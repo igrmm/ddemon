@@ -1,0 +1,11 @@
+#android and gradle
+android/com.igrmm.isgt/app/jni/SDL
+android/com.igrmm.isgt/app/jni/SDL_image
+android/com.igrmm.isgt/.gradle/
+android/com.igrmm.isgt/app/.cxx/
+android/com.igrmm.isgt/app/build/
+android/com.igrmm.isgt/.idea
+
+#cmake and make
+.cache
+build
