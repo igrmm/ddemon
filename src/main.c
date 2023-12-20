@@ -1,7 +1,10 @@
 #include "SDL.h"
 #include "SDL_image.h"
+#include "SDL_ttf.h"
 
 #include "../external/wobu/src/txt.h"
+
+#include "assets.h"
 
 static SDL_Window *win;
 static SDL_Renderer *ren;
@@ -15,41 +18,20 @@ int main(int argc, char *argv[])
     if (setup() < 0)
         shutdown();
 
+    struct assets assets;
+    if (assets_load(&assets, ren) < 0) {
+        SDL_Log("Error loading assets.");
+        assets_dispose(&assets);
+        shutdown();
+    }
+
     int frames = 0;
     Uint32 last_frame_time = 0;
     char fps[512];
 
-    SDL_Texture *tex = IMG_LoadTexture(ren, "img.png");
-    if (tex == NULL) {
-        SDL_Log("Error loading texture: %s\n", SDL_GetError());
-        shutdown();
-        return -1;
-    }
+    SDL_Texture *tex = assets.textures[ASSET_TEXTURE_PLAYER];
 
-    TTF_Font *ttf = TTF_OpenFont("NotoSansMono-Regular.ttf", 26);
-    if (ttf == NULL) {
-        SDL_Log("Error loading ttf font! SDL_ttf Error: %s\n", TTF_GetError());
-        shutdown();
-        return -1;
-    }
-
-    struct txt_codepoint_cache *cache = txt_create_codepoint_cache();
-    if (cache == NULL) {
-        SDL_Log("Error creating txt_codepoint_cache.");
-        shutdown();
-        return -1;
-    }
-    // cache all ASCII table
-    for (char c = ' '; c <= '~'; c++) {
-        txt_cache_codepoint(cache, &c);
-    }
-    struct txt_font *font = txt_create_font(cache, ttf, ren);
-    SDL_free(cache);
-    if (font == NULL) {
-        SDL_Log("Error creating txt_font.");
-        shutdown();
-        return -1;
-    }
+    struct txt_font *font = assets.fonts[ASSET_FONT_SMALL];
 
     while (running) {
         Uint32 now = SDL_GetTicks64();
@@ -83,7 +65,7 @@ int main(int argc, char *argv[])
         SDL_RenderPresent(ren);
     }
 
-    SDL_DestroyTexture(tex);
+    assets_dispose(&assets);
     txt_destroy_font(font);
     shutdown();
 
