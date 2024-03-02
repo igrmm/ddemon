@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(isgt)
+project(ddemon)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -10,7 +10,7 @@ find_package(SDL2_ttf REQUIRED CONFIG)
 
 add_executable(${PROJECT_NAME}
     WIN32
-    src/main.c
+    src/ddemon.c
     src/assets.c
     external/wobu/src/txt.c
     )

@@ -5,4 +5,4 @@ cd build
 cmake ..
 cmake --build .
 cd ../assets
-../build/isgt
+../build/ddemon

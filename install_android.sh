@@ -3,8 +3,8 @@
 SDL_COMMIT=tags/release-2.28.3
 SDL_IMAGE_COMMIT=tags/release-2.6.3
 SDL_TTF_COMMIT=tags/release-2.20.2
-ANDROID_PROJECT=com.igrmm.isgt
-APP_NAME=ISGT
+ANDROID_PROJECT=com.igrmm.ddemon
+APP_NAME=DDEMON
 
 mkdir -p build
 

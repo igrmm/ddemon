@@ -1,7 +1,7 @@
-# isgt - igrmm's sdl game template
+# ddemon
 
 clone with:
 
 ```
-git clone --recurse-submodules https://github.com/igrmm/isgt.git
+git clone --recurse-submodules https://github.com/igrmm/ddemon.git
 ```
