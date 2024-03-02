@@ -66,7 +66,6 @@ int main(int argc, char *argv[])
     }
 
     assets_dispose(&assets);
-    txt_destroy_font(font);
     shutdown();
 
     return 0;
@@ -80,7 +79,7 @@ static int setup(void)
     }
 
     win =
-        SDL_CreateWindow("ISGT", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+        SDL_CreateWindow("DDEMON", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                          1920, 1080, SDL_WINDOW_RESIZABLE);
     if (win == NULL) {
         SDL_Log("SDL_CreateWindow Error: %s\n", SDL_GetError());

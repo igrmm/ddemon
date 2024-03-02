@@ -5,12 +5,12 @@
 
 #include "../external/wobu/src/txt.h"
 
-enum assets_texture { ASSET_TEXTURE_PLAYER = 0, NUM_TEXTURES };
-enum font { ASSET_FONT_SMALL = 0, NUM_FONTS };
+enum asset_texture { ASSET_TEXTURE_PLAYER = 0, ASSET_TEXTURE_MAX };
+enum asset_font { ASSET_FONT_SMALL = 0, ASSET_FONT_MAX };
 
 struct assets {
-    SDL_Texture *textures[NUM_TEXTURES];
-    struct txt_font *fonts[NUM_FONTS];
+    SDL_Texture *textures[ASSET_TEXTURE_MAX];
+    struct txt_font *fonts[ASSET_FONT_MAX];
 };
 
 int assets_load(struct assets *assets, SDL_Renderer *ren);

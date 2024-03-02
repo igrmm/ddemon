@@ -9,7 +9,7 @@
 // clang-format off
 static const char *TEXTURE_PATHS[] = {
     [ASSET_TEXTURE_PLAYER] = "img.png",
-    [NUM_TEXTURES] = 0
+    [ASSET_TEXTURE_MAX] = 0
 };
 
 static const char FONT_PATH[] = "NotoSansMono-Regular.ttf";
@@ -17,7 +17,7 @@ static const char FONT_PATH[] = "NotoSansMono-Regular.ttf";
 
 int assets_load(struct assets *assets, SDL_Renderer *ren)
 {
-    for (int i = 0; i < NUM_TEXTURES; i++) {
+    for (int i = 0; i < ASSET_TEXTURE_MAX; i++) {
         assets->textures[i] = IMG_LoadTexture(ren, TEXTURE_PATHS[i]);
         if (assets->textures[i] == NULL) {
             SDL_Log("Error loading texture: %s\n", SDL_GetError());
@@ -53,12 +53,12 @@ int assets_load(struct assets *assets, SDL_Renderer *ren)
 
 void assets_dispose(struct assets *assets)
 {
-    for (int i = 0; i < NUM_TEXTURES; i++) {
+    for (int i = 0; i < ASSET_TEXTURE_MAX; i++) {
         if (assets->textures[i] != NULL)
             SDL_DestroyTexture(assets->textures[i]);
     }
 
-    for (int i = 0; i < NUM_FONTS; i++) {
+    for (int i = 0; i < ASSET_FONT_MAX; i++) {
         if (assets->fonts[i] != NULL)
             txt_destroy_font(assets->fonts[i]);
     }
