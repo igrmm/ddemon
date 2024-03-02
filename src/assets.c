@@ -37,8 +37,10 @@ int assets_load(struct assets *assets, SDL_Renderer *ren)
         return -1;
     }
     // cache all ASCII table
+    char str[2] = {0};
     for (char c = ' '; c <= '~'; c++) {
-        txt_cache_codepoint(cache, &c);
+        SDL_snprintf(str, 2, "%c", c);
+        txt_cache_codepoint(cache, str);
     }
     assets->fonts[ASSET_FONT_SMALL] = txt_create_font(cache, ttf_small, ren);
     TTF_CloseFont(ttf_small);
