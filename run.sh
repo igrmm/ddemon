@@ -2,7 +2,12 @@
 
 mkdir -p build
 cd build
-cmake ..
+if [ "$1" = "debug" ]; then
+    export SANITIZERS="-fsanitize=address,undefined"
+    cmake -DCMAKE_BUILD_TYPE=Debug ..
+else
+    cmake ..
+fi
 cmake --build .
 cd ../assets
 ../build/ddemon
