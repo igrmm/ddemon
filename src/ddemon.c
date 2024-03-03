@@ -5,33 +5,34 @@
 #include "../external/wobu/src/txt.h"
 
 #include "assets.h"
+#include "ddemon.h"
 
-static SDL_Window *win;
-static SDL_Renderer *ren;
-
-static int setup(void);
-static void shutdown(void);
+static int setup(struct ddemon *game);
+static void shutdown(struct ddemon *game);
 static SDL_bool running = SDL_FALSE;
 
 int main(int argc, char *argv[])
 {
-    if (setup() < 0)
-        shutdown();
+    struct ddemon game = {0};
+    if (setup(&game) < 0)
+        shutdown(&game);
 
-    struct assets assets;
-    if (assets_load(&assets, ren) < 0) {
+    SDL_Renderer *ren = game.renderer;
+    struct assets *assets = &game.assets;
+
+    if (assets_load(assets, ren) < 0) {
         SDL_Log("Error loading assets.");
-        assets_dispose(&assets);
-        shutdown();
+        assets_dispose(assets);
+        shutdown(&game);
     }
 
     int frames = 0;
     Uint32 last_frame_time = 0;
     char fps[512];
 
-    SDL_Texture *tex = assets.textures[ASSET_TEXTURE_PLAYER];
+    SDL_Texture *tex = assets->textures[ASSET_TEXTURE_PLAYER];
 
-    struct txt_font *font = assets.fonts[ASSET_FONT_SMALL];
+    struct txt_font *font = assets->fonts[ASSET_FONT_SMALL];
 
     while (running) {
         Uint32 now = SDL_GetTicks64();
@@ -65,29 +66,29 @@ int main(int argc, char *argv[])
         SDL_RenderPresent(ren);
     }
 
-    assets_dispose(&assets);
-    shutdown();
+    assets_dispose(assets);
+    shutdown(&game);
 
     return 0;
 }
 
-static int setup(void)
+static int setup(struct ddemon *game)
 {
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
         SDL_Log("SDL_Init Error: %s\n", SDL_GetError());
         return -1;
     }
 
-    win =
-        SDL_CreateWindow("DDEMON", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                         1920, 1080, SDL_WINDOW_RESIZABLE);
-    if (win == NULL) {
+    game->window = SDL_CreateWindow("DDEMON", SDL_WINDOWPOS_CENTERED,
+                                    SDL_WINDOWPOS_CENTERED, 1920, 1080,
+                                    SDL_WINDOW_RESIZABLE);
+    if (game->window == NULL) {
         SDL_Log("SDL_CreateWindow Error: %s\n", SDL_GetError());
         return -1;
     }
 
-    ren = SDL_CreateRenderer(win, -1, 0);
-    if (ren == NULL) {
+    game->renderer = SDL_CreateRenderer(game->window, -1, 0);
+    if (game->renderer == NULL) {
         SDL_Log("SDL_CreateRenderer Error: %s\n", SDL_GetError());
         return -1;
     }
@@ -109,10 +110,10 @@ static int setup(void)
     return 0;
 }
 
-static void shutdown(void)
+static void shutdown(struct ddemon *game)
 {
-    SDL_DestroyRenderer(ren);
-    SDL_DestroyWindow(win);
+    SDL_DestroyRenderer(game->renderer);
+    SDL_DestroyWindow(game->window);
     IMG_Quit();
     SDL_Quit();
 }
