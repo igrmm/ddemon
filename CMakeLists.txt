@@ -14,6 +14,7 @@ add_executable(${PROJECT_NAME}
     WIN32
     src/ddemon.c
     src/assets.c
+    src/ecs.c
     external/wobu/src/txt.c
     )
 
