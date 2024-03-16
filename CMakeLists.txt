@@ -15,6 +15,7 @@ add_executable(${PROJECT_NAME}
     src/ddemon.c
     src/assets.c
     src/ecs.c
+    src/core.c
     external/wobu/src/txt.c
     )
 

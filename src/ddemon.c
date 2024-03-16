@@ -1,29 +1,27 @@
-#include "SDL.h"
-#include "SDL_image.h"
-#include "SDL_ttf.h"
+#include "SDL.h" // IWYU pragma: keep //clangd
 
 #include "../external/wobu/src/txt.h"
 
 #include "assets.h"
+#include "core.h"
 #include "ddemon.h"
-
-static int setup(struct ddemon *game);
-static void shutdown(struct ddemon *game);
-static SDL_bool running = SDL_FALSE;
 
 int main(int argc, char *argv[])
 {
-    struct ddemon game = {0};
-    if (setup(&game) < 0)
-        shutdown(&game);
+    SDL_bool running = SDL_TRUE;
+    struct ddemon game = {.core = {.window_name = "DDEMON",
+                                   .window_width = 1920,
+                                   .window_height = 1080}};
+    if (core_setup(&game.core) < 0)
+        core_shutdown(&game.core);
 
-    SDL_Renderer *ren = game.renderer;
+    SDL_Renderer *ren = game.core.renderer;
     struct assets *assets = &game.assets;
 
     if (assets_load(assets, ren) < 0) {
         SDL_Log("Error loading assets.");
         assets_dispose(assets);
-        shutdown(&game);
+        core_shutdown(&game.core);
     }
 
     int frames = 0;
@@ -67,53 +65,7 @@ int main(int argc, char *argv[])
     }
 
     assets_dispose(assets);
-    shutdown(&game);
+    core_shutdown(&game.core);
 
     return 0;
-}
-
-static int setup(struct ddemon *game)
-{
-    if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
-        SDL_Log("SDL_Init Error: %s\n", SDL_GetError());
-        return -1;
-    }
-
-    game->window = SDL_CreateWindow("DDEMON", SDL_WINDOWPOS_CENTERED,
-                                    SDL_WINDOWPOS_CENTERED, 1920, 1080,
-                                    SDL_WINDOW_RESIZABLE);
-    if (game->window == NULL) {
-        SDL_Log("SDL_CreateWindow Error: %s\n", SDL_GetError());
-        return -1;
-    }
-
-    game->renderer = SDL_CreateRenderer(game->window, -1, 0);
-    if (game->renderer == NULL) {
-        SDL_Log("SDL_CreateRenderer Error: %s\n", SDL_GetError());
-        return -1;
-    }
-
-    if (IMG_Init(IMG_INIT_PNG) != IMG_INIT_PNG) {
-        SDL_Log("SDL_image could not initialize! SDL_image Error: %s\n",
-                IMG_GetError());
-        return -1;
-    }
-
-    if (TTF_Init() < 0) {
-        SDL_Log("SDL_ttf could not initialize! SDL_ttf Error: %s\n",
-                TTF_GetError());
-        return -1;
-    }
-
-    running = SDL_TRUE;
-
-    return 0;
-}
-
-static void shutdown(struct ddemon *game)
-{
-    SDL_DestroyRenderer(game->renderer);
-    SDL_DestroyWindow(game->window);
-    IMG_Quit();
-    SDL_Quit();
 }

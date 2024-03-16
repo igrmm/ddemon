@@ -1,13 +1,11 @@
 #ifndef DDEMON_H
 #define DDEMON_H
 
-#include "SDL.h"
-
 #include "assets.h"
+#include "core.h"
 
 struct ddemon {
-    SDL_Window *window;
-    SDL_Renderer *renderer;
+    struct core core;
     struct assets assets;
 };
 
