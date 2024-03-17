@@ -1,0 +1,72 @@
+{
+   nvidia_realloc
+   Memcheck:ReallocZero
+   ...
+   obj:/usr/lib/libGLX_nvidia.so.*
+}
+{
+   nvidia_leak
+   Memcheck:Leak
+   ...
+   obj:/usr/lib/libGLX_nvidia.so.*
+}
+{
+   pulse_audio
+   Memcheck:Leak
+   ...
+   fun:pa_*
+}
+{
+   alsa
+   Memcheck:Leak
+   ...
+   fun:*snd_*
+}
+{
+   dbus
+   Memcheck:Leak
+   ...
+   fun:*dbus_*
+}
+{
+   dlopen
+   Memcheck:Leak
+   ...
+   fun:_dl_*
+}
+{
+   sdl_video_init
+   Memcheck:Leak
+   ...
+   fun:SDL_VideoInit_REAL
+}
+{
+   sdl_create_renderer
+   Memcheck:Cond
+   ...
+   fun:SDL_CreateRenderer_REAL
+}
+{
+   X11_keyboard_something
+   Memcheck:Leak
+   ...
+   fun:X11_InitKeyboard
+}
+{
+   X11_locale_something
+   Memcheck:Leak
+   ...
+   fun:XSetLocaleModifiers
+}
+{
+   nuklear_cond
+   Memcheck:Cond
+   ...
+   fun:nk_*
+}
+{
+   nuklear_value8
+   Memcheck:Value8
+   ...
+   fun:nk_*
+}
