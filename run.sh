@@ -4,6 +4,8 @@ mkdir -p build
 cd build
 
 if [ "$1" = "valgrind" ]; then
+    cmake -DCMAKE_BUILD_TYPE=Debug ..
+    cmake --build .
     cd ../assets
     valgrind \
         --suppressions=../valgrind.sup \
