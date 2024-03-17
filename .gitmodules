@@ -1,3 +1,9 @@
 [submodule "external/wobu"]
 	path = external/wobu
 	url = https://github.com/igrmm/wobu.git
+[submodule "external/Nuklear"]
+	path = external/Nuklear
+	url = https://github.com/Immediate-Mode-UI/Nuklear
+[submodule "external/json.h"]
+	path = external/json.h
+	url = https://github.com/sheredom/json.h
