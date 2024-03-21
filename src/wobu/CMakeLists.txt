@@ -13,6 +13,8 @@ find_package(SDL2_ttf REQUIRED CONFIG)
 add_executable(${PROJECT_NAME}
     WIN32
     wobu.c
+    app.c
+    window_status.c
     ../core.c
     )
 
