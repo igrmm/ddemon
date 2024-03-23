@@ -35,7 +35,12 @@ int main(int argc, char *argv[])
 
     //  initialize app
     struct app app = {0};
-    app_init(&app, &core, nk_ctx);
+    if (app_init(&app, &core, nk_ctx) < 0) {
+        nk_sdl_shutdown();
+        core_shutdown(&core);
+        app_shutdown(&app);
+        return -1;
+    }
 
     while (running) {
         /* Input */
@@ -75,8 +80,8 @@ int main(int argc, char *argv[])
         SDL_RenderPresent(core.renderer);
     }
 
-    // destroy app
     nk_sdl_shutdown();
     core_shutdown(&core);
+    app_shutdown(&app);
     return 0;
 }

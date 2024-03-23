@@ -15,6 +15,7 @@ add_executable(${PROJECT_NAME}
     wobu.c
     app.c
     window_status.c
+    window_tileset.c
     ../core.c
     )
 
