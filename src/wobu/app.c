@@ -4,7 +4,8 @@
 
 #include "../core.h"
 #include "app.h"
-#include "windows.h"
+#include "pick.h"
+#include "status.h"
 
 int app_init(struct app *app, struct core *core, struct nk_context *nk_ctx)
 {
@@ -18,7 +19,7 @@ int app_init(struct app *app, struct core *core, struct nk_context *nk_ctx)
         return -1;
     }
     app->tileset_texture = tileset_texture;
-    app->show_tilesetw = 1;
+    app->show_pick_window = 1;
     app->window_flags = NK_WINDOW_BORDER | NK_WINDOW_SCALABLE |
                         NK_WINDOW_MOVABLE | NK_WINDOW_MINIMIZABLE |
                         NK_WINDOW_CLOSABLE;
@@ -27,10 +28,10 @@ int app_init(struct app *app, struct core *core, struct nk_context *nk_ctx)
 
 void app_run(struct app *app)
 {
-    if (app->show_tilesetw)
-        window_tileset(app);
+    if (app->show_pick_window)
+        pick_window(app);
 
-    window_status(app);
+    status_window(app);
 }
 
 void app_shutdown(struct app *app)

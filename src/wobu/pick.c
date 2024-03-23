@@ -2,10 +2,11 @@
 #include "nk.h"
 
 #include "app.h"
-#include "windows.h"
+#include "pick.h"
 
-static void select_tile_on_click(struct app *app, struct nk_context *nk_ctx,
-                                 struct nk_rect tileset_rect)
+static void pick_tile_from_tileset_on_click(struct app *app,
+                                            struct nk_context *nk_ctx,
+                                            struct nk_rect tileset_rect)
 {
     if (nk_input_is_mouse_click_in_rect(&nk_ctx->input, NK_BUTTON_LEFT,
                                         tileset_rect)) {
@@ -24,9 +25,9 @@ static void select_tile_on_click(struct app *app, struct nk_context *nk_ctx,
     }
 }
 
-static void render(struct app *app, struct nk_context *nk_ctx,
-                   struct nk_command_buffer *canvas,
-                   struct nk_rect tileset_rect)
+static void pick_render(struct app *app, struct nk_context *nk_ctx,
+                        struct nk_command_buffer *canvas,
+                        struct nk_rect tileset_rect)
 {
     struct nk_image tileset_image = nk_image_ptr(app->tileset_texture);
     int tile_size = 32;
@@ -73,7 +74,7 @@ static void render(struct app *app, struct nk_context *nk_ctx,
     }
 }
 
-void window_tileset(struct app *app)
+void pick_window(struct app *app)
 {
     struct nk_context *nk_ctx = app->nk_ctx;
     int window_flags = app->window_flags;
@@ -95,10 +96,10 @@ void window_tileset(struct app *app)
         struct nk_rect tileset_rect =
             nk_rect(canvas->clip.x, canvas->clip.y, w, h);
 
-        select_tile_on_click(app, nk_ctx, tileset_rect);
-        render(app, nk_ctx, canvas, tileset_rect);
+        pick_tile_from_tileset_on_click(app, nk_ctx, tileset_rect);
+        pick_render(app, nk_ctx, canvas, tileset_rect);
     } else {
-        app->show_tilesetw = 0;
+        app->show_pick_window = 0;
     }
     nk_end(nk_ctx);
 

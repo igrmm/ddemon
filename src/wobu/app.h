@@ -18,7 +18,7 @@ struct app {
     struct nk_context *nk_ctx;
     SDL_Texture *tileset_texture;
     SDL_Point selected_tileset_index;
-    int show_tilesetw;
+    int show_pick_window;
     int window_flags;
 };
 

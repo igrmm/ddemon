@@ -7,7 +7,6 @@
 
 #include "../core.h"
 #include "app.h"
-#include "windows.h"
 
 int main(int argc, char *argv[])
 {

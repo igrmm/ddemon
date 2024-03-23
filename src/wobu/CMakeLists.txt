@@ -14,8 +14,8 @@ add_executable(${PROJECT_NAME}
     WIN32
     wobu.c
     app.c
-    window_status.c
-    window_tileset.c
+    status.c
+    pick.c
     ../core.c
     )
 

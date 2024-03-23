@@ -3,13 +3,13 @@
 
 #include "../core.h"
 #include "app.h"
-#include "windows.h"
+#include "status.h"
 
 static int frames;
 static Uint32 timer;
 static char fps_text[9];
 
-void window_status(struct app *app)
+void status_window(struct app *app)
 {
     // get fps
     Uint32 now = SDL_GetTicks64();
