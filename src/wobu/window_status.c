@@ -1,5 +1,5 @@
-#include "../../external/Nuklear/nuklear.h"
 #include "SDL.h" // IWYU pragma: keep //clangd
+#include "nk.h"
 
 #include "../core.h"
 #include "app.h"
