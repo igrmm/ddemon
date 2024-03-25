@@ -2,6 +2,7 @@
 #include "nk.h"
 
 #include "app.h"
+#include "map.h"
 #include "pick.h"
 
 static void pick_tile_from_tileset_on_click(struct app *app,
@@ -10,8 +11,7 @@ static void pick_tile_from_tileset_on_click(struct app *app,
 {
     if (nk_input_is_mouse_click_in_rect(&nk_ctx->input, NK_BUTTON_LEFT,
                                         tileset_rect)) {
-        int tile_size = 32;
-        // int tile_size = app->map->tile_size;
+        int tile_size = MAP_TILE_SIZE;
 
         // sets the x,y index of selected tile in tileset
         app->selected_tileset_index.x =
@@ -30,8 +30,7 @@ static void pick_render(struct app *app, struct nk_context *nk_ctx,
                         struct nk_rect tileset_rect)
 {
     struct nk_image tileset_image = nk_image_ptr(app->tileset_texture);
-    int tile_size = 32;
-    // int tile_size = app->map->tile_size;
+    int tile_size = MAP_TILE_SIZE;
 
     // draw tileset
     nk_image(nk_ctx, tileset_image);
