@@ -24,6 +24,7 @@ int core_setup(struct core *core)
         SDL_Log("SDL_CreateRenderer Error: %s\n", SDL_GetError());
         return -1;
     }
+    SDL_SetRenderDrawBlendMode(core->renderer, SDL_BLENDMODE_BLEND);
 
     if (IMG_Init(IMG_INIT_PNG) != IMG_INIT_PNG) {
         SDL_Log("SDL_image could not initialize! SDL_image Error: %s\n",
