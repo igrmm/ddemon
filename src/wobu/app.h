@@ -4,6 +4,8 @@
 #include "SDL.h" // IWYU pragma: keep //clangd
 #include "nk.h"
 
+#include "map.h"
+
 #define GREY                                                                   \
     (struct nk_color) { 45, 45, 45, 255 }
 #define GREEN                                                                  \
@@ -14,6 +16,7 @@
     (struct nk_color) { 255, 255, 255, 255 }
 
 struct app {
+    struct map *map;
     struct core *core;
     struct nk_context *nk_ctx;
     SDL_Texture *tileset_texture;

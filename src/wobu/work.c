@@ -54,6 +54,35 @@ void work_render(struct app *app)
 
     SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
 
+    // render tiles
+    SDL_Rect src_rect = {0, 0, tile_size, tile_size};
+    SDL_FRect dst_rect = {0, 0, tile_size, tile_size};
+    SDL_FPoint work_coord = {0, 0};
+    SDL_FPoint screen_coord = {0, 0};
+    struct map_tile_layer *tile_layer = NULL;
+
+    for (int i = 0; i < MAP_TILES_X_MAX; i++) {
+        for (int j = 0; j < MAP_TILES_Y_MAX; j++) {
+            for (int l = 0; l < MAP_TILE_LAYERS_MAX; l++) {
+                tile_layer = &app->map->tiles[i][j].layers[l];
+                if (tile_layer->enabled == 0)
+                    continue;
+                src_rect.x = tile_layer->tileset_index_x * tile_size;
+                src_rect.y = tile_layer->tileset_index_y * tile_size;
+                // make coordinate conversion
+                work_coord.x = i * tile_size;
+                work_coord.y = j * tile_size;
+                work_coord_to_screen(work_coord, &screen_coord);
+                dst_rect.x = screen_coord.x;
+                dst_rect.y = screen_coord.y;
+                dst_rect.w = dst_rect.h = tile_size * scale;
+
+                SDL_RenderCopyF(renderer, app->tileset_texture, &src_rect,
+                                &dst_rect);
+            }
+        }
+    }
+
     // render grid
     if (app->show_grid) {
         int cols = MAP_TILES_X_MAX;

@@ -10,6 +10,10 @@
 
 int app_init(struct app *app, struct core *core, struct nk_context *nk_ctx)
 {
+    app->map = SDL_calloc(1, sizeof(*app->map));
+    if (app->map == NULL)
+        return -1;
+
     app->core = core;
     app->nk_ctx = nk_ctx;
 
@@ -40,6 +44,9 @@ void app_render(struct app *app) { work_render(app); }
 
 void app_shutdown(struct app *app)
 {
+    if (app->map != NULL)
+        SDL_free(app->map);
+
     if (app->tileset_texture != NULL)
         SDL_DestroyTexture(app->tileset_texture);
 }
