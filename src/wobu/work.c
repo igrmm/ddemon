@@ -5,22 +5,22 @@
 #include "map.h"
 #include "work.h"
 
-static SDL_FPoint offset;
-static SDL_FPoint pan_start;
-static float scale = 1;
+static SDL_FPoint work_offset;
+static SDL_FPoint work_pan_start_point;
+static float work_scale = 1;
 
 static void work_coord_to_screen(SDL_FPoint work_coord,
                                  SDL_FPoint *screen_coord)
 {
-    screen_coord->x = (work_coord.x - offset.x) * scale;
-    screen_coord->y = (work_coord.y - offset.y) * scale;
+    screen_coord->x = (work_coord.x - work_offset.x) * work_scale;
+    screen_coord->y = (work_coord.y - work_offset.y) * work_scale;
 }
 
 static void work_coord_from_screen(SDL_FPoint screen_coord,
                                    SDL_FPoint *work_coord)
 {
-    work_coord->x = screen_coord.x / scale + offset.x;
-    work_coord->y = screen_coord.y / scale + offset.y;
+    work_coord->x = screen_coord.x / work_scale + work_offset.x;
+    work_coord->y = screen_coord.y / work_scale + work_offset.y;
 }
 
 static void work_rect_to_screen(SDL_FRect rect_work_coord,
@@ -31,8 +31,8 @@ static void work_rect_to_screen(SDL_FRect rect_work_coord,
     work_coord_to_screen(work_coord, &screen_coord);
     rect_screen_coord->x = screen_coord.x;
     rect_screen_coord->y = screen_coord.y;
-    rect_screen_coord->w = rect_work_coord.w * scale;
-    rect_screen_coord->h = rect_work_coord.h * scale;
+    rect_screen_coord->w = rect_work_coord.w * work_scale;
+    rect_screen_coord->h = rect_work_coord.h * work_scale;
 }
 
 static void work_rect_from_screen(SDL_FRect rect_screen_coord,
@@ -43,8 +43,8 @@ static void work_rect_from_screen(SDL_FRect rect_screen_coord,
     work_coord_from_screen(screen_coord, &work_coord);
     rect_work_coord->x = work_coord.x;
     rect_work_coord->y = work_coord.y;
-    rect_work_coord->w = rect_screen_coord.w / scale;
-    rect_work_coord->h = rect_screen_coord.h / scale;
+    rect_work_coord->w = rect_screen_coord.w / work_scale;
+    rect_work_coord->h = rect_screen_coord.h / work_scale;
 }
 
 void work_render(struct app *app)
@@ -75,7 +75,7 @@ void work_render(struct app *app)
                 work_coord_to_screen(work_coord, &screen_coord);
                 dst_rect.x = screen_coord.x;
                 dst_rect.y = screen_coord.y;
-                dst_rect.w = dst_rect.h = tile_size * scale;
+                dst_rect.w = dst_rect.h = tile_size * work_scale;
 
                 SDL_RenderCopyF(renderer, app->tileset_texture, &src_rect,
                                 &dst_rect);
