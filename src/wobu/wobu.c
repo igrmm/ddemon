@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
         /* Render */
         SDL_SetRenderDrawColor(core.renderer, 26.0f, 46.0f, 61.0f, 255.0f);
         SDL_RenderClear(core.renderer);
-        // app_render(&app);
+        app_render(&app);
         nk_sdl_render(NK_ANTI_ALIASING_ON);
         SDL_RenderPresent(core.renderer);
     }

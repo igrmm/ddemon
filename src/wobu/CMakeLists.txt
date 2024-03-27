@@ -16,6 +16,7 @@ add_executable(${PROJECT_NAME}
     app.c
     status.c
     pick.c
+    work.c
     ../core.c
     )
 

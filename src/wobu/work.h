@@ -30,5 +30,6 @@ struct work {
 
 struct app;
 void work_window(struct app *app);
+void work_render(struct app *app);
 
 #endif

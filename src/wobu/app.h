@@ -18,12 +18,13 @@ struct app {
     struct nk_context *nk_ctx;
     SDL_Texture *tileset_texture;
     SDL_Point selected_tileset_index;
-    int show_pick_window;
+    int show_pick_window, show_grid;
     int window_flags;
 };
 
 int app_init(struct app *app, struct core *core, struct nk_context *nk_ctx);
 void app_run(struct app *app);
+void app_render(struct app *app);
 void app_shutdown(struct app *app);
 
 #endif

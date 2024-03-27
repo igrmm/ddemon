@@ -1,10 +1,13 @@
 #include "SDL.h" // IWYU pragma: keep //clangd
 
+#include "../core.h"
+#include "app.h"
+#include "map.h"
 #include "work.h"
 
 static SDL_FPoint offset;
 static SDL_FPoint pan_start;
-static float scale;
+static float scale = 1;
 
 static void work_coord_to_screen(SDL_FPoint work_coord,
                                  SDL_FPoint *screen_coord)
@@ -42,4 +45,45 @@ static void work_rect_from_screen(SDL_FRect rect_screen_coord,
     rect_work_coord->y = work_coord.y;
     rect_work_coord->w = rect_screen_coord.w / scale;
     rect_work_coord->h = rect_screen_coord.h / scale;
+}
+
+void work_render(struct app *app)
+{
+    SDL_Renderer *renderer = app->core->renderer;
+    int tile_size = MAP_TILE_SIZE;
+
+    SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
+
+    // render grid
+    if (app->show_grid) {
+        int cols = MAP_TILES_X_MAX;
+        SDL_FPoint col0_work, col0_screen, col1_work, col1_screen;
+        for (int col = 0; col <= cols; col++) {
+            col0_work.x = col * tile_size;
+            col0_work.y = 0;
+            col1_work.x = col * tile_size;
+            col1_work.y = MAP_TILES_Y_MAX * tile_size;
+
+            work_coord_to_screen(col0_work, &col0_screen);
+            work_coord_to_screen(col1_work, &col1_screen);
+
+            SDL_RenderDrawLineF(renderer, col0_screen.x, col0_screen.y,
+                                col1_screen.x, col1_screen.y);
+        }
+
+        int rows = MAP_TILES_Y_MAX;
+        SDL_FPoint row0_work, row0_screen, row1_work, row1_screen;
+        for (int row = 0; row <= rows; row++) {
+            row0_work.x = 0;
+            row0_work.y = row * tile_size;
+            row1_work.x = MAP_TILES_X_MAX * tile_size;
+            row1_work.y = row * tile_size;
+
+            work_coord_to_screen(row0_work, &row0_screen);
+            work_coord_to_screen(row1_work, &row1_screen);
+
+            SDL_RenderDrawLineF(renderer, row0_screen.x, row0_screen.y,
+                                row1_screen.x, row1_screen.y);
+        }
+    }
 }
