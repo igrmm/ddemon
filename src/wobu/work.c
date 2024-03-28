@@ -15,7 +15,14 @@ static void work_state_pan(SDL_Event *event, struct app *app);
 
 static void (*work_state_table[WORK_STATE_TOTAL])(SDL_Event *event,
                                                   struct app *app) = {
-    work_state_zoom, work_state_pan_start, work_state_pan, NULL, NULL};
+    // clang-format off
+    work_state_zoom,
+    work_state_pan_start,
+    work_state_pan,
+    NULL,
+    NULL
+    // clang-format on
+};
 
 static void work_coord_to_screen(SDL_FPoint work_coord,
                                  SDL_FPoint *screen_coord)
