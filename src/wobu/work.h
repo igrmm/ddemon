@@ -3,8 +3,10 @@
 
 #include "SDL.h" // IWYU pragma: keep //clangd
 
+enum work_state { WORK_STATE_ZOOM = 0, WORK_STATE_IDLE, WORK_STATE_TOTAL };
+
 enum work_tool_type {
-    WORK_TOOL_PENCIL,
+    WORK_TOOL_PENCIL = 0,
     WORK_TOOL_ERASER,
     WORK_TOOL_ENTITY,
     WORK_TOOL_SELECT,
@@ -29,7 +31,8 @@ struct work {
 };
 
 struct app;
-void work_window(struct app *app);
+enum work_state work_get_state(struct app *app, SDL_Event *event);
+void work_run_state(struct app *app, SDL_Event *event, enum work_state state);
 void work_render(struct app *app);
 
 #endif

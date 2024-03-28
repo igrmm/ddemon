@@ -26,6 +26,7 @@ struct app {
 };
 
 int app_init(struct app *app, struct core *core, struct nk_context *nk_ctx);
+void app_handle_event(struct app *app, SDL_Event *event);
 void app_run(struct app *app);
 void app_render(struct app *app);
 void app_shutdown(struct app *app);

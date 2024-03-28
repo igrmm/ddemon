@@ -32,6 +32,12 @@ int app_init(struct app *app, struct core *core, struct nk_context *nk_ctx)
     return 0;
 }
 
+void app_handle_event(struct app *app, SDL_Event *event)
+{
+    enum work_state state = work_get_state(app, event);
+    work_run_state(app, event, state);
+}
+
 void app_run(struct app *app)
 {
     if (app->show_pick_window)

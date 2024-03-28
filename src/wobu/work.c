@@ -9,6 +9,12 @@ static SDL_FPoint work_offset;
 static SDL_FPoint work_pan_start_point;
 static float work_scale = 1;
 
+static void work_state_zoom(SDL_Event *event, struct app *app);
+
+static void (*work_state_table[WORK_STATE_TOTAL])(SDL_Event *event,
+                                                  struct app *app) = {
+    work_state_zoom, NULL, NULL};
+
 static void work_coord_to_screen(SDL_FPoint work_coord,
                                  SDL_FPoint *screen_coord)
 {
@@ -45,6 +51,50 @@ static void work_rect_from_screen(SDL_FRect rect_screen_coord,
     rect_work_coord->y = work_coord.y;
     rect_work_coord->w = rect_screen_coord.w / work_scale;
     rect_work_coord->h = rect_screen_coord.h / work_scale;
+}
+
+static void work_state_zoom(SDL_Event *event, struct app *app)
+{
+    SDL_FPoint mouse_screen_coord = {event->wheel.mouseX, event->wheel.mouseY};
+    SDL_FPoint mouse_work_coord_before_zoom = {0, 0};
+
+    work_coord_from_screen(mouse_screen_coord, &mouse_work_coord_before_zoom);
+
+    if (event->wheel.y > 0) {
+        work_scale *= 1.1f;
+
+    } else if (event->wheel.y < 0) {
+        work_scale *= 0.9f;
+    }
+
+    SDL_FPoint mouse_work_coord_after_zoom = {0, 0};
+    work_coord_from_screen(mouse_screen_coord, &mouse_work_coord_after_zoom);
+
+    work_offset.x +=
+        (mouse_work_coord_before_zoom.x - mouse_work_coord_after_zoom.x);
+    work_offset.y +=
+        (mouse_work_coord_before_zoom.y - mouse_work_coord_after_zoom.y);
+}
+
+enum work_state work_get_state(struct app *app, SDL_Event *event)
+{
+    enum work_state state;
+
+    state = WORK_STATE_ZOOM;
+    if (event->type == SDL_MOUSEWHEEL) {
+        return state;
+    }
+
+    state = WORK_STATE_IDLE;
+    return state;
+}
+
+void work_run_state(struct app *app, SDL_Event *event, enum work_state state)
+{
+    if (state >= WORK_STATE_IDLE)
+        return;
+
+    (*work_state_table[state])(event, app);
 }
 
 void work_render(struct app *app)

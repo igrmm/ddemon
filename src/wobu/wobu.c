@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
                 if (evt.type != SDL_MOUSEWHEEL) {
                     nk_sdl_handle_event(&evt);
                 }
-                // app_handle_event(&app, &evt);
+                app_handle_event(&app, &evt);
             }
         }
         nk_input_end(nk_ctx);
