@@ -3,7 +3,13 @@
 
 #include "SDL.h" // IWYU pragma: keep //clangd
 
-enum work_state { WORK_STATE_ZOOM = 0, WORK_STATE_IDLE, WORK_STATE_TOTAL };
+enum work_state {
+    WORK_STATE_ZOOM = 0,
+    WORK_STATE_PAN_START,
+    WORK_STATE_PAN,
+    WORK_STATE_IDLE,
+    WORK_STATE_TOTAL
+};
 
 enum work_tool_type {
     WORK_TOOL_PENCIL = 0,

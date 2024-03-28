@@ -10,10 +10,12 @@ static SDL_FPoint work_pan_start_point;
 static float work_scale = 1;
 
 static void work_state_zoom(SDL_Event *event, struct app *app);
+static void work_state_pan_start(SDL_Event *event, struct app *app);
+static void work_state_pan(SDL_Event *event, struct app *app);
 
 static void (*work_state_table[WORK_STATE_TOTAL])(SDL_Event *event,
                                                   struct app *app) = {
-    work_state_zoom, NULL, NULL};
+    work_state_zoom, work_state_pan_start, work_state_pan, NULL, NULL};
 
 static void work_coord_to_screen(SDL_FPoint work_coord,
                                  SDL_FPoint *screen_coord)
@@ -76,12 +78,38 @@ static void work_state_zoom(SDL_Event *event, struct app *app)
         (mouse_work_coord_before_zoom.y - mouse_work_coord_after_zoom.y);
 }
 
+static void work_state_pan_start(SDL_Event *event, struct app *app)
+{
+    work_pan_start_point = (SDL_FPoint){event->button.x, event->button.y};
+}
+
+static void work_state_pan(SDL_Event *event, struct app *app)
+{
+    work_offset.x -= (event->motion.x - work_pan_start_point.x) / work_scale;
+    work_offset.y -= (event->motion.y - work_pan_start_point.y) / work_scale;
+    work_pan_start_point.x = event->motion.x;
+    work_pan_start_point.y = event->motion.y;
+}
+
 enum work_state work_get_state(struct app *app, SDL_Event *event)
 {
     enum work_state state;
 
     state = WORK_STATE_ZOOM;
     if (event->type == SDL_MOUSEWHEEL) {
+        return state;
+    }
+
+    state = WORK_STATE_PAN_START;
+    if (event->type == SDL_MOUSEBUTTONDOWN &&
+        event->button.button == SDL_BUTTON_MIDDLE &&
+        event->button.clicks == 1) {
+        return state;
+    }
+
+    state = WORK_STATE_PAN;
+    if (event->type == SDL_MOUSEMOTION &&
+        event->motion.state == SDL_BUTTON_MMASK) {
         return state;
     }
 
