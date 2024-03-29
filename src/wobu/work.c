@@ -14,6 +14,7 @@ static void work_state_pan_start(SDL_Event *event, struct app *app);
 static void work_state_pan(SDL_Event *event, struct app *app);
 static void work_state_paint(SDL_Event *event, struct app *app);
 static void work_state_paint_motion(SDL_Event *event, struct app *app);
+static void work_state_erase(SDL_Event *event, struct app *app);
 
 static void (*work_state_table[WORK_STATE_TOTAL])(SDL_Event *event,
                                                   struct app *app) = {
@@ -23,6 +24,7 @@ static void (*work_state_table[WORK_STATE_TOTAL])(SDL_Event *event,
     work_state_pan,
     work_state_paint,
     work_state_paint_motion,
+    work_state_erase,
     NULL,
     NULL
     // clang-format on
@@ -146,6 +148,13 @@ static void work_state_paint_motion(SDL_Event *event, struct app *app)
     work_set_tile_layer_on_mouse(mouse_screen_coord, app->map, 0, tile_layer);
 }
 
+static void work_state_erase(SDL_Event *event, struct app *app)
+{
+    SDL_FPoint mouse_screen_coord = {event->button.x, event->button.y};
+    struct map_tile_layer tile_layer = {0, 0, 0};
+    work_set_tile_layer_on_mouse(mouse_screen_coord, app->map, 0, tile_layer);
+}
+
 enum work_state work_get_state(struct app *app, SDL_Event *event)
 {
     enum work_state state;
@@ -169,16 +178,23 @@ enum work_state work_get_state(struct app *app, SDL_Event *event)
     }
 
     state = WORK_STATE_PAINT;
-    // todo: check if current tool is pencil
     if (event->type == SDL_MOUSEBUTTONDOWN &&
-        event->button.button == SDL_BUTTON_LEFT) {
+        event->button.button == SDL_BUTTON_LEFT &&
+        app->work.tool->type == TOOL_TYPE_PENCIL) {
         return state;
     }
 
     state = WORK_STATE_PAINT_MOTION;
-    // todo: check if current tool is pencil
     if (event->type == SDL_MOUSEMOTION &&
-        event->motion.state == SDL_BUTTON_LMASK) {
+        event->motion.state == SDL_BUTTON_LMASK &&
+        app->work.tool->type == TOOL_TYPE_PENCIL) {
+        return state;
+    }
+
+    state = WORK_STATE_ERASE;
+    if (event->type == SDL_MOUSEBUTTONDOWN &&
+        event->button.button == SDL_BUTTON_LEFT &&
+        app->work.tool->type == TOOL_TYPE_ERASER) {
         return state;
     }
 
