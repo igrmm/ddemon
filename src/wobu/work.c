@@ -96,6 +96,47 @@ static void work_mk_tool_rect(struct tool_rect *tool_rect,
     }
 }
 
+static void work_mk_tile_shaped_tool_rect(struct tool_rect *tool_rect,
+                                          SDL_FPoint mouse_screen_coord)
+{
+    work_mk_tool_rect(tool_rect, mouse_screen_coord);
+
+    // make tool_rect in work coords
+    SDL_FRect tool_rect_work_coord = {0};
+    work_rect_from_screen(tool_rect->rect, &tool_rect_work_coord);
+
+    // make map_rect in work coords
+    int map_width = MAP_TILES_X_MAX * MAP_TILE_SIZE;
+    int map_height = MAP_TILES_Y_MAX * MAP_TILE_SIZE;
+    SDL_FRect map_rect_work_coord = {0, 0, map_width, map_height};
+
+    SDL_FRect intersect = {0};
+    if (SDL_IntersectFRect(&map_rect_work_coord, &tool_rect_work_coord,
+                           &intersect)) {
+        int tile_size = MAP_TILE_SIZE;
+
+        // floor intersect origin to tile index (i*tile) and save the difference
+        int x = (int)(intersect.x / tile_size) * tile_size;
+        int diff_x = intersect.x - x;
+        intersect.x = x;
+        int y = (int)(intersect.y / tile_size) * tile_size;
+        int diff_y = intersect.y - y;
+        intersect.y = y;
+
+        // ceil intersect sz to tile index (j*tile) n clamp if bigger than mapsz
+        intersect.w = (int)((intersect.w + diff_x) / tile_size + 1) * tile_size;
+        if ((intersect.x + intersect.w) > map_rect_work_coord.w)
+            intersect.w = map_rect_work_coord.w - intersect.x;
+        intersect.h = (int)((intersect.h + diff_y) / tile_size + 1) * tile_size;
+        if ((intersect.y + intersect.h) > map_rect_work_coord.h)
+            intersect.h = map_rect_work_coord.h - intersect.y;
+
+        tool_rect->rect = intersect;
+    } else {
+        tool_rect->rect = (SDL_FRect){0};
+    }
+}
+
 static int work_get_tile_index_on_mouse(SDL_FPoint mouse_screen_coord,
                                         SDL_Point *tile_index)
 {
