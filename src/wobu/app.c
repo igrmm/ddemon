@@ -6,6 +6,7 @@
 #include "app.h"
 #include "pick.h"
 #include "status.h"
+#include "tools.h"
 #include "work.h"
 
 int app_init(struct app *app, struct core *core, struct nk_context *nk_ctx)
@@ -23,9 +24,48 @@ int app_init(struct app *app, struct core *core, struct nk_context *nk_ctx)
         SDL_Log("SDL error in tileset_texture creation: %s", SDL_GetError());
         return -1;
     }
+
+    SDL_Texture *pencil_icon_texture =
+        IMG_LoadTexture(core->renderer, "../../assets/pencil.png");
+    if (pencil_icon_texture == NULL) {
+        SDL_Log("SDL error in pencil_texture creation: %s", SDL_GetError());
+        return -1;
+    }
+    app->work.tools[TOOL_TYPE_PENCIL] = (struct tool){
+        TOOL_TYPE_PENCIL, (SDL_Color){0, 255, 0, 255}, pencil_icon_texture};
+
+    SDL_Texture *eraser_icon_texture =
+        IMG_LoadTexture(core->renderer, "../../assets/eraser.png");
+    if (eraser_icon_texture == NULL) {
+        SDL_Log("SDL error in eraser_texture creation: %s", SDL_GetError());
+        return -1;
+    }
+    app->work.tools[TOOL_TYPE_ERASER] = (struct tool){
+        TOOL_TYPE_ERASER, (SDL_Color){255, 0, 0, 255}, eraser_icon_texture};
+
+    SDL_Texture *entity_icon_texture =
+        IMG_LoadTexture(core->renderer, "../../assets/entity.png");
+    if (entity_icon_texture == NULL) {
+        SDL_Log("SDL error in entity_texture creation: %s", SDL_GetError());
+        return -1;
+    }
+    app->work.tools[TOOL_TYPE_ENTITY] = (struct tool){
+        TOOL_TYPE_ENTITY, (SDL_Color){255, 0, 0, 255}, entity_icon_texture};
+
+    SDL_Texture *select_icon_texture =
+        IMG_LoadTexture(core->renderer, "../../assets/select.png");
+    if (select_icon_texture == NULL) {
+        SDL_Log("SDL error in select_texture creation: %s", SDL_GetError());
+        return -1;
+    }
+    app->work.tools[TOOL_TYPE_SELECT] = (struct tool){
+        TOOL_TYPE_SELECT, (SDL_Color){255, 0, 0, 255}, select_icon_texture};
+
+    app->work.tool = &app->work.tools[TOOL_TYPE_PENCIL];
     app->tileset_texture = tileset_texture;
     app->show_pick_window = 1;
     app->show_grid = 1;
+    app->show_tool_window = 1;
     app->window_flags = NK_WINDOW_BORDER | NK_WINDOW_SCALABLE |
                         NK_WINDOW_MOVABLE | NK_WINDOW_MINIMIZABLE |
                         NK_WINDOW_CLOSABLE;
@@ -43,6 +83,9 @@ void app_run(struct app *app)
     if (app->show_pick_window)
         pick_window(app);
 
+    if (app->show_tool_window)
+        tools_window(app);
+
     status_window(app);
 }
 
@@ -55,4 +98,10 @@ void app_shutdown(struct app *app)
 
     if (app->tileset_texture != NULL)
         SDL_DestroyTexture(app->tileset_texture);
+
+    enum tool_type tool_type = 0;
+    for (; tool_type < TOOL_TYPE_TOTAL; tool_type++) {
+        if (app->work.tools[tool_type].icon_texture != NULL)
+            SDL_DestroyTexture(app->work.tools[tool_type].icon_texture);
+    }
 }

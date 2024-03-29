@@ -3,6 +3,8 @@
 
 #include "SDL.h" // IWYU pragma: keep //clangd
 
+#include "tools.h"
+
 enum work_state {
     WORK_STATE_ZOOM = 0,
     WORK_STATE_PAN_START,
@@ -12,29 +14,10 @@ enum work_state {
     WORK_STATE_TOTAL
 };
 
-enum work_tool_type {
-    WORK_TOOL_PENCIL = 0,
-    WORK_TOOL_ERASER,
-    WORK_TOOL_ENTITY,
-    WORK_TOOL_SELECT,
-    WORK_TOOL_TOTAL
-};
-
-struct work_tool {
-    enum work_tool_type type;
-    SDL_Color rect_color;
-    SDL_Texture *icon_texture;
-};
-
-struct work_tool_rect {
-    SDL_FRect rect;
-    SDL_FPoint start;
-};
-
 struct work {
-    struct work_tool tools[WORK_TOOL_TOTAL];
-    struct work_tool_rect tool_rect;
-    struct work_tool *tool;
+    struct tool tools[TOOL_TYPE_TOTAL];
+    struct tool_rect tool_rect;
+    struct tool *tool;
 };
 
 struct app;

@@ -17,6 +17,7 @@ add_executable(${PROJECT_NAME}
     status.c
     pick.c
     work.c
+    tools.c
     ../core.c
     )
 

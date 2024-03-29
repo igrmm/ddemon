@@ -5,6 +5,7 @@
 #include "nk.h"
 
 #include "map.h"
+#include "work.h"
 
 #define GREY                                                                   \
     (struct nk_color) { 45, 45, 45, 255 }
@@ -19,9 +20,10 @@ struct app {
     struct map *map;
     struct core *core;
     struct nk_context *nk_ctx;
+    struct work work;
     SDL_Texture *tileset_texture;
     SDL_Point selected_tileset_index;
-    int show_pick_window, show_grid;
+    int show_pick_window, show_grid, show_tool_window;
     int window_flags;
 };
 
