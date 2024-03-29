@@ -15,6 +15,7 @@ static void work_state_pan(SDL_Event *event, struct app *app);
 static void work_state_mk_tool_rect(SDL_Event *event, struct app *app);
 static void work_state_paint(SDL_Event *event, struct app *app);
 static void work_state_paint_motion(SDL_Event *event, struct app *app);
+static void work_state_paint_rect(SDL_Event *event, struct app *app);
 static void work_state_erase(SDL_Event *event, struct app *app);
 static void work_state_erase_motion(SDL_Event *event, struct app *app);
 
@@ -27,6 +28,7 @@ static void (*work_state_table[WORK_STATE_TOTAL])(SDL_Event *event,
     work_state_mk_tool_rect,
     work_state_paint,
     work_state_paint_motion,
+    work_state_paint_rect,
     work_state_erase,
     work_state_erase_motion,
     NULL,
@@ -167,6 +169,23 @@ static void work_set_tile_layer_on_mouse(SDL_FPoint mouse_screen_coord,
     }
 }
 
+static void work_set_tile_layers_in_rect(SDL_FRect rect_work_coord,
+                                         struct map *map, int layer,
+                                         struct map_tile_layer tile_layer)
+{
+    if (!SDL_FRectEmpty(&rect_work_coord)) {
+        int i0 = rect_work_coord.x / MAP_TILE_SIZE;
+        int j0 = rect_work_coord.y / MAP_TILE_SIZE;
+        int i1 = (rect_work_coord.x + rect_work_coord.w) / MAP_TILE_SIZE;
+        int j1 = (rect_work_coord.y + rect_work_coord.h) / MAP_TILE_SIZE;
+        for (int i = i0; i < i1; i++) {
+            for (int j = j0; j < j1; j++) {
+                map->tiles[i][j].layers[layer] = tile_layer;
+            }
+        }
+    }
+}
+
 static void work_state_zoom(SDL_Event *event, struct app *app)
 {
     SDL_FPoint mouse_screen_coord = {event->wheel.mouseX, event->wheel.mouseY};
@@ -225,6 +244,16 @@ static void work_state_paint_motion(SDL_Event *event, struct app *app)
     work_set_tile_layer_on_mouse(mouse_screen_coord, app->map, 0, tile_layer);
 }
 
+static void work_state_paint_rect(SDL_Event *event, struct app *app)
+{
+    struct map_tile_layer tile_layer = {app->selected_tileset_index.x,
+                                        app->selected_tileset_index.y, 1};
+    work_set_tile_layers_in_rect(app->work.tool_rect.rect, app->map, 0,
+                                 tile_layer);
+    app->work.tool_rect.rect = (SDL_FRect){0};
+    app->work.tool_rect.start = (SDL_FPoint){0};
+}
+
 static void work_state_erase(SDL_Event *event, struct app *app)
 {
     SDL_FPoint mouse_screen_coord = {event->button.x, event->button.y};
@@ -277,6 +306,13 @@ enum work_state work_get_state(struct app *app, SDL_Event *event)
     state = WORK_STATE_PAINT_MOTION;
     if (event->type == SDL_MOUSEMOTION &&
         event->motion.state == SDL_BUTTON_LMASK &&
+        app->work.tool->type == TOOL_TYPE_PENCIL) {
+        return state;
+    }
+
+    state = WORK_STATE_PAINT_RECT;
+    if (event->type == SDL_MOUSEBUTTONUP &&
+        event->button.button == SDL_BUTTON_RIGHT &&
         app->work.tool->type == TOOL_TYPE_PENCIL) {
         return state;
     }
