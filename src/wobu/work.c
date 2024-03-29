@@ -12,6 +12,7 @@ static float work_scale = 1;
 static void work_state_zoom(SDL_Event *event, struct app *app);
 static void work_state_pan_start(SDL_Event *event, struct app *app);
 static void work_state_pan(SDL_Event *event, struct app *app);
+static void work_state_mk_tool_rect(SDL_Event *event, struct app *app);
 static void work_state_paint(SDL_Event *event, struct app *app);
 static void work_state_paint_motion(SDL_Event *event, struct app *app);
 static void work_state_erase(SDL_Event *event, struct app *app);
@@ -23,6 +24,7 @@ static void (*work_state_table[WORK_STATE_TOTAL])(SDL_Event *event,
     work_state_zoom,
     work_state_pan_start,
     work_state_pan,
+    work_state_mk_tool_rect,
     work_state_paint,
     work_state_paint_motion,
     work_state_erase,
@@ -201,6 +203,12 @@ static void work_state_pan(SDL_Event *event, struct app *app)
     work_pan_start_point.y = event->motion.y;
 }
 
+static void work_state_mk_tool_rect(SDL_Event *event, struct app *app)
+{
+    work_mk_tile_shaped_tool_rect(
+        &app->work.tool_rect, (SDL_FPoint){event->motion.x, event->motion.y});
+}
+
 static void work_state_paint(SDL_Event *event, struct app *app)
 {
     SDL_FPoint mouse_screen_coord = {event->button.x, event->button.y};
@@ -250,6 +258,12 @@ enum work_state work_get_state(struct app *app, SDL_Event *event)
     state = WORK_STATE_PAN;
     if (event->type == SDL_MOUSEMOTION &&
         event->motion.state == SDL_BUTTON_MMASK) {
+        return state;
+    }
+
+    state = WORK_STATE_MK_TOOL_RECT;
+    if (event->type == SDL_MOUSEMOTION &&
+        event->motion.state == SDL_BUTTON_RMASK) {
         return state;
     }
 
@@ -360,5 +374,14 @@ void work_render(struct app *app)
             SDL_RenderDrawLineF(renderer, row0_screen.x, row0_screen.y,
                                 row1_screen.x, row1_screen.y);
         }
+    }
+
+    // render tool rect
+    if (app->work.tool_rect.rect.w > 0 || app->work.tool_rect.rect.h > 0) {
+        SDL_Color color = app->work.tool->rect_color;
+        SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+        SDL_FRect tool_rect_screen_coord = {0};
+        work_rect_to_screen(app->work.tool_rect.rect, &tool_rect_screen_coord);
+        SDL_RenderDrawRectF(renderer, &tool_rect_screen_coord);
     }
 }
