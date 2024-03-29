@@ -7,6 +7,7 @@ enum work_state {
     WORK_STATE_ZOOM = 0,
     WORK_STATE_PAN_START,
     WORK_STATE_PAN,
+    WORK_STATE_PAINT,
     WORK_STATE_IDLE,
     WORK_STATE_TOTAL
 };

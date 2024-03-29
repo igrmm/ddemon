@@ -12,6 +12,7 @@ static float work_scale = 1;
 static void work_state_zoom(SDL_Event *event, struct app *app);
 static void work_state_pan_start(SDL_Event *event, struct app *app);
 static void work_state_pan(SDL_Event *event, struct app *app);
+static void work_state_paint(SDL_Event *event, struct app *app);
 
 static void (*work_state_table[WORK_STATE_TOTAL])(SDL_Event *event,
                                                   struct app *app) = {
@@ -19,6 +20,7 @@ static void (*work_state_table[WORK_STATE_TOTAL])(SDL_Event *event,
     work_state_zoom,
     work_state_pan_start,
     work_state_pan,
+    work_state_paint,
     NULL,
     NULL
     // clang-format on
@@ -62,6 +64,34 @@ static void work_rect_from_screen(SDL_FRect rect_screen_coord,
     rect_work_coord->h = rect_screen_coord.h / work_scale;
 }
 
+static int work_get_tile_index_on_mouse(SDL_FPoint mouse_screen_coord,
+                                        SDL_Point *tile_index)
+{
+    SDL_FPoint mouse_work_coord;
+    work_coord_from_screen(mouse_screen_coord, &mouse_work_coord);
+
+    int map_width = MAP_TILES_X_MAX * MAP_TILE_SIZE;
+    int map_height = MAP_TILES_Y_MAX * MAP_TILE_SIZE;
+    SDL_FRect map_rect = {0, 0, map_width, map_height};
+
+    if (SDL_PointInFRect(&mouse_work_coord, &map_rect)) {
+        tile_index->x = mouse_work_coord.x / MAP_TILE_SIZE;
+        tile_index->y = mouse_work_coord.y / MAP_TILE_SIZE;
+        return 0;
+    }
+    return -1;
+}
+
+static void work_set_tile_layer_on_mouse(SDL_FPoint mouse_screen_coord,
+                                         struct map *map, int layer,
+                                         struct map_tile_layer tile_layer)
+{
+    SDL_Point tile_index;
+    if (work_get_tile_index_on_mouse(mouse_screen_coord, &tile_index) == 0) {
+        map->tiles[tile_index.x][tile_index.y].layers[layer] = tile_layer;
+    }
+}
+
 static void work_state_zoom(SDL_Event *event, struct app *app)
 {
     SDL_FPoint mouse_screen_coord = {event->wheel.mouseX, event->wheel.mouseY};
@@ -98,6 +128,14 @@ static void work_state_pan(SDL_Event *event, struct app *app)
     work_pan_start_point.y = event->motion.y;
 }
 
+static void work_state_paint(SDL_Event *event, struct app *app)
+{
+    SDL_FPoint mouse_screen_coord = {event->button.x, event->button.y};
+    struct map_tile_layer tile_layer = {app->selected_tileset_index.x,
+                                        app->selected_tileset_index.y, 1};
+    work_set_tile_layer_on_mouse(mouse_screen_coord, app->map, 0, tile_layer);
+}
+
 enum work_state work_get_state(struct app *app, SDL_Event *event)
 {
     enum work_state state;
@@ -117,6 +155,13 @@ enum work_state work_get_state(struct app *app, SDL_Event *event)
     state = WORK_STATE_PAN;
     if (event->type == SDL_MOUSEMOTION &&
         event->motion.state == SDL_BUTTON_MMASK) {
+        return state;
+    }
+
+    state = WORK_STATE_PAINT;
+    // todo: check if current tool is pencil
+    if (event->type == SDL_MOUSEBUTTONDOWN &&
+        event->button.button == SDL_BUTTON_LEFT) {
         return state;
     }
 
