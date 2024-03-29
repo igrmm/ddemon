@@ -70,6 +70,32 @@ static void work_rect_from_screen(SDL_FRect rect_screen_coord,
     rect_work_coord->h = rect_screen_coord.h / work_scale;
 }
 
+static void work_mk_tool_rect(struct tool_rect *tool_rect,
+                              SDL_FPoint mouse_screen_coord)
+{
+    // HORIZONTAL X AXIS
+    if (tool_rect->start.x <= 0) {
+        tool_rect->start.x = tool_rect->rect.x = mouse_screen_coord.x;
+    } else if (mouse_screen_coord.x > tool_rect->start.x) {
+        tool_rect->rect.x = tool_rect->start.x;
+        tool_rect->rect.w = mouse_screen_coord.x - tool_rect->start.x;
+    } else {
+        tool_rect->rect.w = tool_rect->start.x - mouse_screen_coord.x;
+        tool_rect->rect.x = mouse_screen_coord.x;
+    }
+
+    // VERTICAL Y AXIS
+    if (tool_rect->start.y <= 0) {
+        tool_rect->start.y = tool_rect->rect.y = mouse_screen_coord.y;
+    } else if (mouse_screen_coord.y > tool_rect->start.y) {
+        tool_rect->rect.y = tool_rect->start.y;
+        tool_rect->rect.h = mouse_screen_coord.y - tool_rect->start.y;
+    } else {
+        tool_rect->rect.h = tool_rect->start.y - mouse_screen_coord.y;
+        tool_rect->rect.y = mouse_screen_coord.y;
+    }
+}
+
 static int work_get_tile_index_on_mouse(SDL_FPoint mouse_screen_coord,
                                         SDL_Point *tile_index)
 {
