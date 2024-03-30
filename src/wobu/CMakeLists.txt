@@ -18,6 +18,7 @@ add_executable(${PROJECT_NAME}
     pick.c
     work.c
     tools.c
+    menu.c
     ../core.c
     )
 

@@ -4,6 +4,7 @@
 
 #include "../core.h"
 #include "app.h"
+#include "menu.h"
 #include "pick.h"
 #include "status.h"
 #include "tools.h"
@@ -86,6 +87,7 @@ void app_run(struct app *app)
     if (app->show_tool_window)
         tools_window(app);
 
+    menu_window(app);
     status_window(app);
 }
 
