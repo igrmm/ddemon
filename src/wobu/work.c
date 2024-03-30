@@ -18,6 +18,7 @@ static void work_state_paint_motion(SDL_Event *event, struct app *app);
 static void work_state_paint_rect(SDL_Event *event, struct app *app);
 static void work_state_erase(SDL_Event *event, struct app *app);
 static void work_state_erase_motion(SDL_Event *event, struct app *app);
+static void work_state_erase_rect(SDL_Event *event, struct app *app);
 
 static void (*work_state_table[WORK_STATE_TOTAL])(SDL_Event *event,
                                                   struct app *app) = {
@@ -31,6 +32,7 @@ static void (*work_state_table[WORK_STATE_TOTAL])(SDL_Event *event,
     work_state_paint_rect,
     work_state_erase,
     work_state_erase_motion,
+    work_state_erase_rect,
     NULL,
     NULL
     // clang-format on
@@ -268,6 +270,15 @@ static void work_state_erase_motion(SDL_Event *event, struct app *app)
     work_set_tile_layer_on_mouse(mouse_screen_coord, app->map, 0, tile_layer);
 }
 
+static void work_state_erase_rect(SDL_Event *event, struct app *app)
+{
+    struct map_tile_layer tile_layer = {0, 0, 0};
+    work_set_tile_layers_in_rect(app->work.tool_rect.rect, app->map, 0,
+                                 tile_layer);
+    app->work.tool_rect.rect = (SDL_FRect){0};
+    app->work.tool_rect.start = (SDL_FPoint){0};
+}
+
 enum work_state work_get_state(struct app *app, SDL_Event *event)
 {
     enum work_state state;
@@ -327,6 +338,13 @@ enum work_state work_get_state(struct app *app, SDL_Event *event)
     state = WORK_STATE_ERASE_MOTION;
     if (event->type == SDL_MOUSEMOTION &&
         event->motion.state == SDL_BUTTON_LMASK &&
+        app->work.tool->type == TOOL_TYPE_ERASER) {
+        return state;
+    }
+
+    state = WORK_STATE_ERASE_RECT;
+    if (event->type == SDL_MOUSEBUTTONUP &&
+        event->button.button == SDL_BUTTON_RIGHT &&
         app->work.tool->type == TOOL_TYPE_ERASER) {
         return state;
     }
