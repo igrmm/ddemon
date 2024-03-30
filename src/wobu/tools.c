@@ -1,3 +1,5 @@
+#include "nk.h"
+
 #include "tools.h"
 #include "app.h"
 #include "work.h"
