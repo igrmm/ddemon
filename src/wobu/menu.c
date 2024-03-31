@@ -3,6 +3,7 @@
 
 #include "../core.h"
 #include "app.h"
+#include "map.h"
 #include "menu.h"
 
 void menu_window(struct app *app)
@@ -26,7 +27,7 @@ void menu_window(struct app *app)
             }
 
             if (nk_menu_item_label(nk_ctx, "save", NK_TEXT_LEFT)) {
-                // todo
+                map_to_file(app->map, "start.wb");
             }
 
             if (nk_menu_item_label(nk_ctx, "load", NK_TEXT_LEFT)) {

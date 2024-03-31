@@ -19,6 +19,8 @@ add_executable(${PROJECT_NAME}
     work.c
     tools.c
     menu.c
+    map.c
+    util.c
     ../core.c
     )
 
