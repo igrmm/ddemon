@@ -30,6 +30,7 @@ static void map_remove_trailing_comma(char *json_str)
 
 int map_to_file(struct map *map, const char *path)
 {
+    Uint32 time_start = SDL_GetTicks64();
     char json_str[JSON_BUFSIZ] = {0};
     size_t json_str_sz = SDL_arraysize(json_str);
 
@@ -97,5 +98,7 @@ int map_to_file(struct map *map, const char *path)
     for (size_t i = 0; i < json_str_len; i++)
         SDL_RWwrite(file, &json_str[i], sizeof(char), 1);
     SDL_RWclose(file);
+    SDL_Log("map saved to file with %zu bytes in %i ms.", json_str_len,
+            (int)(SDL_GetTicks64() - time_start));
     return 0;
 }
