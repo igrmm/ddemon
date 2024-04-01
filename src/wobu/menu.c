@@ -23,7 +23,7 @@ void menu_window(struct app *app)
             nk_layout_row_dynamic(nk_ctx, h, 1);
 
             if (nk_menu_item_label(nk_ctx, "new", NK_TEXT_LEFT)) {
-                // todo
+                map_new(app->map);
             }
 
             if (nk_menu_item_label(nk_ctx, "save", NK_TEXT_LEFT)) {
