@@ -28,6 +28,20 @@ static void map_remove_trailing_comma(char *json_str)
         json_str[comma_index] = '\0';
 }
 
+void map_new(struct map *map)
+{
+    for (int i = 0; i < MAP_TILES_X_MAX; i++) {
+        for (int j = 0; j < MAP_TILES_Y_MAX; j++) {
+            map->tiles[i][j] =
+                (struct map_tile){0,
+                                  {(struct map_tile_layer){0, 0, 0},
+                                   (struct map_tile_layer){0, 0, 0},
+                                   (struct map_tile_layer){0, 0, 0},
+                                   (struct map_tile_layer){0, 0, 0}}};
+        }
+    }
+}
+
 int map_to_file(struct map *map, const char *path)
 {
     Uint32 time_start = SDL_GetTicks64();
@@ -99,6 +113,114 @@ int map_to_file(struct map *map, const char *path)
         SDL_RWwrite(file, &json_str[i], sizeof(char), 1);
     SDL_RWclose(file);
     SDL_Log("map saved to file with %zu bytes in %i ms.", json_str_len,
+            (int)(SDL_GetTicks64() - time_start));
+    return 0;
+}
+
+int map_from_file(struct map *map, const char *path)
+{
+    map_new(map);
+    Uint32 time_start = SDL_GetTicks64();
+    // DESERIALIZE JSON STRING
+    // todo: json error handling
+    struct json_value_s *json = util_json_from_file(path);
+    if (json == NULL) {
+        SDL_Log("Error parsing json map.");
+        return -1;
+    }
+
+    struct json_object_s *json_root = (struct json_object_s *)json->payload;
+
+    // START LOADING TILES
+    struct json_object_element_s *element = json_root->start;
+    if (SDL_strcmp("tiles", element->name->string) != 0) {
+        SDL_Log("Json Object is not 'tiles', found: %s", element->name->string);
+        SDL_free(json);
+        return -1;
+    }
+
+    struct json_array_s *json_tiles = json_value_as_array(element->value);
+    size_t total_tiles = json_tiles->length;
+    struct json_array_element_s *json_tile = json_tiles->start;
+    struct map_tile *tile = NULL;
+
+    // loop through all tiles
+    // format: [X,Y,[COLLIDABLE,[[LAYER,TILESET_IDX,TILESET_IDY]]]]
+    while (json_tile != NULL) {
+        struct json_array_s *json_array_tile =
+            json_value_as_array(json_tile->value);
+
+        // index x
+        struct json_array_element_s *json_x = json_array_tile->start;
+        struct json_number_s *json_number_x =
+            json_value_as_number(json_x->value);
+        int x = SDL_strtol(json_number_x->number, NULL, 10);
+
+        // index y
+        struct json_array_element_s *json_y = json_x->next;
+        struct json_number_s *json_number_y =
+            json_value_as_number(json_y->value);
+        int y = SDL_strtol(json_number_y->number, NULL, 10);
+
+        tile = &map->tiles[x][y];
+
+        // map_tile
+        struct json_array_element_s *json_map_tile = json_y->next;
+        struct json_array_s *json_array_map_tile =
+            json_value_as_array(json_map_tile->value);
+
+        // map_tile.collidable
+        struct json_array_element_s *json_collidable =
+            json_array_map_tile->start;
+        struct json_number_s *json_number_collidable =
+            json_value_as_number(json_collidable->value);
+        int collidable = SDL_strtol(json_number_collidable->number, NULL, 10);
+        tile->collidable = collidable;
+
+        // map_tile.layers
+        struct json_array_element_s *json_layers = json_collidable->next;
+        struct json_array_s *json_array_layers =
+            json_value_as_array(json_layers->value);
+
+        // loop through layers
+        struct json_array_element_s *json_layer = json_array_layers->start;
+        while (json_layer != NULL) {
+            struct json_array_s *json_array_layer =
+                json_value_as_array(json_layer->value);
+
+            // layer
+            struct json_array_element_s *json_layer_number =
+                json_array_layer->start;
+            struct json_number_s *json_number_layer_number =
+                json_value_as_number(json_layer_number->value);
+            int layer = SDL_strtol(json_number_layer_number->number, NULL, 10);
+            tile->layers[layer].enabled = 1;
+
+            // tileset index x
+            struct json_array_element_s *json_tileset_index_x =
+                json_layer_number->next;
+            struct json_number_s *json_number_tileset_index_x =
+                json_value_as_number(json_tileset_index_x->value);
+            int tileset_index_x =
+                SDL_strtol(json_number_tileset_index_x->number, NULL, 10);
+            tile->layers[layer].tileset_index_x = tileset_index_x;
+
+            // tileset index y
+            struct json_array_element_s *json_tileset_index_y =
+                json_tileset_index_x->next;
+            struct json_number_s *json_number_tileset_index_y =
+                json_value_as_number(json_tileset_index_y->value);
+            int tileset_index_y =
+                SDL_strtol(json_number_tileset_index_y->number, NULL, 10);
+            tile->layers[layer].tileset_index_y = tileset_index_y;
+
+            json_layer = json_layer->next;
+        }
+
+        json_tile = json_tile->next;
+    }
+    SDL_free(json);
+    SDL_Log("map loaded from file with %zu tiles in %i ms.", total_tiles,
             (int)(SDL_GetTicks64() - time_start));
     return 0;
 }

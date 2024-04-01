@@ -23,6 +23,8 @@ struct map {
     struct map_tile tiles[MAP_TILES_X_MAX][MAP_TILES_Y_MAX];
 };
 
+void map_new(struct map *map);
 int map_to_file(struct map *map, const char *path);
+int map_from_file(struct map *map, const char *path);
 
 #endif
