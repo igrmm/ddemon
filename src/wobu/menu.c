@@ -68,13 +68,13 @@ void menu_window(struct app *app)
             }
 
             // properties window
-            // char propertiesw_title[] = "*properties";
-            // if (!app->show_propertiesw)
-            //    SDL_snprintf(propertiesw_title, sizeof propertiesw_title,
-            //                 " properties");
+            char propertiesw_title[] = "*properties";
+            if (!app->show_properties_window)
+                SDL_snprintf(propertiesw_title, sizeof propertiesw_title,
+                             " properties");
 
-            // if (nk_menu_item_label(nk_ctx, propertiesw_title, NK_TEXT_LEFT))
-            //     app->show_propertiesw = !app->show_propertiesw;
+            if (nk_menu_item_label(nk_ctx, propertiesw_title, NK_TEXT_LEFT))
+                app->show_properties_window = !app->show_properties_window;
 
             nk_menu_end(nk_ctx);
         }
