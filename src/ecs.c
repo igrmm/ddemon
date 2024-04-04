@@ -87,6 +87,7 @@ static Uint16 ecs_table_entity_poll_last(struct ecs_table *entity_table)
 static void ecs_table_entity_add(struct ecs_table *entity_table, Uint16 entity)
 {
     struct ecs_node *node = &entity_table->buffer[entity];
+    node->data.entity = entity;
     struct ecs_list *list = &entity_table->list;
     ecs_list_add(list, node);
     entity_table->count++;
@@ -108,14 +109,8 @@ struct ecs *ecs_create(void)
     if (ecs == NULL)
         return NULL;
     // fill entity pool
-    struct ecs_node *node = NULL;
-    for (Uint16 entity = 0; entity < ECS_BUFSIZ; entity++) {
-        node = &ecs->entity_pool.buffer[entity];
-        node->data.entity = entity;
+    for (Uint16 entity = 0; entity < ECS_BUFSIZ; entity++)
         ecs_table_entity_add(&ecs->entity_pool, entity);
-        node = &ecs->entities.buffer[entity];
-        node->data.entity = entity;
-    }
     ecs->player_entity = ecs_create_entity(ecs);
     return ecs;
 }
