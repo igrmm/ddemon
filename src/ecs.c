@@ -115,6 +115,12 @@ struct ecs *ecs_create(void)
     return ecs;
 }
 
+struct ecs_table *ecs_create_table(void)
+{
+    struct ecs_table *table = SDL_calloc(1, sizeof(*table));
+    return table;
+}
+
 void ecs_remove_entity(struct ecs *ecs, Uint16 entity)
 {
     size_t types = SDL_arraysize(ecs->components);
