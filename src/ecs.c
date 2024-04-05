@@ -34,7 +34,7 @@ struct ecs {
     Uint16 player_entity;
 };
 
-static void ecs_list_add(struct ecs_list *list, struct ecs_node *node)
+static void ecs_list_add_node(struct ecs_list *list, struct ecs_node *node)
 {
     if (list->head == NULL) {
         list->head = node;
@@ -48,7 +48,7 @@ static void ecs_list_add(struct ecs_list *list, struct ecs_node *node)
     list->tail = node;
 }
 
-static void ecs_list_remove(struct ecs_list *list, struct ecs_node *node)
+static void ecs_list_remove_node(struct ecs_list *list, struct ecs_node *node)
 {
     if (list->tail == node && list->head != node) {
         node->prev->next = NULL;
@@ -71,35 +71,35 @@ static void ecs_list_remove(struct ecs_list *list, struct ecs_node *node)
 }
 
 /* Retrieves and removes the last entity node, or returns zero if empty. */
-static Uint16 ecs_table_entity_poll_last(struct ecs_table *entity_table)
+static Uint16 ecs_table_poll_last_entity(struct ecs_table *entity_table)
 {
     struct ecs_list *list = &entity_table->list;
     if (list->tail == NULL)
         return 0;
     struct ecs_node *node = list->tail;
     Uint16 entity = node->data.entity;
-    ecs_list_remove(list, node);
+    ecs_list_remove_node(list, node);
     entity_table->count--;
     return entity;
 }
 
 /* Appends the specified entity node to the end of this table. */
-static void ecs_table_entity_add(struct ecs_table *entity_table, Uint16 entity)
+static void ecs_table_add_entity(struct ecs_table *entity_table, Uint16 entity)
 {
     struct ecs_node *node = &entity_table->buffer[entity];
     node->data.entity = entity;
     struct ecs_list *list = &entity_table->list;
-    ecs_list_add(list, node);
+    ecs_list_add_node(list, node);
     entity_table->count++;
 }
 
 /* Removes the specified entity node of this table. */
-static void ecs_table_entity_remove(struct ecs_table *entity_table,
+static void ecs_table_remove_entity(struct ecs_table *entity_table,
                                     Uint16 entity)
 {
     struct ecs_node *node = &entity_table->buffer[entity];
     struct ecs_list *list = &entity_table->list;
-    ecs_list_remove(list, node);
+    ecs_list_remove_node(list, node);
     entity_table->count--;
 }
 
@@ -110,7 +110,7 @@ struct ecs *ecs_create(void)
         return NULL;
     // fill entity pool
     for (Uint16 entity = 0; entity < ECS_BUFSIZ; entity++)
-        ecs_table_entity_add(&ecs->entity_pool, entity);
+        ecs_table_add_entity(&ecs->entity_pool, entity);
     ecs->player_entity = ecs_create_entity(ecs);
     return ecs;
 }
@@ -126,14 +126,14 @@ void ecs_remove_entity(struct ecs *ecs, Uint16 entity)
     size_t types = SDL_arraysize(ecs->components);
     for (size_t type = 0; type < types; type++)
         ecs_remove_component(ecs, type, entity);
-    ecs_table_entity_remove(&ecs->entities, entity);
-    ecs_table_entity_add(&ecs->entity_pool, entity);
+    ecs_table_remove_entity(&ecs->entities, entity);
+    ecs_table_add_entity(&ecs->entity_pool, entity);
 }
 
 Uint16 ecs_create_entity(struct ecs *ecs)
 {
-    Uint16 entity = ecs_table_entity_poll_last(&ecs->entity_pool);
-    ecs_table_entity_add(&ecs->entities, entity);
+    Uint16 entity = ecs_table_poll_last_entity(&ecs->entity_pool);
+    ecs_table_add_entity(&ecs->entities, entity);
     return entity;
 }
 
@@ -146,7 +146,7 @@ void ecs_add_component(struct ecs *ecs, struct component component_added)
     struct ecs_list *list = &ecs->components[type].list;
     struct component *component = &node->data.component;
     *component = component_added;
-    ecs_list_add(list, node);
+    ecs_list_add_node(list, node);
     table->count++;
 }
 
@@ -156,7 +156,7 @@ void ecs_remove_component(struct ecs *ecs, enum component_type type,
     struct ecs_table *table = &ecs->components[type];
     struct ecs_node *node = &table->buffer[entity];
     struct ecs_list *list = &ecs->components[type].list;
-    ecs_list_remove(list, node);
+    ecs_list_remove_node(list, node);
     struct component *component = &node->data.component;
     *component = (struct component){0};
     table->count--;
@@ -172,7 +172,7 @@ struct component *ecs_get_component(struct ecs *ecs, enum component_type type,
     return component;
 }
 
-static int ecs_pool_node(struct ecs_list *list, struct ecs_node **node)
+static int ecs_poll_node(struct ecs_list *list, struct ecs_node **node)
 {
     /** if the list is empty, stop the polling */
     if (list->head == NULL)
@@ -200,7 +200,7 @@ static int ecs_pool_node(struct ecs_list *list, struct ecs_node **node)
 int ecs_poll_entity(struct ecs *ecs, struct ecs_node **node, Uint16 *entity)
 {
     struct ecs_list *list = &ecs->entities.list;
-    int ret = ecs_pool_node(list, node);
+    int ret = ecs_poll_node(list, node);
     if (ret)
         *entity = (*node)->data.entity;
     return ret;
@@ -210,7 +210,7 @@ int ecs_poll_component(struct ecs *ecs, struct ecs_node **node,
                        struct component **component, enum component_type type)
 {
     struct ecs_list *list = &ecs->components[type].list;
-    int ret = ecs_pool_node(list, node);
+    int ret = ecs_poll_node(list, node);
     if (ret)
         *component = &(*node)->data.component;
     return ret;
