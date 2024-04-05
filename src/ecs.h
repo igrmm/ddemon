@@ -21,5 +21,6 @@ struct component *ecs_get_component(struct ecs *ecs, enum component_type type,
 int ecs_poll_entity(struct ecs *ecs, struct ecs_node **node, Uint16 *entity);
 int ecs_poll_component(struct ecs *ecs, struct ecs_node **node,
                        struct component **component, enum component_type type);
+Uint16 ecs_table_get_count(struct ecs_table *table);
 
 #endif

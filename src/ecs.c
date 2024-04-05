@@ -215,3 +215,5 @@ int ecs_poll_component(struct ecs *ecs, struct ecs_node **node,
         *component = &(*node)->data.component;
     return ret;
 }
+
+Uint16 ecs_table_get_count(struct ecs_table *table) { return table->count; }
