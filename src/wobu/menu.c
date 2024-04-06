@@ -69,12 +69,12 @@ void menu_window(struct app *app)
 
             // properties window
             char propertiesw_title[] = "*properties";
-            if (!app->show_properties_window)
+            if (!app->show_prop_window)
                 SDL_snprintf(propertiesw_title, sizeof propertiesw_title,
                              " properties");
 
             if (nk_menu_item_label(nk_ctx, propertiesw_title, NK_TEXT_LEFT))
-                app->show_properties_window = !app->show_properties_window;
+                app->show_prop_window = !app->show_prop_window;
 
             nk_menu_end(nk_ctx);
         }

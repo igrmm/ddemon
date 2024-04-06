@@ -25,7 +25,7 @@ struct app {
     struct work work;
     SDL_Texture *tileset_texture;
     SDL_Point selected_tileset_index;
-    int show_pick_window, show_grid, show_tool_window, show_properties_window;
+    int show_pick_window, show_grid, show_tool_window, show_prop_window;
     int window_flags;
 };
 

@@ -7,7 +7,7 @@
 #include "app.h"
 #include "menu.h"
 #include "pick.h"
-#include "properties.h"
+#include "prop.h"
 #include "status.h"
 #include "tools.h"
 #include "work.h"
@@ -77,7 +77,7 @@ int app_init(struct app *app, struct core *core, struct nk_context *nk_ctx)
     app->show_pick_window = 1;
     app->show_grid = 1;
     app->show_tool_window = 1;
-    app->show_properties_window = 1;
+    app->show_prop_window = 1;
     app->window_flags = NK_WINDOW_BORDER | NK_WINDOW_SCALABLE |
                         NK_WINDOW_MOVABLE | NK_WINDOW_MINIMIZABLE |
                         NK_WINDOW_CLOSABLE;
@@ -98,8 +98,8 @@ void app_run(struct app *app)
     if (app->show_tool_window)
         tools_window(app);
 
-    if (app->show_properties_window)
-        properties_window(app);
+    if (app->show_prop_window)
+        prop_window(app);
 
     menu_window(app);
     status_window(app);

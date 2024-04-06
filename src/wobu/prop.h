@@ -2,6 +2,6 @@
 #define PROPERTIES_H
 
 struct app;
-void properties_window(struct app *app);
+void prop_window(struct app *app);
 
 #endif

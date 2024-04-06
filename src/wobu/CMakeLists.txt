@@ -21,7 +21,7 @@ add_executable(${PROJECT_NAME}
     menu.c
     map.c
     util.c
-    properties.c
+    prop.c
     ../core.c
     ../ecs.c
     )
