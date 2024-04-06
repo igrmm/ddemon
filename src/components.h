@@ -3,7 +3,19 @@
 
 #include "SDL.h" // IWYU pragma: keep //clangd
 
-enum component_type { CMP_TYPE_RECT = 0, CMP_TYPE_RENDERABLE, CMP_TYPE_TOTAL };
+enum component_type {
+    CMP_TYPE_TAG = 0,
+    CMP_TYPE_RECT,
+    CMP_TYPE_RENDERABLE,
+    CMP_TYPE_WAYPOINT,
+    CMP_TYPE_TOTAL
+};
+
+enum component_tag_type { CMP_TAG_WAYPOINT = 0, CMP_TAG_PORTAL, CMP_TAG_TOTAL };
+
+struct component_tag {
+    enum component_tag_type type;
+};
 
 struct component_rect {
     SDL_FRect rect;
@@ -13,9 +25,16 @@ struct component_renderable {
     SDL_Texture *texture;
 };
 
+struct component_waypoint {
+    char waypoint_name[24];
+    char map_name[24];
+};
+
 union component_data {
+    struct component_tag tag;
     struct component_rect rect;
     struct component_renderable renderable;
+    struct component_waypoint waypoint;
 };
 
 struct component {
