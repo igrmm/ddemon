@@ -84,7 +84,7 @@ static Uint16 ecs_table_poll_last_entity(struct ecs_table *entity_table)
 }
 
 /* Appends the specified entity node to the end of this table. */
-static void ecs_table_add_entity(struct ecs_table *entity_table, Uint16 entity)
+void ecs_table_add_entity(struct ecs_table *entity_table, Uint16 entity)
 {
     struct ecs_node *node = &entity_table->buffer[entity];
     node->data.entity = entity;
@@ -94,8 +94,7 @@ static void ecs_table_add_entity(struct ecs_table *entity_table, Uint16 entity)
 }
 
 /* Removes the specified entity node of this table. */
-static void ecs_table_remove_entity(struct ecs_table *entity_table,
-                                    Uint16 entity)
+void ecs_table_remove_entity(struct ecs_table *entity_table, Uint16 entity)
 {
     struct ecs_node *node = &entity_table->buffer[entity];
     struct ecs_list *list = &entity_table->list;
@@ -172,7 +171,7 @@ struct component *ecs_get_component(struct ecs *ecs, enum component_type type,
     return component;
 }
 
-static int ecs_poll_node(struct ecs_list *list, struct ecs_node **node)
+static int ecs_iterate_nodes(struct ecs_list *list, struct ecs_node **node)
 {
     /** if the list is empty, stop the polling */
     if (list->head == NULL)
@@ -197,20 +196,28 @@ static int ecs_poll_node(struct ecs_list *list, struct ecs_node **node)
     return 1;
 }
 
-int ecs_poll_entity(struct ecs *ecs, struct ecs_node **node, Uint16 *entity)
+int ecs_table_iterate_entities(struct ecs_table *entity_table,
+                               struct ecs_node **node, Uint16 *entity)
 {
-    struct ecs_list *list = &ecs->entities.list;
-    int ret = ecs_poll_node(list, node);
+    struct ecs_list *list = &entity_table->list;
+    int ret = ecs_iterate_nodes(list, node);
     if (ret)
         *entity = (*node)->data.entity;
     return ret;
 }
 
-int ecs_poll_component(struct ecs *ecs, struct ecs_node **node,
-                       struct component **component, enum component_type type)
+int ecs_iterate_entities(struct ecs *ecs, struct ecs_node **node,
+                         Uint16 *entity)
+{
+    return ecs_table_iterate_entities(&ecs->entities, node, entity);
+}
+
+int ecs_iterate_components(struct ecs *ecs, struct ecs_node **node,
+                           struct component **component,
+                           enum component_type type)
 {
     struct ecs_list *list = &ecs->components[type].list;
-    int ret = ecs_poll_node(list, node);
+    int ret = ecs_iterate_nodes(list, node);
     if (ret)
         *component = &(*node)->data.component;
     return ret;
