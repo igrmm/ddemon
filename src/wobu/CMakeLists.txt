@@ -23,6 +23,7 @@ add_executable(${PROJECT_NAME}
     util.c
     properties.c
     ../core.c
+    ../ecs.c
     )
 
 if (CMAKE_C_COMPILER_ID STREQUAL "GNU")

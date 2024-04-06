@@ -3,6 +3,7 @@
 #include "nk.h"
 
 #include "../core.h"
+#include "../ecs.h"
 #include "app.h"
 #include "menu.h"
 #include "pick.h"
@@ -15,6 +16,14 @@ int app_init(struct app *app, struct core *core, struct nk_context *nk_ctx)
 {
     app->map = SDL_calloc(1, sizeof(*app->map));
     if (app->map == NULL)
+        return -1;
+
+    app->ecs = ecs_create();
+    if (app->ecs == NULL)
+        return -1;
+
+    app->selected_entities = ecs_create_table();
+    if (app->selected_entities == NULL)
         return -1;
 
     app->core = core;
@@ -102,6 +111,12 @@ void app_shutdown(struct app *app)
 {
     if (app->map != NULL)
         SDL_free(app->map);
+
+    if (app->ecs != NULL)
+        SDL_free(app->ecs);
+
+    if (app->selected_entities != NULL)
+        SDL_free(app->selected_entities);
 
     if (app->tileset_texture != NULL)
         SDL_DestroyTexture(app->tileset_texture);

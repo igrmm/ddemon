@@ -18,6 +18,8 @@
 
 struct app {
     struct map *map;
+    struct ecs *ecs;
+    struct ecs_table *selected_entities;
     struct core *core;
     struct nk_context *nk_ctx;
     struct work work;
