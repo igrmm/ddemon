@@ -3,6 +3,8 @@
 
 #include "SDL.h" // IWYU pragma: keep //clangd
 
+#define CMP_STRINGBUF_SIZE 24
+
 enum component_type {
     CMP_TYPE_TAG = 0,
     CMP_TYPE_RECT,
@@ -26,8 +28,8 @@ struct component_renderable {
 };
 
 struct component_waypoint {
-    char waypoint_name[24];
-    char map_name[24];
+    char waypoint_name[CMP_STRINGBUF_SIZE];
+    char map_name[CMP_STRINGBUF_SIZE];
 };
 
 union component_data {
