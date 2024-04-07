@@ -459,6 +459,19 @@ void work_render(struct app *app)
         }
     }
 
+    // render entities
+    struct ecs_node *node = NULL;
+    Uint16 entity;
+    while (ecs_table_iterate_entities(app->selected_entities, &node, &entity)) {
+        struct component *cmp_rect =
+            ecs_get_component(app->ecs, CMP_TYPE_RECT, entity);
+        SDL_FRect rect_work_coord = cmp_rect->data.rect.rect;
+        SDL_FRect rect_screen_coord;
+        work_rect_to_screen(rect_work_coord, &rect_screen_coord);
+        SDL_SetRenderDrawColor(renderer, WHITE.r, WHITE.g, WHITE.b, WHITE.a);
+        SDL_RenderDrawRectF(renderer, &rect_screen_coord);
+    }
+
     // render tool rect
     if (app->work.tool_rect.rect.w > 0 || app->work.tool_rect.rect.h > 0) {
         SDL_Color color = app->work.tool->rect_color;
