@@ -20,6 +20,7 @@ static void work_state_paint_rect(SDL_Event *event, struct app *app);
 static void work_state_erase(SDL_Event *event, struct app *app);
 static void work_state_erase_motion(SDL_Event *event, struct app *app);
 static void work_state_erase_rect(SDL_Event *event, struct app *app);
+static void work_state_select(SDL_Event *event, struct app *app);
 static void work_state_entity_rect(SDL_Event *event, struct app *app);
 
 static void (*work_state_table[WORK_STATE_TOTAL])(SDL_Event *event,
@@ -35,6 +36,7 @@ static void (*work_state_table[WORK_STATE_TOTAL])(SDL_Event *event,
     work_state_erase,
     work_state_erase_motion,
     work_state_erase_rect,
+    work_state_select,
     work_state_entity_rect,
     NULL,
     NULL
@@ -282,6 +284,38 @@ static void work_state_erase_rect(SDL_Event *event, struct app *app)
     app->work.tool_rect.start = (SDL_FPoint){0};
 }
 
+static void work_state_select(SDL_Event *event, struct app *app)
+{
+    SDL_FPoint mouse_work_coord;
+    work_coord_from_screen((SDL_FPoint){event->button.x, event->button.y},
+                           &mouse_work_coord);
+
+    SDL_FRect grid_rect = {0, 0, MAP_TILES_X_MAX * MAP_TILE_SIZE,
+                           MAP_TILES_Y_MAX * MAP_TILE_SIZE};
+
+    if (SDL_PointInFRect(&mouse_work_coord, &grid_rect)) {
+        // clear selected_entities
+        Uint16 entity;
+        struct ecs_node *node = NULL;
+        while (ecs_table_iterate_entities(app->selected_entities, &node,
+                                          &entity)) {
+            ecs_table_remove_entity(app->selected_entities, entity);
+        }
+
+        node = NULL;
+        SDL_FRect entity_rect = {0};
+        while (ecs_iterate_entities(app->ecs, &node, &entity)) {
+            struct component *cmp_rect =
+                ecs_get_component(app->ecs, CMP_TYPE_RECT, entity);
+            entity_rect = cmp_rect->data.rect.rect;
+            if (SDL_PointInFRect(&mouse_work_coord, &entity_rect)) {
+                ecs_table_add_entity(app->selected_entities, entity);
+                return;
+            }
+        }
+    }
+}
+
 static void work_state_entity_rect(SDL_Event *event, struct app *app)
 {
     // clear selected_entities
@@ -374,6 +408,13 @@ enum work_state work_get_state(struct app *app, SDL_Event *event)
     if (event->type == SDL_MOUSEBUTTONUP &&
         event->button.button == SDL_BUTTON_RIGHT &&
         app->work.tool->type == TOOL_TYPE_ERASER) {
+        return state;
+    }
+
+    state = WORK_STATE_SELECT;
+    if (event->type == SDL_MOUSEBUTTONDOWN &&
+        event->button.button == SDL_BUTTON_LEFT &&
+        app->work.tool->type == TOOL_TYPE_SELECT) {
         return state;
     }
 
