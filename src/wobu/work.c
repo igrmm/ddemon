@@ -1,6 +1,7 @@
 #include "SDL.h" // IWYU pragma: keep //clangd
 
 #include "../core.h"
+#include "../ecs.h"
 #include "app.h"
 #include "map.h"
 #include "work.h"
@@ -19,6 +20,7 @@ static void work_state_paint_rect(SDL_Event *event, struct app *app);
 static void work_state_erase(SDL_Event *event, struct app *app);
 static void work_state_erase_motion(SDL_Event *event, struct app *app);
 static void work_state_erase_rect(SDL_Event *event, struct app *app);
+static void work_state_entity_rect(SDL_Event *event, struct app *app);
 
 static void (*work_state_table[WORK_STATE_TOTAL])(SDL_Event *event,
                                                   struct app *app) = {
@@ -33,6 +35,7 @@ static void (*work_state_table[WORK_STATE_TOTAL])(SDL_Event *event,
     work_state_erase,
     work_state_erase_motion,
     work_state_erase_rect,
+    work_state_entity_rect,
     NULL,
     NULL
     // clang-format on
@@ -279,6 +282,20 @@ static void work_state_erase_rect(SDL_Event *event, struct app *app)
     app->work.tool_rect.start = (SDL_FPoint){0};
 }
 
+static void work_state_entity_rect(SDL_Event *event, struct app *app)
+{
+    enum component_tag_type tag = CMP_TAG_WAYPOINT;
+    Uint16 entity = ecs_create_entity(app->ecs);
+    struct component cmp_tag = {.type = CMP_TYPE_TAG,
+                                .entity = entity,
+                                .alive = SDL_TRUE,
+                                .data = {.tag = {tag}}};
+    ecs_add_component(app->ecs, cmp_tag);
+    ecs_table_add_entity(app->selected_entities, entity);
+    app->work.tool_rect.rect = (SDL_FRect){0};
+    app->work.tool_rect.start = (SDL_FPoint){0};
+}
+
 enum work_state work_get_state(struct app *app, SDL_Event *event)
 {
     enum work_state state;
@@ -346,6 +363,13 @@ enum work_state work_get_state(struct app *app, SDL_Event *event)
     if (event->type == SDL_MOUSEBUTTONUP &&
         event->button.button == SDL_BUTTON_RIGHT &&
         app->work.tool->type == TOOL_TYPE_ERASER) {
+        return state;
+    }
+
+    state = WORK_STATE_ENTITY_RECT;
+    if (event->type == SDL_MOUSEBUTTONUP &&
+        event->button.button == SDL_BUTTON_RIGHT &&
+        app->work.tool->type == TOOL_TYPE_ENTITY) {
         return state;
     }
 
