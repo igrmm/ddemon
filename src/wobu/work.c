@@ -284,8 +284,14 @@ static void work_state_erase_rect(SDL_Event *event, struct app *app)
 
 static void work_state_entity_rect(SDL_Event *event, struct app *app)
 {
+    // clear selected_entities
+    Uint16 entity;
+    struct ecs_node *node = NULL;
+    while (ecs_table_iterate_entities(app->selected_entities, &node, &entity))
+        ecs_table_remove_entity(app->selected_entities, entity);
+
     enum component_tag_type tag = CMP_TAG_WAYPOINT;
-    Uint16 entity = ecs_create_entity(app->ecs);
+    entity = ecs_create_entity(app->ecs);
     struct component cmp_tag = {.type = CMP_TYPE_TAG,
                                 .entity = entity,
                                 .alive = SDL_TRUE,
@@ -462,7 +468,7 @@ void work_render(struct app *app)
     // render entities
     struct ecs_node *node = NULL;
     Uint16 entity;
-    while (ecs_table_iterate_entities(app->selected_entities, &node, &entity)) {
+    while (ecs_iterate_entities(app->ecs, &node, &entity)) {
         struct component *cmp_rect =
             ecs_get_component(app->ecs, CMP_TYPE_RECT, entity);
         SDL_FRect rect_work_coord = cmp_rect->data.rect.rect;
