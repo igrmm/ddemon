@@ -22,6 +22,33 @@ static const enum component_tag_type prop_entity_to_tag_table[] = {
     [PROP_ENTITY_WAYPOINT] = CMP_TAG_WAYPOINT,
     [PROP_ENTITY_PORTAL] = CMP_TAG_PORTAL};
 
+static void prop_entity_waypoint_edit(Uint16 entity, struct app *app);
+
+static void (*prop_entity_edit_table[PROP_ENTITY_TOTAL])(Uint16 entity,
+                                                         struct app *app) = {
+    // clang-format off
+    prop_entity_waypoint_edit
+    // clang-format on
+};
+
+static void prop_entity_waypoint_edit(Uint16 entity, struct app *app)
+{
+    struct nk_context *nk_ctx = app->nk_ctx;
+    struct component *component =
+        ecs_get_component(app->ecs, CMP_TYPE_WAYPOINT, entity);
+    struct component_waypoint *cmp_waypoint = &component->data.waypoint;
+
+    nk_label(nk_ctx, "waypoint", NK_TEXT_LEFT);
+    nk_edit_string_zero_terminated(
+        nk_ctx, NK_EDIT_SIMPLE, cmp_waypoint->waypoint_name,
+        SDL_arraysize(cmp_waypoint->waypoint_name), nk_filter_default);
+
+    nk_label(app->nk_ctx, "map", NK_TEXT_LEFT);
+    nk_edit_string_zero_terminated(
+        nk_ctx, NK_EDIT_SIMPLE, cmp_waypoint->map_name,
+        SDL_arraysize(cmp_waypoint->map_name), nk_filter_default);
+}
+
 static void prop_edit_entity(struct app *app)
 {
     struct nk_context *nk_ctx = app->nk_ctx;
@@ -64,6 +91,9 @@ static void prop_edit_entity(struct app *app)
         cmp_tag->type = prop_entity_to_tag_table[new_entity_type];
         SDL_Log("NEW ENTITY TYPE: %i", new_entity_type); // debug info
     }
+
+    // edit the selected entity
+    (*prop_entity_edit_table[new_entity_type])(entity, app);
 }
 
 void prop_window(struct app *app)
