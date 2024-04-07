@@ -291,6 +291,11 @@ static void work_state_entity_rect(SDL_Event *event, struct app *app)
                                 .alive = SDL_TRUE,
                                 .data = {.tag = {tag}}};
     ecs_add_component(app->ecs, cmp_tag);
+    struct component cmp_rect = {.type = CMP_TYPE_RECT,
+                                 .entity = entity,
+                                 .alive = SDL_TRUE,
+                                 .data = {.rect = {app->work.tool_rect.rect}}};
+    ecs_add_component(app->ecs, cmp_rect);
     ecs_table_add_entity(app->selected_entities, entity);
     app->work.tool_rect.rect = (SDL_FRect){0};
     app->work.tool_rect.start = (SDL_FPoint){0};
