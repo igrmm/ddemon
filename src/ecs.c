@@ -110,7 +110,6 @@ struct ecs *ecs_create(void)
     // fill entity pool
     for (Uint16 entity = 0; entity < ECS_BUFSIZ; entity++)
         ecs_table_add_entity(&ecs->entity_pool, entity);
-    ecs->player_entity = ecs_create_entity(ecs);
     return ecs;
 }
 
