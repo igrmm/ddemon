@@ -1,53 +1,115 @@
-#include "SDL.h"
-#include "SDL_image.h"
-#include "SDL_ttf.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "../external/stb/stb_image.h"
 
-#include "../external/wobu/src/txt.h"
+#include "SDL.h" // IWYU pragma: keep //clangd
 
 #include "assets.h"
+#include "core.h"
+
+#define ASSET_BUFSIZ 1024
 
 // clang-format off
 static const char *TEXTURE_PATHS[] = {
     [ASSET_TEXTURE_PLAYER] = "img.png",
+    [ASSET_TEXTURE_TILEMAP] = "opengl.png",
     [ASSET_TEXTURE_MAX] = 0
 };
 
 static const char FONT_PATH[] = "NotoSansMono-Regular.ttf";
 // clang-format on
 
-int assets_load(struct assets *assets, SDL_Renderer *ren)
+static const char *default_vertex_src =
+    "#version 320 es\n"
+    "precision mediump float;\n"
+    "layout (location = 0) in vec4 vertex;\n"
+    "layout (location = 1) in vec4 offset;\n"
+    "out vec2 TexCoord;\n"
+    "void main()\n"
+    "{\n"
+    "   TexCoord = vertex.zw + offset.zw;\n"
+    "   gl_Position = vec4(vertex.x + offset.x, vertex.y + offset.y, 0, 1.0);\n"
+    "}\0";
+
+static const char *default_fragment_src =
+    "#version 320 es\n"
+    "precision mediump float;\n"
+    "out vec4 FragColor;\n"
+    "in vec2 TexCoord;\n"
+    "uniform sampler2D atlas;\n"
+    "void main()\n"
+    "{\n"
+    "   FragColor = texture(atlas, TexCoord);\n"
+    "}\n\0";
+
+static int assets_load_raw(Uint8 *buffer, size_t bufsiz, const char *file_path,
+                           size_t *file_size)
 {
-    for (int i = 0; i < ASSET_TEXTURE_MAX; i++) {
-        assets->textures[i] = IMG_LoadTexture(ren, TEXTURE_PATHS[i]);
-        if (assets->textures[i] == NULL) {
-            SDL_Log("Error loading texture: %s\n", SDL_GetError());
+    SDL_RWops *file = SDL_RWFromFile(file_path, "r");
+    if (file == NULL) {
+        SDL_Log("Error opening asset: %s (not found?)", file_path);
+        return -1;
+    }
+    for (size_t i = 0; i < bufsiz; i++) {
+        if (SDL_RWread(file, &buffer[i], sizeof(Uint8), 1) <= 0) {
+            // loading is done, lets wrap it up
+            buffer[i] = 0;
+            *file_size = i;
+            break;
+        } else if (i >= bufsiz - 1) {
+            // buffer exploded and loading is not done, abort
+            SDL_Log("Buffer overflow when loading asset: %s", file_path);
+            SDL_RWclose(file);
             return -1;
         }
     }
+    SDL_RWclose(file);
+    return 0;
+}
 
-    TTF_Font *ttf_small = TTF_OpenFont(FONT_PATH, 26);
-    if (ttf_small == NULL) {
-        SDL_Log("Error loading ttf font! SDL_ttf Error: %s\n", TTF_GetError());
-        return -1;
+int assets_load(struct assets *assets)
+{
+    /**
+     * Load all textures
+     * */
+    stbi_set_flip_vertically_on_load(1);
+    for (int i = 0; i < ASSET_TEXTURE_MAX; i++) {
+        // load img from file using sdl's crossplatform api for files
+        Uint8 buffer[ASSET_BUFSIZ] = {0}; // stack only for now
+        const char *file_path = TEXTURE_PATHS[i];
+        size_t file_size = 0;
+        if (assets_load_raw(buffer, ASSET_BUFSIZ, file_path, &file_size) != 0)
+            return -1;
+
+        // load img data from memory using stbi and create the texture
+        int width, height, nrChannels;
+        Uint8 *texture_data = stbi_load_from_memory(
+            buffer, file_size, &width, &height, &nrChannels, STBI_rgb_alpha);
+        if (texture_data == NULL) {
+            SDL_Log("Failed to loading texture from memory: %s",
+                    stbi_failure_reason());
+            return -1;
+        }
+        assets->textures[i] = core_create_texture(width, height, texture_data);
+        stbi_image_free(texture_data);
     }
-    struct txt_codepoint_cache *cache = txt_create_codepoint_cache();
-    if (cache == NULL) {
-        TTF_CloseFont(ttf_small);
-        SDL_Log("Error creating txt_codepoint_cache.");
-        return -1;
-    }
-    // cache all ASCII table
-    char str[] = {'\0', '\0'};
-    for (char c = ' '; c <= '~'; c++) {
-        str[0] = c;
-        txt_cache_codepoint(cache, str);
-    }
-    assets->fonts[ASSET_FONT_SMALL] = txt_create_font(cache, ttf_small, ren);
-    TTF_CloseFont(ttf_small);
-    SDL_free(cache);
-    if (assets->fonts[ASSET_FONT_SMALL] == NULL) {
-        SDL_Log("Error creating txt_font.");
-        return -1;
+
+    /**
+     * Load all fonts (TO-DO)
+     * */
+    assets->fonts[ASSET_FONT_SMALL] = NULL;
+
+    /**
+     * Load all shaders
+     * */
+    int status;
+    char log[512] = {0};
+    for (int i = 0; i < ASSET_SHADER_MAX; i++) {
+        assets->shaders[i] = core_create_shader(
+            default_vertex_src, default_fragment_src, &status, log, 512);
+        if (!status) {
+            SDL_Log("shader error: \n\n%s\n", log);
+            return -1;
+        }
     }
 
     return 0;
@@ -56,12 +118,10 @@ int assets_load(struct assets *assets, SDL_Renderer *ren)
 void assets_dispose(struct assets *assets)
 {
     for (int i = 0; i < ASSET_TEXTURE_MAX; i++) {
-        if (assets->textures[i] != NULL)
-            SDL_DestroyTexture(assets->textures[i]);
+        core_delete_texture(&assets->textures[i]);
     }
 
-    for (int i = 0; i < ASSET_FONT_MAX; i++) {
-        if (assets->fonts[i] != NULL)
-            txt_destroy_font(assets->fonts[i]);
+    for (int i = 0; i < ASSET_SHADER_MAX; i++) {
+        core_delete_shader(assets->shaders[i]);
     }
 }

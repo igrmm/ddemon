@@ -1,8 +1,6 @@
 #!/bin/sh
 
 SDL_COMMIT=tags/release-2.28.3
-SDL_IMAGE_COMMIT=tags/release-2.6.3
-SDL_TTF_COMMIT=tags/release-2.20.2
 ANDROID_PROJECT=com.igrmm.ddemon
 APP_NAME=DDEMON
 
@@ -16,16 +14,10 @@ if [ ! -d "build/android" ]; then
     ./androidbuild.sh $ANDROID_PROJECT /dev/null
     cd ../ && mv build/$ANDROID_PROJECT ../ && cd ../
     cd $ANDROID_PROJECT/app/jni/
-    git clone https://github.com/libsdl-org/SDL_image.git
-    cd SDL_image && git checkout $SDL_IMAGE_COMMIT && cd ../
-    git clone https://github.com/libsdl-org/SDL_ttf.git
-    cd SDL_ttf && git checkout $SDL_TTF_COMMIT && git submodule update --init
-    cd ../
 
     #scaping $ and /
-    sed -i "/LOCAL_C_INCLUDES.*/ s/$/ \$(LOCAL_PATH)\/..\/SDL_image\/ \$(LOCAL_PATH)\/..\/SDL_ttf\//" src/Android.mk
     sed -i "s/LOCAL_SRC_FILES.*/LOCAL_SRC_FILES := \$(wildcard \$(LOCAL_PATH)\/..\/..\/..\/..\/..\/..\/src\/*.c)/" src/Android.mk
-    sed -i "/LOCAL_SHARED_LIBRARIES.*/ s/$/ SDL2_image SDL2_ttf/" src/Android.mk
+    sed -i "s/-lGLESv2/-lGLESv3/" src/Android.mk
 
     cd ../
     sed -i "s/Game/$APP_NAME/" src/main/res/values/strings.xml
