@@ -16,30 +16,17 @@ static const char *TEXTURE_PATHS[] = {
 };
 
 static const char FONT_PATH[] = "NotoSansMono-Regular.ttf";
+
+static const char *SHADER_VERTEX_PATHS[] = {
+    [ASSET_SHADER_DEFAULT] = "default.vs",
+    [ASSET_SHADER_MAX] = 0
+};
+
+static const char *SHADER_FRAGMENT_PATHS[] = {
+    [ASSET_SHADER_DEFAULT] = "default.fs",
+    [ASSET_SHADER_MAX] = 0
+};
 // clang-format on
-
-static const char *default_vertex_src =
-    "#version 320 es\n"
-    "precision mediump float;\n"
-    "layout (location = 0) in vec4 vertex;\n"
-    "layout (location = 1) in vec4 offset;\n"
-    "out vec2 TexCoord;\n"
-    "void main()\n"
-    "{\n"
-    "   TexCoord = vertex.zw + offset.zw;\n"
-    "   gl_Position = vec4(vertex.x + offset.x, vertex.y + offset.y, 0, 1.0);\n"
-    "}\0";
-
-static const char *default_fragment_src =
-    "#version 320 es\n"
-    "precision mediump float;\n"
-    "out vec4 FragColor;\n"
-    "in vec2 TexCoord;\n"
-    "uniform sampler2D atlas;\n"
-    "void main()\n"
-    "{\n"
-    "   FragColor = texture(atlas, TexCoord);\n"
-    "}\n\0";
 
 static int assets_load_raw(Uint8 *buffer, size_t bufsiz, const char *file_path,
                            size_t *file_size)
@@ -53,7 +40,8 @@ static int assets_load_raw(Uint8 *buffer, size_t bufsiz, const char *file_path,
         if (SDL_RWread(file, &buffer[i], sizeof(Uint8), 1) <= 0) {
             // loading is done, lets wrap it up
             buffer[i] = 0;
-            *file_size = i;
+            if (file_size != NULL)
+                *file_size = i;
             break;
         } else if (i >= bufsiz - 1) {
             // buffer exploded and loading is not done, abort
@@ -68,15 +56,19 @@ static int assets_load_raw(Uint8 *buffer, size_t bufsiz, const char *file_path,
 
 int assets_load(struct assets *assets)
 {
+    Uint8 buffer[ASSET_BUFSIZ] = {0}; // stack only for now
+    const char *file_path = NULL;
+    size_t file_size = 0;
+
     /**
      * Load all textures
      * */
     stbi_set_flip_vertically_on_load(1);
     for (int i = 0; i < ASSET_TEXTURE_MAX; i++) {
         // load img from file using sdl's crossplatform api for files
-        Uint8 buffer[ASSET_BUFSIZ] = {0}; // stack only for now
-        const char *file_path = TEXTURE_PATHS[i];
-        size_t file_size = 0;
+        buffer[0] = 0;
+        file_path = TEXTURE_PATHS[i];
+        file_size = 0;
         if (assets_load_raw(buffer, ASSET_BUFSIZ, file_path, &file_size) != 0)
             return -1;
 
@@ -101,11 +93,23 @@ int assets_load(struct assets *assets)
     /**
      * Load all shaders
      * */
-    int status;
-    char log[512] = {0};
     for (int i = 0; i < ASSET_SHADER_MAX; i++) {
+        // load vertex shader from file using sdl's crossplatform api for files
+        Uint8 vert_src[ASSET_BUFSIZ] = {0}; // stack only for now
+        file_path = SHADER_VERTEX_PATHS[i];
+        if (assets_load_raw(vert_src, ASSET_BUFSIZ, file_path, NULL) != 0)
+            return -1;
+
+        // load frag shader from file using sdl's crossplatform api for files
+        Uint8 frag_src[ASSET_BUFSIZ] = {0}; // stack only for now
+        file_path = SHADER_FRAGMENT_PATHS[i];
+        if (assets_load_raw(frag_src, ASSET_BUFSIZ, file_path, NULL) != 0)
+            return -1;
+
+        int status;
+        char log[512] = {0};
         assets->shaders[i] = core_create_shader(
-            default_vertex_src, default_fragment_src, &status, log, 512);
+            (const char *)vert_src, (const char *)frag_src, &status, log, 512);
         if (!status) {
             SDL_Log("shader error: \n\n%s\n", log);
             return -1;
