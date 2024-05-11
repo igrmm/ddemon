@@ -5,146 +5,25 @@
 
 #include "core.h"
 
-/**
- *  SDL VARIABLES
- */
-static SDL_Window *window;
-static SDL_GLContext *ctx;
-
-/**
- *  OPENGL VARIABLES
- */
-static GLuint vao;
-static GLuint tile_vbo;
-static GLuint tile_ebo;
-static GLuint tile_instance_vbo;
-static GLuint current_shader;
-static GLuint current_texture;
-static GLuint current_ebo;
-
-/**
- *  APP CONFIG
- */
-#define WINDOW_NAME "DDEMON"
-#define WINDOW_WIDTH 1920
-#define WINDOW_HEIGHT 1080
-#define TILE_SIZE 32
-#define LAYER_NUM 6
-#define BUFSIZ_TILE_X 61 // ROUND(WINDOW_WIDTH/TILE_SIZE)+1
-#define BUFSIZ_TILE_Y 35 // ROUND(WINDOW_HEIGHT/TILE_SIZE)+1
-
-/**
- *  Considering:
- *  - Target resolution: 1920x1080
- *  - Target tile size: 32
- *  - Target layer number: 6
- *  - A buffer of 1 column and 1 row on the edges
- *
- *  Number of tiles on x will be: 1920/32 + 1 = 61
- *  Number of tiles on y will be: 1080/32 + 1 = 35
- *  Total number of tiles/transformations: 61*35*6 = 12810
- */
-#define TILE_TRANSFORM_NUM 12810
-
-struct tile_transform {
-    float x, y;
-    float tex_x, tex_y;
-};
-
-static struct tile_transform tile_transforms[TILE_TRANSFORM_NUM];
-
-static float normalize_x(float x, float viewport_width)
+int core_setup(struct core *core, const char *window_title, int window_width,
+               int window_height)
 {
-    return x / viewport_width * 2 - 1;
-}
-
-static float normalize_y(float y, float viewport_height)
-{
-    return y / viewport_height * 2 - 1;
-}
-
-static void core_initialize_map_renderer(void)
-{
-    // initialize tile transformations
-    int n = 0;
-    const int tileset_tile_num_x = 6;
-    for (int l = 0; l < LAYER_NUM; l++) {
-        for (int x = 0; x < BUFSIZ_TILE_X; x += 1) {
-            for (int y = 0; y < BUFSIZ_TILE_Y; y += 1) {
-                float offsetx = (float)x / WINDOW_WIDTH * 2 * TILE_SIZE;
-                float offsety = (float)y / WINDOW_HEIGHT * 2 * TILE_SIZE;
-                float tloffsetx = (float)l / tileset_tile_num_x;
-                tile_transforms[n] =
-                    (struct tile_transform){offsetx, offsety, tloffsetx, 0};
-                n++;
-            }
-        }
+    if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
+        SDL_Log("SDL_Init Error: %s\n", SDL_GetError());
+        return -1;
     }
 
-    // setup instance vbo
-    glGenBuffers(1, &tile_instance_vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, tile_instance_vbo);
-    glBufferData(GL_ARRAY_BUFFER,
-                 sizeof(struct tile_transform) * TILE_TRANSFORM_NUM,
-                 &tile_transforms[0], GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind instance_vbo
+    core->window = SDL_CreateWindow(
+        window_title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 0, 0,
+        SDL_WINDOW_FULLSCREEN_DESKTOP | SDL_WINDOW_OPENGL);
+    if (core->window == NULL) {
+        SDL_Log("SDL_CreateWindow Error: %s\n", SDL_GetError());
+        return -1;
+    }
 
-    // setup vertices/indices of quad for the tile template
-    SDL_FPoint top_right = {normalize_x(TILE_SIZE, WINDOW_WIDTH),
-                            normalize_y(TILE_SIZE, WINDOW_HEIGHT)};
-    SDL_FPoint bottom_right = {normalize_x(TILE_SIZE, WINDOW_WIDTH),
-                               normalize_y(0, WINDOW_HEIGHT)};
-    SDL_FPoint bottom_left = {normalize_x(0, WINDOW_WIDTH),
-                              normalize_y(0, WINDOW_HEIGHT)};
-    SDL_FPoint top_left = {normalize_x(0, WINDOW_WIDTH),
-                           normalize_y(TILE_SIZE, WINDOW_HEIGHT)};
-    float tloffsetx = 1.0f / 6.0f;
-    float vertices[] = {
-        // positions                    // texture coords
-        top_right.x,    top_right.y,    tloffsetx, 1.0f, // top right
-        bottom_right.x, bottom_right.y, tloffsetx, 0.0f, // bottom right
-        bottom_left.x,  bottom_left.y,  0.0f,      0.0f, // bottom left
-        top_left.x,     top_left.y,     0.0f,      1.0f  // top left
-    };
-    Uint32 indices[] = {
-        0, 1, 3, // first Triangle
-        1, 2, 3  // second Triangle
-    };
-
-    // setup vbo for the tile template
-    glGenBuffers(1, &tile_vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, tile_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind tile vbo
-
-    // setup ebo for the tile template
-    glGenBuffers(1, &tile_ebo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tile_ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices,
-                 GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); // unbind tile ebo
-
-    // put the vertex atrib of the tile template vbo in the vao
-    glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, tile_vbo);
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float),
-                          (void *)0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind tile vbo
-
-    // put the vertex atrib of the tile instance vbo in the vao
-    glEnableVertexAttribArray(1);
-    glBindBuffer(GL_ARRAY_BUFFER, tile_instance_vbo);
-    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float),
-                          (void *)0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind instance vbo
-
-    // create the instances
-    glVertexAttribDivisor(1, 1);
-}
-
-static int core_initialize_gl(void)
-{
-    ctx = SDL_GL_CreateContext(window);
+    core->ctx = SDL_GL_CreateContext(core->window);
+    core->viewport_width = window_width;
+    core->viewport_height = window_height;
 
     // try to init glad with ogl profile
     const char *platform = SDL_GetPlatform();
@@ -160,7 +39,7 @@ static int core_initialize_gl(void)
                 platform);
         return -1;
     }
-    SDL_Log("GLAD initialization success.");
+    SDL_Log("GLAD initialization succeeded.");
     SDL_Log("PLATFORM: %s, PROFILE: %i, VERSION: %i", platform, profile,
             version);
 
@@ -172,43 +51,76 @@ static int core_initialize_gl(void)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // create vao
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
+    glGenVertexArrays(1, &core->vertex_array_object);
+    glBindVertexArray(core->vertex_array_object);
+
+    // setup instance vbo
+    glGenBuffers(1, &core->instance_vertex_buffer_object);
+    glBindBuffer(GL_ARRAY_BUFFER, core->instance_vertex_buffer_object);
+    glBufferData(GL_ARRAY_BUFFER,
+                 sizeof(struct core_drawing) * CORE_DRAWING_POOL_SIZE, NULL,
+                 GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind instance_vbo
+
+    // setup vertices/indices of quad for the template drawing
+    float vertices[] = {
+        // w     h     <- identify if this is a "width" or "height" vertex
+        1.0f, 1.0f, // top right
+        1.0f, 0.0f, // bottom right
+        0.0f, 0.0f, // bottom left
+        0.0f, 1.0f, // top left
+    };
+    Uint32 indices[] = {
+        0, 1, 3, // first triangle
+        1, 2, 3  // second triangle
+    };
+
+    // setup vbo for the quad template
+    glGenBuffers(1, &core->vertex_buffer_object);
+    glBindBuffer(GL_ARRAY_BUFFER, core->vertex_buffer_object);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind vbo
+
+    // setup ebo for the quad template
+    glGenBuffers(1, &core->element_buffer_object);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, core->element_buffer_object);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices,
+                 GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); // unbind ebo
+
+    // put the vertex atrib of the quad template vbo in the vao
+    glBindBuffer(GL_ARRAY_BUFFER, core->vertex_buffer_object);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float),
+                          (void *)0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind vbo
+
+    // put the vertex atrib of the instance vbo in the vao
+    glBindBuffer(GL_ARRAY_BUFFER, core->instance_vertex_buffer_object);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
+                          (void *)0);
+    glVertexAttribDivisor(1, 1); // create instance
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
+                          (void *)(4 * sizeof(float)));
+    glVertexAttribDivisor(2, 1);      // create instance
+    glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind instance vbo
+
+    // bind ebo and instance vbo to be used throughout the whole program
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, core->element_buffer_object);
+    glBindBuffer(GL_ARRAY_BUFFER, core->instance_vertex_buffer_object);
 
     return 0;
 }
 
-int core_setup(void)
+void core_shutdown(struct core *core)
 {
-    if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
-        SDL_Log("SDL_Init Error: %s\n", SDL_GetError());
-        return -1;
-    }
-
-    window =
-        SDL_CreateWindow(WINDOW_NAME, SDL_WINDOWPOS_CENTERED,
-                         SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT,
-                         SDL_WINDOW_FULLSCREEN_DESKTOP | SDL_WINDOW_OPENGL);
-    if (window == NULL) {
-        SDL_Log("SDL_CreateWindow Error: %s\n", SDL_GetError());
-        return -1;
-    }
-
-    if (core_initialize_gl() < 0)
-        return -1;
-
-    core_initialize_map_renderer();
-
-    return 0;
-}
-
-void core_shutdown(void)
-{
-    glDeleteVertexArrays(1, &vao);
-    glDeleteBuffers(1, &tile_vbo);
-    glDeleteBuffers(1, &tile_ebo);
-    SDL_GL_DeleteContext(ctx);
-    SDL_DestroyWindow(window);
+    glDeleteVertexArrays(1, &core->vertex_array_object);
+    glDeleteBuffers(1, &core->vertex_buffer_object);
+    glDeleteBuffers(1, &core->element_buffer_object);
+    SDL_GL_DeleteContext(core->ctx);
+    SDL_DestroyWindow(core->window);
     SDL_Quit();
 }
 
@@ -248,16 +160,25 @@ Uint32 core_create_shader(const char *vert_src, const char *frag_src,
     return shader_program;
 }
 
-void core_delete_texture(const Uint32 *texture)
+void core_use_shader(struct core *core, Uint32 shader)
 {
-    glDeleteTextures(1, texture);
+    if (core->current_shader != shader) {
+        glUseProgram(shader);
+        core->current_shader = shader;
+    }
 }
 
-Uint32 core_create_texture(int width, int height, const Uint8 *texture_data)
+void core_delete_texture(struct core_texture *texture)
 {
-    Uint32 texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
+    glDeleteTextures(1, &texture->id);
+}
+
+struct core_texture core_create_texture(int width, int height,
+                                        const Uint8 *texture_data)
+{
+    Uint32 texture_id;
+    glGenTextures(1, &texture_id);
+    glBindTexture(GL_TEXTURE_2D, texture_id);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -266,9 +187,20 @@ Uint32 core_create_texture(int width, int height, const Uint8 *texture_data)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
                  GL_UNSIGNED_BYTE, texture_data);
     glGenerateMipmap(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindTexture(GL_TEXTURE_2D, 0); // unbind texture
+
+    struct core_texture texture = {width, height, texture_id};
 
     return texture;
+}
+
+void core_bind_texture(struct core *core, struct core_texture *texture)
+{
+    if (core->current_texture == NULL ||
+        core->current_texture->id != texture->id) {
+        glBindTexture(GL_TEXTURE_2D, texture->id);
+        core->current_texture = texture;
+    }
 }
 
 void core_clear_screen(float r, float g, float b, float a)
@@ -277,28 +209,47 @@ void core_clear_screen(float r, float g, float b, float a)
     glClear(GL_COLOR_BUFFER_BIT);
 }
 
-void core_use_shader(Uint32 shader)
+void core_add_drawing(struct core *core, SDL_FRect *src_rect,
+                      SDL_FRect *dst_rect)
 {
-    if (current_shader != shader) {
-        glUseProgram(shader);
-        current_shader = shader;
-    }
+    // check if there is available instances in the pool
+    if (core->drawing_queue_size + 1 > CORE_DRAWING_POOL_SIZE)
+        return;
+
+    // obtain instance from the pool
+    core->drawing_queue_size++;
+    int instance = core->drawing_queue_size - 1;
+
+    // set up instance to be draw
+    core->drawing_pool[instance] = (struct core_drawing){
+        .x = dst_rect->x / core->viewport_width * 2.0f - 1.0f,
+        .y = dst_rect->y / core->viewport_height * 2.0f - 1.0f,
+        .w = 1.0f / core->viewport_width * 2.0f * dst_rect->w,
+        .h = 1.0f / core->viewport_height * 2.0f * dst_rect->h,
+        .tex_x = src_rect->x / core->current_texture->width,
+        .tex_y = src_rect->y / core->current_texture->height,
+        .tex_w = src_rect->w / core->current_texture->width,
+        .tex_h = src_rect->h / core->current_texture->height};
 }
 
-void core_draw_map(Uint32 tilemap)
+void core_draw_queue(struct core *core)
 {
-    if (current_texture != tilemap) {
-        glBindTexture(GL_TEXTURE_2D, tilemap);
-        current_texture = tilemap;
-    }
-
-    if (current_ebo != tile_ebo) {
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tile_ebo);
-        current_ebo = tile_ebo;
-    }
-
+    glBufferSubData(GL_ARRAY_BUFFER, 0,
+                    sizeof(struct core_drawing) * core->drawing_queue_size,
+                    &core->drawing_pool[0]);
     glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0,
-                            TILE_TRANSFORM_NUM);
+                            core->drawing_queue_size);
+
+    // return all instances to the pool
+    core->drawing_queue_size = 0;
 }
 
-void core_update_window(void) { SDL_GL_SwapWindow(window); }
+void core_update_window(SDL_Window *window) { SDL_GL_SwapWindow(window); }
+
+void core_update_viewport(struct core *core, int viewport_width,
+                          int viewport_height)
+{
+    glViewport(0, 0, viewport_width, viewport_height);
+    core->viewport_width = viewport_width;
+    core->viewport_height = viewport_height;
+}
