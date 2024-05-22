@@ -253,3 +253,13 @@ void core_update_viewport(struct core *core, int viewport_width,
     core->viewport_width = viewport_width;
     core->viewport_height = viewport_height;
 }
+
+void core_restore_gl_state(struct core *core)
+{
+    glEnable(GL_BLEND);
+    glBindVertexArray(core->vertex_array_object);
+    glBindBuffer(GL_ARRAY_BUFFER, core->instance_vertex_buffer_object);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, core->element_buffer_object);
+    glUseProgram(core->current_shader);
+    glBindTexture(GL_TEXTURE_2D, core->current_texture->id);
+}

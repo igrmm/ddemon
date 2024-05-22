@@ -6,6 +6,7 @@ cd build/wobu
 if [ "$1" = "valgrind" ]; then
     cmake -DCMAKE_BUILD_TYPE=Debug ../../src/wobu
     cmake --build .
+    cd ../../assets
     valgrind \
         --suppressions=../../valgrind.sup \
         --leak-check=full \
@@ -16,7 +17,7 @@ if [ "$1" = "valgrind" ]; then
         --track-origins=yes \
         --keep-debuginfo=yes \
         --log-file=supdata.log \
-        ./wobu
+        ../build/wobu/wobu
     exit
 fi
 
@@ -27,4 +28,5 @@ else
     cmake ../../src/wobu
 fi
 cmake --build .
-./wobu
+cd ../../assets
+../build/wobu/wobu

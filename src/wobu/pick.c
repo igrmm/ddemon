@@ -29,11 +29,10 @@ static void pick_render(struct app *app, struct nk_context *nk_ctx,
                         struct nk_command_buffer *canvas,
                         struct nk_rect tileset_rect)
 {
-    struct nk_image tileset_image = nk_image_ptr(app->tileset_texture);
     int tile_size = MAP_TILE_SIZE;
 
     // draw tileset
-    nk_image(nk_ctx, tileset_image);
+    nk_image(nk_ctx, nk_image_id(app->tileset_texture.id));
 
     // draw grid - column lines
     int cols = tileset_rect.w + nk_ctx->current->scrollbar.x;
@@ -77,9 +76,8 @@ void pick_window(struct app *app)
 {
     struct nk_context *nk_ctx = app->nk_ctx;
     int window_flags = app->window_flags;
-    int tileset_width, tileset_height;
-    SDL_QueryTexture(app->tileset_texture, NULL, NULL, &tileset_width,
-                     &tileset_height);
+    int tileset_width = app->tileset_texture.width;
+    int tileset_height = app->tileset_texture.height;
 
     // backup padding
     struct nk_vec2 padding_bkp = nk_ctx->style.window.padding;

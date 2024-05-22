@@ -1,5 +1,4 @@
 #include "SDL.h" // IWYU pragma: keep //clangd
-#include "SDL_image.h"
 #include "nk.h"
 
 #include "../core.h"
@@ -12,7 +11,8 @@
 #include "tools.h"
 #include "work.h"
 
-int app_init(struct app *app, struct core *core, struct nk_context *nk_ctx)
+int app_init(struct app *app, struct core *core, struct assets *assets,
+             struct nk_context *nk_ctx)
 {
     app->map = SDL_calloc(1, sizeof(*app->map));
     if (app->map == NULL)
@@ -29,46 +29,28 @@ int app_init(struct app *app, struct core *core, struct nk_context *nk_ctx)
     app->core = core;
     app->nk_ctx = nk_ctx;
 
-    SDL_Texture *tileset_texture =
-        IMG_LoadTexture(core->renderer, "tileset.png");
-    if (tileset_texture == NULL) {
-        SDL_Log("SDL error in tileset_texture creation: %s", SDL_GetError());
-        return -1;
-    }
+    struct core_texture tileset_texture =
+        assets->textures[ASSET_TEXTURE_TILEMAP];
+    // we'll be using only this texture with the core renderer
+    core_bind_texture(core, &assets->textures[ASSET_TEXTURE_TILEMAP]);
 
-    SDL_Texture *pencil_icon_texture =
-        IMG_LoadTexture(core->renderer, "../../assets/pencil.png");
-    if (pencil_icon_texture == NULL) {
-        SDL_Log("SDL error in pencil_texture creation: %s", SDL_GetError());
-        return -1;
-    }
+    struct core_texture pencil_icon_texture =
+        assets->textures[ASSET_TEXTURE_ICON_PENCIL];
     app->work.tools[TOOL_TYPE_PENCIL] = (struct tool){
         TOOL_TYPE_PENCIL, (SDL_Color){0, 255, 0, 255}, pencil_icon_texture};
 
-    SDL_Texture *eraser_icon_texture =
-        IMG_LoadTexture(core->renderer, "../../assets/eraser.png");
-    if (eraser_icon_texture == NULL) {
-        SDL_Log("SDL error in eraser_texture creation: %s", SDL_GetError());
-        return -1;
-    }
+    struct core_texture eraser_icon_texture =
+        assets->textures[ASSET_TEXTURE_ICON_ERASER];
     app->work.tools[TOOL_TYPE_ERASER] = (struct tool){
         TOOL_TYPE_ERASER, (SDL_Color){255, 0, 0, 255}, eraser_icon_texture};
 
-    SDL_Texture *entity_icon_texture =
-        IMG_LoadTexture(core->renderer, "../../assets/entity.png");
-    if (entity_icon_texture == NULL) {
-        SDL_Log("SDL error in entity_texture creation: %s", SDL_GetError());
-        return -1;
-    }
+    struct core_texture entity_icon_texture =
+        assets->textures[ASSET_TEXTURE_ICON_ENTITY];
     app->work.tools[TOOL_TYPE_ENTITY] = (struct tool){
         TOOL_TYPE_ENTITY, (SDL_Color){255, 0, 0, 255}, entity_icon_texture};
 
-    SDL_Texture *select_icon_texture =
-        IMG_LoadTexture(core->renderer, "../../assets/select.png");
-    if (select_icon_texture == NULL) {
-        SDL_Log("SDL error in select_texture creation: %s", SDL_GetError());
-        return -1;
-    }
+    struct core_texture select_icon_texture =
+        assets->textures[ASSET_TEXTURE_ICON_SELECT];
     app->work.tools[TOOL_TYPE_SELECT] = (struct tool){
         TOOL_TYPE_SELECT, (SDL_Color){255, 0, 0, 255}, select_icon_texture};
 
@@ -117,13 +99,4 @@ void app_shutdown(struct app *app)
 
     if (app->selected_entities != NULL)
         SDL_free(app->selected_entities);
-
-    if (app->tileset_texture != NULL)
-        SDL_DestroyTexture(app->tileset_texture);
-
-    enum tool_type tool_type = 0;
-    for (; tool_type < TOOL_TYPE_TOTAL; tool_type++) {
-        if (app->work.tools[tool_type].icon_texture != NULL)
-            SDL_DestroyTexture(app->work.tools[tool_type].icon_texture);
-    }
 }

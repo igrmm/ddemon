@@ -1,45 +1,55 @@
+#include "../../external/glad.h"
+
 #include "SDL.h" // IWYU pragma: keep //clangd
 
 #define NK_IMPLEMENTATION
 #include "nk.h"
-#define NK_SDL_RENDERER_IMPLEMENTATION
-#include "../../external/Nuklear/demo/sdl_renderer/nuklear_sdl_renderer.h"
+#define NK_SDL_GL3_IMPLEMENTATION
+#include "../../external/Nuklear/demo/sdl_opengl3/nuklear_sdl_gl3.h"
 
+#include "../assets.h"
 #include "../core.h"
 #include "app.h"
+
+#define MAX_VERTEX_MEMORY 512 * 1024
+#define MAX_ELEMENT_MEMORY 128 * 1024
 
 int main(int argc, char *argv[])
 {
     SDL_bool running = SDL_TRUE;
 
     // initialize sdl
-    struct core core = {
-        .window_name = "WOBU", .window_width = 1200, .window_height = 800};
-    if (core_setup(&core) < 0)
+    struct core core = {0};
+    if (core_setup(&core, "WOBU", 1200, 800) < 0)
         core_shutdown(&core);
+
+    struct assets assets = {0};
+    if (assets_load(&assets) < 0) {
+        SDL_Log("Error loading assets.");
+        assets_dispose(&assets);
+        core_shutdown(&core);
+    }
 
     // initialize nuklear
     struct nk_context *nk_ctx;
-    nk_ctx = nk_sdl_init(core.window, core.renderer);
+    nk_ctx = nk_sdl_init(core.window);
     {
-        struct nk_font_atlas *atlas;
-        struct nk_font_config config = nk_font_config(0);
-        struct nk_font *font;
-
-        nk_sdl_font_stash_begin(&atlas);
-        font = nk_font_atlas_add_default(atlas, 13, &config);
+        struct nk_font_atlas *nk_font_atlas;
+        nk_sdl_font_stash_begin(&nk_font_atlas);
         nk_sdl_font_stash_end();
-        nk_style_set_font(nk_ctx, &font->handle);
     }
 
     //  initialize app
     struct app app = {0};
-    if (app_init(&app, &core, nk_ctx) < 0) {
+    if (app_init(&app, &core, &assets, nk_ctx) < 0) {
         nk_sdl_shutdown();
         core_shutdown(&core);
         app_shutdown(&app);
         return -1;
     }
+
+    // uses default shader for entire program with the core renderer
+    core_use_shader(&core, assets.shaders[ASSET_SHADER_DEFAULT]);
 
     while (running) {
         /* Input */
@@ -49,12 +59,9 @@ int main(int argc, char *argv[])
             if (evt.type == SDL_QUIT)
                 running = 0;
 
-            if (evt.type == SDL_WINDOWEVENT) {
-                if (evt.window.event == SDL_WINDOWEVENT_RESIZED ||
-                    evt.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
-                    SDL_GetWindowSize(core.window, &core.window_width,
-                                      &core.window_height);
-                }
+            if (evt.type == SDL_WINDOWEVENT &&
+                evt.window.event == SDL_WINDOWEVENT_RESIZED) {
+                core_update_viewport(&core, evt.window.data1, evt.window.data2);
             }
 
             if (nk_item_is_any_active(nk_ctx)) {
@@ -72,11 +79,17 @@ int main(int argc, char *argv[])
         app_run(&app);
 
         /* Render */
-        SDL_SetRenderDrawColor(core.renderer, 26.0f, 46.0f, 61.0f, 255.0f);
-        SDL_RenderClear(core.renderer);
+        core_clear_screen(0.1f, 0.18f, 0.24, 1.0f);
         app_render(&app);
-        nk_sdl_render(NK_ANTI_ALIASING_ON);
-        SDL_RenderPresent(core.renderer);
+        core_draw_queue(&core);
+
+        nk_sdl_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY,
+                      MAX_ELEMENT_MEMORY);
+
+        // nk_sdl_render changes opengl state, so we neet to restore it
+        core_restore_gl_state(&core);
+
+        core_update_window(core.window);
     }
 
     nk_sdl_shutdown();

@@ -23,9 +23,9 @@ void status_window(struct app *app)
 
     struct nk_context *nk_ctx = app->nk_ctx;
     int h = 20;
-    int y = app->core->window_height - h;
+    int y = app->core->viewport_height - h;
     int x = 0;
-    int w = app->core->window_width;
+    int w = app->core->viewport_width;
 
     if (nk_begin(nk_ctx, "status", nk_rect(x, y, w, h),
                  NK_WINDOW_NO_SCROLLBAR)) {

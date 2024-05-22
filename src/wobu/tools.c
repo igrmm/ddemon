@@ -1,7 +1,7 @@
 #include "nk.h"
 
-#include "tools.h"
 #include "app.h"
+#include "tools.h"
 #include "work.h"
 
 void tools_window(struct app *app)
@@ -20,7 +20,7 @@ void tools_window(struct app *app)
                 nk_ctx->style.button.border_color = RED;
             if (nk_button_image(
                     nk_ctx,
-                    nk_image_ptr(app->work.tools[tool_type].icon_texture)))
+                    nk_image_id(app->work.tools[tool_type].icon_texture.id)))
                 app->work.tool = &app->work.tools[tool_type];
             nk_ctx->style.button.border_color = color_bkp;
         }

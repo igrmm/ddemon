@@ -3,6 +3,8 @@
 
 #include "SDL.h" // IWYU pragma: keep //clangd
 
+#include "../core.h"
+
 enum tool_type {
     TOOL_TYPE_PENCIL = 0,
     TOOL_TYPE_ERASER,
@@ -14,7 +16,7 @@ enum tool_type {
 struct tool {
     enum tool_type type;
     SDL_Color rect_color;
-    SDL_Texture *icon_texture;
+    struct core_texture icon_texture;
 };
 
 struct tool_rect {

@@ -7,8 +7,6 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 find_package(SDL2 REQUIRED CONFIG COMPONENTS SDL2main)
 find_package(SDL2 REQUIRED CONFIG REQUIRED COMPONENTS SDL2)
-find_package(SDL2_image REQUIRED CONFIG)
-find_package(SDL2_ttf REQUIRED CONFIG)
 
 add_executable(${PROJECT_NAME}
     WIN32
@@ -24,6 +22,7 @@ add_executable(${PROJECT_NAME}
     prop.c
     ../core.c
     ../ecs.c
+    ../assets.c
     )
 
 if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
@@ -37,6 +36,4 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     m
     SDL2::SDL2main
     SDL2::SDL2
-    SDL2_image::SDL2_image
-    SDL2_ttf::SDL2_ttf
     )

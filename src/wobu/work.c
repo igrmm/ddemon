@@ -43,6 +43,11 @@ static void (*work_state_table[WORK_STATE_TOTAL])(SDL_Event *event,
     // clang-format on
 };
 
+static int work_ydown_to_yup(int ydown, int viewport_height)
+{
+    return viewport_height - 1 - ydown;
+}
+
 static void work_coord_to_screen(SDL_FPoint work_coord,
                                  SDL_FPoint *screen_coord)
 {
@@ -195,7 +200,9 @@ static void work_set_tile_layers_in_rect(SDL_FRect rect_work_coord,
 
 static void work_state_zoom(SDL_Event *event, struct app *app)
 {
-    SDL_FPoint mouse_screen_coord = {event->wheel.mouseX, event->wheel.mouseY};
+    int mouse_y =
+        work_ydown_to_yup(event->wheel.mouseY, app->core->viewport_height);
+    SDL_FPoint mouse_screen_coord = {event->wheel.mouseX, mouse_y};
     SDL_FPoint mouse_work_coord_before_zoom = {0, 0};
 
     work_coord_from_screen(mouse_screen_coord, &mouse_work_coord_before_zoom);
@@ -218,26 +225,34 @@ static void work_state_zoom(SDL_Event *event, struct app *app)
 
 static void work_state_pan_start(SDL_Event *event, struct app *app)
 {
-    work_pan_start_point = (SDL_FPoint){event->button.x, event->button.y};
+    int mouse_y =
+        work_ydown_to_yup(event->button.y, app->core->viewport_height);
+    work_pan_start_point = (SDL_FPoint){event->button.x, mouse_y};
 }
 
 static void work_state_pan(SDL_Event *event, struct app *app)
 {
+    int mouse_y =
+        work_ydown_to_yup(event->motion.y, app->core->viewport_height);
     work_offset.x -= (event->motion.x - work_pan_start_point.x) / work_scale;
-    work_offset.y -= (event->motion.y - work_pan_start_point.y) / work_scale;
+    work_offset.y -= (mouse_y - work_pan_start_point.y) / work_scale;
     work_pan_start_point.x = event->motion.x;
-    work_pan_start_point.y = event->motion.y;
+    work_pan_start_point.y = mouse_y;
 }
 
 static void work_state_mk_tool_rect(SDL_Event *event, struct app *app)
 {
-    work_mk_tile_shaped_tool_rect(
-        &app->work.tool_rect, (SDL_FPoint){event->motion.x, event->motion.y});
+    int mouse_y =
+        work_ydown_to_yup(event->motion.y, app->core->viewport_height);
+    work_mk_tile_shaped_tool_rect(&app->work.tool_rect,
+                                  (SDL_FPoint){event->motion.x, mouse_y});
 }
 
 static void work_state_paint(SDL_Event *event, struct app *app)
 {
-    SDL_FPoint mouse_screen_coord = {event->button.x, event->button.y};
+    int mouse_y =
+        work_ydown_to_yup(event->button.y, app->core->viewport_height);
+    SDL_FPoint mouse_screen_coord = {event->button.x, mouse_y};
     struct map_tile_layer tile_layer = {app->selected_tileset_index.x,
                                         app->selected_tileset_index.y, 1};
     work_set_tile_layer_on_mouse(mouse_screen_coord, app->map, 0, tile_layer);
@@ -245,7 +260,9 @@ static void work_state_paint(SDL_Event *event, struct app *app)
 
 static void work_state_paint_motion(SDL_Event *event, struct app *app)
 {
-    SDL_FPoint mouse_screen_coord = {event->motion.x, event->motion.y};
+    int mouse_y =
+        work_ydown_to_yup(event->motion.y, app->core->viewport_height);
+    SDL_FPoint mouse_screen_coord = {event->motion.x, mouse_y};
     struct map_tile_layer tile_layer = {app->selected_tileset_index.x,
                                         app->selected_tileset_index.y, 1};
     work_set_tile_layer_on_mouse(mouse_screen_coord, app->map, 0, tile_layer);
@@ -263,14 +280,18 @@ static void work_state_paint_rect(SDL_Event *event, struct app *app)
 
 static void work_state_erase(SDL_Event *event, struct app *app)
 {
-    SDL_FPoint mouse_screen_coord = {event->button.x, event->button.y};
+    int mouse_y =
+        work_ydown_to_yup(event->button.y, app->core->viewport_height);
+    SDL_FPoint mouse_screen_coord = {event->button.x, mouse_y};
     struct map_tile_layer tile_layer = {0, 0, 0};
     work_set_tile_layer_on_mouse(mouse_screen_coord, app->map, 0, tile_layer);
 }
 
 static void work_state_erase_motion(SDL_Event *event, struct app *app)
 {
-    SDL_FPoint mouse_screen_coord = {event->motion.x, event->motion.y};
+    int mouse_y =
+        work_ydown_to_yup(event->motion.y, app->core->viewport_height);
+    SDL_FPoint mouse_screen_coord = {event->motion.x, mouse_y};
     struct map_tile_layer tile_layer = {0, 0, 0};
     work_set_tile_layer_on_mouse(mouse_screen_coord, app->map, 0, tile_layer);
 }
@@ -286,8 +307,10 @@ static void work_state_erase_rect(SDL_Event *event, struct app *app)
 
 static void work_state_select(SDL_Event *event, struct app *app)
 {
+    int mouse_y =
+        work_ydown_to_yup(event->button.y, app->core->viewport_height);
     SDL_FPoint mouse_work_coord;
-    work_coord_from_screen((SDL_FPoint){event->button.x, event->button.y},
+    work_coord_from_screen((SDL_FPoint){event->button.x, mouse_y},
                            &mouse_work_coord);
 
     SDL_FRect grid_rect = {0, 0, MAP_TILES_X_MAX * MAP_TILE_SIZE,
@@ -444,13 +467,10 @@ void work_run_state(struct app *app, SDL_Event *event, enum work_state state)
 
 void work_render(struct app *app)
 {
-    SDL_Renderer *renderer = app->core->renderer;
     int tile_size = MAP_TILE_SIZE;
 
-    SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
-
     // render tiles
-    SDL_Rect src_rect = {0, 0, tile_size, tile_size};
+    SDL_FRect src_rect = {0, 0, tile_size, tile_size};
     SDL_FRect dst_rect = {0, 0, tile_size, tile_size};
     SDL_FPoint work_coord = {0, 0};
     SDL_FPoint screen_coord = {0, 0};
@@ -472,76 +492,77 @@ void work_render(struct app *app)
                 dst_rect.y = screen_coord.y;
                 dst_rect.w = dst_rect.h = tile_size * work_scale;
 
-                SDL_RenderCopyF(renderer, app->tileset_texture, &src_rect,
-                                &dst_rect);
+                core_add_drawing(app->core, &src_rect, &dst_rect);
             }
         }
     }
 
-    // render grid
-    if (app->show_grid) {
-        int cols = MAP_TILES_X_MAX;
-        SDL_FPoint col0_work, col0_screen, col1_work, col1_screen;
-        for (int col = 0; col <= cols; col++) {
-            col0_work.x = col * tile_size;
-            col0_work.y = 0;
-            col1_work.x = col * tile_size;
-            col1_work.y = MAP_TILES_Y_MAX * tile_size;
+    //// render grid
+    // if (app->show_grid) {
+    //     int cols = MAP_TILES_X_MAX;
+    //     SDL_FPoint col0_work, col0_screen, col1_work, col1_screen;
+    //     for (int col = 0; col <= cols; col++) {
+    //         col0_work.x = col * tile_size;
+    //         col0_work.y = 0;
+    //         col1_work.x = col * tile_size;
+    //         col1_work.y = MAP_TILES_Y_MAX * tile_size;
 
-            work_coord_to_screen(col0_work, &col0_screen);
-            work_coord_to_screen(col1_work, &col1_screen);
+    //        work_coord_to_screen(col0_work, &col0_screen);
+    //        work_coord_to_screen(col1_work, &col1_screen);
 
-            SDL_RenderDrawLineF(renderer, col0_screen.x, col0_screen.y,
-                                col1_screen.x, col1_screen.y);
-        }
+    //        SDL_RenderDrawLineF(renderer, col0_screen.x, col0_screen.y,
+    //                            col1_screen.x, col1_screen.y);
+    //    }
 
-        int rows = MAP_TILES_Y_MAX;
-        SDL_FPoint row0_work, row0_screen, row1_work, row1_screen;
-        for (int row = 0; row <= rows; row++) {
-            row0_work.x = 0;
-            row0_work.y = row * tile_size;
-            row1_work.x = MAP_TILES_X_MAX * tile_size;
-            row1_work.y = row * tile_size;
+    //    int rows = MAP_TILES_Y_MAX;
+    //    SDL_FPoint row0_work, row0_screen, row1_work, row1_screen;
+    //    for (int row = 0; row <= rows; row++) {
+    //        row0_work.x = 0;
+    //        row0_work.y = row * tile_size;
+    //        row1_work.x = MAP_TILES_X_MAX * tile_size;
+    //        row1_work.y = row * tile_size;
 
-            work_coord_to_screen(row0_work, &row0_screen);
-            work_coord_to_screen(row1_work, &row1_screen);
+    //        work_coord_to_screen(row0_work, &row0_screen);
+    //        work_coord_to_screen(row1_work, &row1_screen);
 
-            SDL_RenderDrawLineF(renderer, row0_screen.x, row0_screen.y,
-                                row1_screen.x, row1_screen.y);
-        }
-    }
+    //        SDL_RenderDrawLineF(renderer, row0_screen.x, row0_screen.y,
+    //                            row1_screen.x, row1_screen.y);
+    //    }
+    //}
 
-    // render entities
-    struct ecs_node *node = NULL;
-    Uint16 entity;
-    while (ecs_iterate_entities(app->ecs, &node, &entity)) {
-        struct component *cmp_rect =
-            ecs_get_component(app->ecs, CMP_TYPE_RECT, entity);
-        SDL_FRect rect_work_coord = cmp_rect->data.rect.rect;
-        SDL_FRect rect_screen_coord;
-        work_rect_to_screen(rect_work_coord, &rect_screen_coord);
-        SDL_SetRenderDrawColor(renderer, WHITE.r, WHITE.g, WHITE.b, WHITE.a);
-        SDL_RenderDrawRectF(renderer, &rect_screen_coord);
-    }
+    //// render entities
+    // struct ecs_node *node = NULL;
+    // Uint16 entity;
+    // while (ecs_iterate_entities(app->ecs, &node, &entity)) {
+    //     struct component *cmp_rect =
+    //         ecs_get_component(app->ecs, CMP_TYPE_RECT, entity);
+    //     SDL_FRect rect_work_coord = cmp_rect->data.rect.rect;
+    //     SDL_FRect rect_screen_coord;
+    //     work_rect_to_screen(rect_work_coord, &rect_screen_coord);
+    //     SDL_SetRenderDrawColor(renderer, WHITE.r, WHITE.g, WHITE.b, WHITE.a);
+    //     SDL_RenderDrawRectF(renderer, &rect_screen_coord);
+    // }
 
-    // render selected entities
-    node = NULL;
-    while (ecs_table_iterate_entities(app->selected_entities, &node, &entity)) {
-        struct component *cmp_rect =
-            ecs_get_component(app->ecs, CMP_TYPE_RECT, entity);
-        SDL_FRect rect_work_coord = cmp_rect->data.rect.rect;
-        SDL_FRect rect_screen_coord;
-        work_rect_to_screen(rect_work_coord, &rect_screen_coord);
-        SDL_SetRenderDrawColor(renderer, RED.r, RED.g, RED.b, 70);
-        SDL_RenderFillRectF(renderer, &rect_screen_coord);
-    }
+    //// render selected entities
+    // node = NULL;
+    // while (ecs_table_iterate_entities(app->selected_entities, &node,
+    // &entity)) {
+    //     struct component *cmp_rect =
+    //         ecs_get_component(app->ecs, CMP_TYPE_RECT, entity);
+    //     SDL_FRect rect_work_coord = cmp_rect->data.rect.rect;
+    //     SDL_FRect rect_screen_coord;
+    //     work_rect_to_screen(rect_work_coord, &rect_screen_coord);
+    //     SDL_SetRenderDrawColor(renderer, RED.r, RED.g, RED.b, 70);
+    //     SDL_RenderFillRectF(renderer, &rect_screen_coord);
+    // }
 
-    // render tool rect
-    if (app->work.tool_rect.rect.w > 0 || app->work.tool_rect.rect.h > 0) {
-        SDL_Color color = app->work.tool->rect_color;
-        SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
-        SDL_FRect tool_rect_screen_coord = {0};
-        work_rect_to_screen(app->work.tool_rect.rect, &tool_rect_screen_coord);
-        SDL_RenderDrawRectF(renderer, &tool_rect_screen_coord);
-    }
+    //// render tool rect
+    // if (app->work.tool_rect.rect.w > 0 || app->work.tool_rect.rect.h > 0) {
+    //     SDL_Color color = app->work.tool->rect_color;
+    //     SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+    //     SDL_FRect tool_rect_screen_coord = {0};
+    //     work_rect_to_screen(app->work.tool_rect.rect,
+    //     &tool_rect_screen_coord); SDL_RenderDrawRectF(renderer,
+    //     &tool_rect_screen_coord);
+    // }
 }

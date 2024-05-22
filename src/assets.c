@@ -12,6 +12,10 @@
 static const char *TEXTURE_PATHS[] = {
     [ASSET_TEXTURE_PLAYER] = "img.png",
     [ASSET_TEXTURE_TILEMAP] = "opengl.png",
+    [ASSET_TEXTURE_ICON_PENCIL] = "pencil.png",
+    [ASSET_TEXTURE_ICON_ERASER] = "eraser.png",
+    [ASSET_TEXTURE_ICON_ENTITY] = "entity.png",
+    [ASSET_TEXTURE_ICON_SELECT] = "select.png",
     [ASSET_TEXTURE_MAX] = 0
 };
 

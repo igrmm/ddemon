@@ -4,6 +4,8 @@
 #include "SDL.h" // IWYU pragma: keep //clangd
 #include "nk.h"
 
+#include "../assets.h"
+#include "../core.h"
 #include "map.h"
 #include "work.h"
 
@@ -23,13 +25,14 @@ struct app {
     struct core *core;
     struct nk_context *nk_ctx;
     struct work work;
-    SDL_Texture *tileset_texture;
+    struct core_texture tileset_texture;
     SDL_Point selected_tileset_index;
     int show_pick_window, show_grid, show_tool_window, show_prop_window;
     int window_flags;
 };
 
-int app_init(struct app *app, struct core *core, struct nk_context *nk_ctx);
+int app_init(struct app *app, struct core *core, struct assets *assets,
+             struct nk_context *nk_ctx);
 void app_handle_event(struct app *app, SDL_Event *event);
 void app_run(struct app *app);
 void app_render(struct app *app);

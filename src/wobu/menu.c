@@ -10,7 +10,7 @@ void menu_window(struct app *app)
 {
     struct nk_context *nk_ctx = app->nk_ctx;
     int h = 25;
-    int w = app->core->window_width;
+    int w = app->core->viewport_width;
     int x = 0;
     int y = 0;
 
