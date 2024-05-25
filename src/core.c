@@ -209,8 +209,8 @@ void core_clear_screen(float r, float g, float b, float a)
     glClear(GL_COLOR_BUFFER_BIT);
 }
 
-void core_add_drawing(struct core *core, SDL_FRect *src_rect,
-                      SDL_FRect *dst_rect)
+void core_add_drawing_tex(struct core *core, SDL_FRect *src_rect,
+                          SDL_FRect *dst_rect)
 {
     // check if there is available instances in the pool
     if (core->drawing_queue_size + 1 > CORE_DRAWING_POOL_SIZE)

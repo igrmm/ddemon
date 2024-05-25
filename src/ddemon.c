@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
                     dst_rect.x = x * 32;
                     dst_rect.y = y * 32;
                     src_rect.x = l * 32;
-                    core_add_drawing(&core, &src_rect, &dst_rect);
+                    core_add_drawing_tex(&core, &src_rect, &dst_rect);
                 }
             }
         }

@@ -54,8 +54,8 @@ struct core_texture core_create_texture(int width, int height,
                                         const Uint8 *texture_data);
 void core_bind_texture(struct core *core, struct core_texture *texture);
 void core_clear_screen(float r, float g, float b, float a);
-void core_add_drawing(struct core *core, SDL_FRect *src_rect,
-                      SDL_FRect *dst_rect);
+void core_add_drawing_tex(struct core *core, SDL_FRect *src_rect,
+                          SDL_FRect *dst_rect);
 void core_draw_queue(struct core *core);
 void core_update_window(SDL_Window *window);
 void core_update_viewport(struct core *core, int viewport_width,
