@@ -209,16 +209,24 @@ void core_clear_screen(float r, float g, float b, float a)
     glClear(GL_COLOR_BUFFER_BIT);
 }
 
-void core_add_drawing_tex(struct core *core, SDL_FRect *src_rect,
-                          SDL_FRect *dst_rect)
+static int core_get_drawing_instance(struct core *core, int *instance)
 {
     // check if there is available instances in the pool
     if (core->drawing_queue_size + 1 > CORE_DRAWING_POOL_SIZE)
-        return;
+        return -1;
 
     // obtain instance from the pool
     core->drawing_queue_size++;
-    int instance = core->drawing_queue_size - 1;
+    *instance = core->drawing_queue_size - 1;
+    return 0;
+}
+
+void core_add_drawing_tex(struct core *core, SDL_FRect *src_rect,
+                          SDL_FRect *dst_rect)
+{
+    int instance;
+    if (core_get_drawing_instance(core, &instance) < 0)
+        return;
 
     // set up instance to be draw
     core->drawing_pool[instance] = (struct core_drawing){
