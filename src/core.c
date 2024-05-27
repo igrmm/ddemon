@@ -234,10 +234,29 @@ void core_add_drawing_tex(struct core *core, SDL_FRect *src_rect,
         .y = dst_rect->y / core->viewport_height * 2.0f - 1.0f,
         .w = 1.0f / core->viewport_width * 2.0f * dst_rect->w,
         .h = 1.0f / core->viewport_height * 2.0f * dst_rect->h,
-        .tex_x = src_rect->x / core->current_texture->width,
-        .tex_y = src_rect->y / core->current_texture->height,
-        .tex_w = src_rect->w / core->current_texture->width,
-        .tex_h = src_rect->h / core->current_texture->height};
+        .data1 = src_rect->x / core->current_texture->width,
+        .data2 = src_rect->y / core->current_texture->height,
+        .data3 = src_rect->w / core->current_texture->width,
+        .data4 = src_rect->h / core->current_texture->height};
+}
+
+void core_add_drawing_rect(struct core *core, SDL_FRect *rect,
+                           struct core_color *color)
+{
+    int instance;
+    if (core_get_drawing_instance(core, &instance) < 0)
+        return;
+
+    // set up instance to be draw
+    core->drawing_pool[instance] = (struct core_drawing){
+        .x = rect->x / core->viewport_width * 2.0f - 1.0f,
+        .y = rect->y / core->viewport_height * 2.0f - 1.0f,
+        .w = 1.0f / core->viewport_width * 2.0f * rect->w,
+        .h = 1.0f / core->viewport_height * 2.0f * rect->h,
+        .data1 = color->r,
+        .data2 = color->g,
+        .data3 = color->b,
+        .data4 = color->a};
 }
 
 void core_draw_queue(struct core *core)

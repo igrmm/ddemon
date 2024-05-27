@@ -11,6 +11,10 @@
 
 #define CORE_DRAWING_POOL_SIZE 13000
 
+struct core_color {
+    float r, g, b, a;
+};
+
 struct core_texture {
     float width, height;
     Uint32 id;
@@ -19,8 +23,8 @@ struct core_texture {
 struct core_drawing {
     // rectangle
     float x, y, w, h;
-    // texture rectangle
-    float tex_x, tex_y, tex_w, tex_h;
+    // texture rectangle or rgba color
+    float data1, data2, data3, data4;
 };
 
 struct core {
@@ -56,6 +60,8 @@ void core_bind_texture(struct core *core, struct core_texture *texture);
 void core_clear_screen(float r, float g, float b, float a);
 void core_add_drawing_tex(struct core *core, SDL_FRect *src_rect,
                           SDL_FRect *dst_rect);
+void core_add_drawing_rect(struct core *core, SDL_FRect *rect,
+                           struct core_color *color);
 void core_draw_queue(struct core *core);
 void core_update_window(SDL_Window *window);
 void core_update_viewport(struct core *core, int viewport_width,

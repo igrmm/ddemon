@@ -23,11 +23,13 @@ static const char FONT_PATH[] = "NotoSansMono-Regular.ttf";
 
 static const char *SHADER_VERTEX_PATHS[] = {
     [ASSET_SHADER_DEFAULT] = "default.vs",
+    [ASSET_SHADER_PRIMITIVE] = "primitive.vs",
     [ASSET_SHADER_MAX] = 0
 };
 
 static const char *SHADER_FRAGMENT_PATHS[] = {
     [ASSET_SHADER_DEFAULT] = "default.fs",
+    [ASSET_SHADER_PRIMITIVE] = "primitive.fs",
     [ASSET_SHADER_MAX] = 0
 };
 // clang-format on
