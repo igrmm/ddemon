@@ -60,8 +60,10 @@ void core_bind_texture(struct core *core, struct core_texture *texture);
 void core_clear_screen(float r, float g, float b, float a);
 void core_add_drawing_tex(struct core *core, SDL_FRect *src_rect,
                           SDL_FRect *dst_rect);
+void core_add_drawing_fill_rect(struct core *core, SDL_FRect *rect,
+                                struct core_color *color);
 void core_add_drawing_rect(struct core *core, SDL_FRect *rect,
-                           struct core_color *color);
+                           struct core_color *color, float thickness);
 void core_draw_queue(struct core *core);
 void core_update_window(SDL_Window *window);
 void core_update_viewport(struct core *core, int viewport_width,

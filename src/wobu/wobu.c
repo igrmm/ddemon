@@ -48,9 +48,6 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    // uses default shader for entire program with the core renderer
-    core_use_shader(&core, assets.shaders[ASSET_SHADER_DEFAULT]);
-
     while (running) {
         /* Input */
         SDL_Event evt;
@@ -81,14 +78,8 @@ int main(int argc, char *argv[])
         /* Render */
         core_clear_screen(0.1f, 0.18f, 0.24, 1.0f);
         app_render(&app);
-        core_draw_queue(&core);
-
         nk_sdl_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY,
                       MAX_ELEMENT_MEMORY);
-
-        // nk_sdl_render changes opengl state, so we neet to restore it
-        core_restore_gl_state(&core);
-
         core_update_window(core.window);
     }
 

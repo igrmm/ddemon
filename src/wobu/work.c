@@ -476,6 +476,12 @@ void work_render(struct app *app)
     SDL_FPoint screen_coord = {0, 0};
     struct map_tile_layer *tile_layer = NULL;
 
+    // bind tilemap texture to opengl state
+    core_bind_texture(app->core, &app->tileset_texture);
+
+    // set default shader for rendering textures (tilemap)
+    core_use_shader(app->core, app->default_shader);
+
     for (int i = 0; i < MAP_TILES_X_MAX; i++) {
         for (int j = 0; j < MAP_TILES_Y_MAX; j++) {
             for (int l = 0; l < MAP_TILE_LAYERS_MAX; l++) {
@@ -492,77 +498,99 @@ void work_render(struct app *app)
                 dst_rect.y = screen_coord.y;
                 dst_rect.w = dst_rect.h = tile_size * work_scale;
 
-                core_add_drawing(app->core, &src_rect, &dst_rect);
+                core_add_drawing_tex(app->core, &src_rect, &dst_rect);
             }
         }
     }
+    // nuklear changes opengl state, so we need to restore it before first call
+    // to core_draw_queue every loop
+    core_restore_gl_state(app->core);
+    core_draw_queue(app->core);
 
-    //// render grid
-    // if (app->show_grid) {
-    //     int cols = MAP_TILES_X_MAX;
-    //     SDL_FPoint col0_work, col0_screen, col1_work, col1_screen;
-    //     for (int col = 0; col <= cols; col++) {
-    //         col0_work.x = col * tile_size;
-    //         col0_work.y = 0;
-    //         col1_work.x = col * tile_size;
-    //         col1_work.y = MAP_TILES_Y_MAX * tile_size;
+    // set primitive shader for rendering primitives (rects, "lines")
+    core_use_shader(app->core, app->primitive_shader);
 
-    //        work_coord_to_screen(col0_work, &col0_screen);
-    //        work_coord_to_screen(col1_work, &col1_screen);
+    // render grid
+    if (app->show_grid) {
+        struct core_color color = (struct core_color){0.4f, 0.4f, 0.4f, 1.0f};
+        SDL_FRect line = {0};
 
-    //        SDL_RenderDrawLineF(renderer, col0_screen.x, col0_screen.y,
-    //                            col1_screen.x, col1_screen.y);
-    //    }
+        int cols = MAP_TILES_X_MAX;
+        SDL_FPoint col0_work, col0_screen, col1_work, col1_screen;
+        for (int col = 0; col <= cols; col++) {
+            col0_work.x = col * tile_size;
+            col0_work.y = 0;
+            col1_work.x = col * tile_size;
+            col1_work.y = MAP_TILES_Y_MAX * tile_size;
 
-    //    int rows = MAP_TILES_Y_MAX;
-    //    SDL_FPoint row0_work, row0_screen, row1_work, row1_screen;
-    //    for (int row = 0; row <= rows; row++) {
-    //        row0_work.x = 0;
-    //        row0_work.y = row * tile_size;
-    //        row1_work.x = MAP_TILES_X_MAX * tile_size;
-    //        row1_work.y = row * tile_size;
+            work_coord_to_screen(col0_work, &col0_screen);
+            work_coord_to_screen(col1_work, &col1_screen);
+            line.x = col0_screen.x;
+            line.y = col0_screen.y;
+            line.w = 1;                             // line thickness
+            line.h = col1_screen.y - col0_screen.y; // line size
 
-    //        work_coord_to_screen(row0_work, &row0_screen);
-    //        work_coord_to_screen(row1_work, &row1_screen);
+            core_add_drawing_fill_rect(app->core, &line, &color);
+        }
 
-    //        SDL_RenderDrawLineF(renderer, row0_screen.x, row0_screen.y,
-    //                            row1_screen.x, row1_screen.y);
-    //    }
-    //}
+        int rows = MAP_TILES_Y_MAX;
+        SDL_FPoint row0_work, row0_screen, row1_work, row1_screen;
+        for (int row = 0; row <= rows; row++) {
+            row0_work.x = 0;
+            row0_work.y = row * tile_size;
+            row1_work.x = MAP_TILES_X_MAX * tile_size;
+            row1_work.y = row * tile_size;
 
-    //// render entities
-    // struct ecs_node *node = NULL;
-    // Uint16 entity;
-    // while (ecs_iterate_entities(app->ecs, &node, &entity)) {
-    //     struct component *cmp_rect =
-    //         ecs_get_component(app->ecs, CMP_TYPE_RECT, entity);
-    //     SDL_FRect rect_work_coord = cmp_rect->data.rect.rect;
-    //     SDL_FRect rect_screen_coord;
-    //     work_rect_to_screen(rect_work_coord, &rect_screen_coord);
-    //     SDL_SetRenderDrawColor(renderer, WHITE.r, WHITE.g, WHITE.b, WHITE.a);
-    //     SDL_RenderDrawRectF(renderer, &rect_screen_coord);
-    // }
+            work_coord_to_screen(row0_work, &row0_screen);
+            work_coord_to_screen(row1_work, &row1_screen);
+            line.x = row0_screen.x;
+            line.y = row0_screen.y;
+            line.w = row1_screen.x - row0_screen.x; // line size
+            line.h = 1;                             // line thickness
 
-    //// render selected entities
-    // node = NULL;
-    // while (ecs_table_iterate_entities(app->selected_entities, &node,
-    // &entity)) {
-    //     struct component *cmp_rect =
-    //         ecs_get_component(app->ecs, CMP_TYPE_RECT, entity);
-    //     SDL_FRect rect_work_coord = cmp_rect->data.rect.rect;
-    //     SDL_FRect rect_screen_coord;
-    //     work_rect_to_screen(rect_work_coord, &rect_screen_coord);
-    //     SDL_SetRenderDrawColor(renderer, RED.r, RED.g, RED.b, 70);
-    //     SDL_RenderFillRectF(renderer, &rect_screen_coord);
-    // }
+            core_add_drawing_fill_rect(app->core, &line, &color);
+        }
+    }
 
-    //// render tool rect
-    // if (app->work.tool_rect.rect.w > 0 || app->work.tool_rect.rect.h > 0) {
-    //     SDL_Color color = app->work.tool->rect_color;
-    //     SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
-    //     SDL_FRect tool_rect_screen_coord = {0};
-    //     work_rect_to_screen(app->work.tool_rect.rect,
-    //     &tool_rect_screen_coord); SDL_RenderDrawRectF(renderer,
-    //     &tool_rect_screen_coord);
-    // }
+    // render entities
+    {
+        struct core_color color = (struct core_color){1.0f, 1.0f, 1.0f, 1.0f};
+        struct ecs_node *node = NULL;
+        Uint16 entity;
+        while (ecs_iterate_entities(app->ecs, &node, &entity)) {
+            struct component *cmp_rect =
+                ecs_get_component(app->ecs, CMP_TYPE_RECT, entity);
+            SDL_FRect rect_work_coord = cmp_rect->data.rect.rect;
+            SDL_FRect rect_screen_coord;
+            work_rect_to_screen(rect_work_coord, &rect_screen_coord);
+            core_add_drawing_rect(app->core, &rect_screen_coord, &color, 1.0f);
+        }
+    }
+
+    // render selected entities
+    {
+        struct core_color color = (struct core_color){1.0f, 0.0f, 0.0f, 0.3f};
+        struct ecs_node *node = NULL;
+        Uint16 entity;
+        while (ecs_table_iterate_entities(app->selected_entities, &node,
+                                          &entity)) {
+            struct component *cmp_rect =
+                ecs_get_component(app->ecs, CMP_TYPE_RECT, entity);
+            SDL_FRect rect_work_coord = cmp_rect->data.rect.rect;
+            SDL_FRect rect_screen_coord;
+            work_rect_to_screen(rect_work_coord, &rect_screen_coord);
+            core_add_drawing_fill_rect(app->core, &rect_screen_coord, &color);
+        }
+    }
+
+    // render tool rect
+    if (app->work.tool_rect.rect.w > 0 || app->work.tool_rect.rect.h > 0) {
+        struct core_color color = app->work.tool->rect_color;
+        SDL_FRect tool_rect_screen_coord = {0};
+        work_rect_to_screen(app->work.tool_rect.rect, &tool_rect_screen_coord);
+        core_add_drawing_rect(app->core, &tool_rect_screen_coord, &color, 3.0f);
+    }
+
+    // one draw call because the rest of the drawings uses same shader
+    core_draw_queue(app->core);
 }

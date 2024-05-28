@@ -15,7 +15,7 @@ enum tool_type {
 
 struct tool {
     enum tool_type type;
-    SDL_Color rect_color;
+    struct core_color rect_color;
     struct core_texture icon_texture;
 };
 

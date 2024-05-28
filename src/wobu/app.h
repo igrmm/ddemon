@@ -29,6 +29,7 @@ struct app {
     SDL_Point selected_tileset_index;
     int show_pick_window, show_grid, show_tool_window, show_prop_window;
     int window_flags;
+    int default_shader, primitive_shader;
 };
 
 int app_init(struct app *app, struct core *core, struct assets *assets,

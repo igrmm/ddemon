@@ -240,8 +240,8 @@ void core_add_drawing_tex(struct core *core, SDL_FRect *src_rect,
         .data4 = src_rect->h / core->current_texture->height};
 }
 
-void core_add_drawing_rect(struct core *core, SDL_FRect *rect,
-                           struct core_color *color)
+void core_add_drawing_fill_rect(struct core *core, SDL_FRect *rect,
+                                struct core_color *color)
 {
     int instance;
     if (core_get_drawing_instance(core, &instance) < 0)
@@ -257,6 +257,33 @@ void core_add_drawing_rect(struct core *core, SDL_FRect *rect,
         .data2 = color->g,
         .data3 = color->b,
         .data4 = color->a};
+}
+
+void core_add_drawing_rect(struct core *core, SDL_FRect *rect,
+                           struct core_color *color, float thickness)
+{
+    SDL_FRect line = {0};
+
+    // line bottom
+    line.x = rect->x;
+    line.y = rect->y;
+    line.w = rect->w;
+    line.h = thickness;
+    core_add_drawing_fill_rect(core, &line, color);
+
+    // line top
+    line.y = rect->y + rect->h - thickness;
+    core_add_drawing_fill_rect(core, &line, color);
+
+    // line left
+    line.y = rect->y;
+    line.w = thickness;
+    line.h = rect->h;
+    core_add_drawing_fill_rect(core, &line, color);
+
+    // line right
+    line.x = rect->x + rect->w - thickness;
+    core_add_drawing_fill_rect(core, &line, color);
 }
 
 void core_draw_queue(struct core *core)

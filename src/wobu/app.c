@@ -31,28 +31,30 @@ int app_init(struct app *app, struct core *core, struct assets *assets,
 
     struct core_texture tileset_texture =
         assets->textures[ASSET_TEXTURE_TILEMAP];
-    // we'll be using only this texture with the core renderer
-    core_bind_texture(core, &assets->textures[ASSET_TEXTURE_TILEMAP]);
 
     struct core_texture pencil_icon_texture =
         assets->textures[ASSET_TEXTURE_ICON_PENCIL];
     app->work.tools[TOOL_TYPE_PENCIL] = (struct tool){
-        TOOL_TYPE_PENCIL, (SDL_Color){0, 255, 0, 255}, pencil_icon_texture};
+        TOOL_TYPE_PENCIL, (struct core_color){0.0f, 1.0f, 0.0f, 1.0f},
+        pencil_icon_texture};
 
     struct core_texture eraser_icon_texture =
         assets->textures[ASSET_TEXTURE_ICON_ERASER];
     app->work.tools[TOOL_TYPE_ERASER] = (struct tool){
-        TOOL_TYPE_ERASER, (SDL_Color){255, 0, 0, 255}, eraser_icon_texture};
+        TOOL_TYPE_ERASER, (struct core_color){1.0f, 0.0f, 0.0f, 1.0f},
+        eraser_icon_texture};
 
     struct core_texture entity_icon_texture =
         assets->textures[ASSET_TEXTURE_ICON_ENTITY];
     app->work.tools[TOOL_TYPE_ENTITY] = (struct tool){
-        TOOL_TYPE_ENTITY, (SDL_Color){255, 0, 0, 255}, entity_icon_texture};
+        TOOL_TYPE_ENTITY, (struct core_color){1.0f, 0.0f, 0.0f, 1.0f},
+        entity_icon_texture};
 
     struct core_texture select_icon_texture =
         assets->textures[ASSET_TEXTURE_ICON_SELECT];
     app->work.tools[TOOL_TYPE_SELECT] = (struct tool){
-        TOOL_TYPE_SELECT, (SDL_Color){255, 0, 0, 255}, select_icon_texture};
+        TOOL_TYPE_SELECT, (struct core_color){1.0f, 0.0f, 0.0f, 1.0f},
+        select_icon_texture};
 
     app->work.tool = &app->work.tools[TOOL_TYPE_PENCIL];
     app->tileset_texture = tileset_texture;
@@ -63,6 +65,9 @@ int app_init(struct app *app, struct core *core, struct assets *assets,
     app->window_flags = NK_WINDOW_BORDER | NK_WINDOW_SCALABLE |
                         NK_WINDOW_MOVABLE | NK_WINDOW_MINIMIZABLE |
                         NK_WINDOW_CLOSABLE;
+    app->default_shader = assets->shaders[ASSET_SHADER_DEFAULT];
+    app->primitive_shader = assets->shaders[ASSET_SHADER_PRIMITIVE];
+
     return 0;
 }
 
