@@ -47,7 +47,7 @@ struct core {
 };
 
 int core_setup(struct core *core, const char *window_title, int window_width,
-               int window_height);
+               int window_height, int window_flag);
 void core_shutdown(struct core *core);
 void core_delete_shader(Uint32 shader);
 Uint32 core_create_shader(const char *vert_src, const char *frag_src,

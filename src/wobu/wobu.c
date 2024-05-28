@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
 
     // initialize sdl
     struct core core = {0};
-    if (core_setup(&core, "WOBU", 1200, 800) < 0)
+    if (core_setup(&core, "WOBU", 1200, 800, 0) < 0)
         core_shutdown(&core);
 
     struct assets assets = {0};

@@ -6,7 +6,8 @@
 int main(int argc, char *argv[])
 {
     struct core core = {0};
-    if (core_setup(&core, "DDEMON", 800, 600) < 0)
+    if (core_setup(&core, "DDEMON", 800, 600, SDL_WINDOW_FULLSCREEN_DESKTOP) <
+        0)
         core_shutdown(&core);
 
     struct assets assets = {0};

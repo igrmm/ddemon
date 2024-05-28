@@ -6,7 +6,7 @@
 #include "core.h"
 
 int core_setup(struct core *core, const char *window_title, int window_width,
-               int window_height)
+               int window_height, int window_flag)
 {
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
         SDL_Log("SDL_Init Error: %s\n", SDL_GetError());
@@ -14,8 +14,8 @@ int core_setup(struct core *core, const char *window_title, int window_width,
     }
 
     core->window = SDL_CreateWindow(
-        window_title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 0, 0,
-        SDL_WINDOW_FULLSCREEN_DESKTOP | SDL_WINDOW_OPENGL);
+        window_title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+        window_width, window_height, window_flag | SDL_WINDOW_OPENGL);
     if (core->window == NULL) {
         SDL_Log("SDL_CreateWindow Error: %s\n", SDL_GetError());
         return -1;
