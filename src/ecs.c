@@ -68,6 +68,8 @@ static void ecs_list_remove_node(struct ecs_list *list, struct ecs_node *node)
     if (list->head == node && list->tail == node) {
         list->head = list->tail = NULL;
     }
+
+    node->next = node->prev = NULL;
 }
 
 /* Retrieves and removes the last entity node, or returns zero if empty. */
