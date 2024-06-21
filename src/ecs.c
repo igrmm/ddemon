@@ -72,6 +72,18 @@ static void ecs_list_remove_node(struct ecs_list *list, struct ecs_node *node)
     node->next = node->prev = NULL;
 }
 
+void ecs_table_clear(struct ecs_table *table)
+{
+    struct ecs_node *node = table->list.head, *to_remove = NULL;
+    while (node != NULL) {
+        to_remove = node;
+        node = node->next;
+        ecs_list_remove_node(&table->list, to_remove);
+        *to_remove = (struct ecs_node){0};
+        table->count--;
+    }
+}
+
 /* Retrieves and removes the last entity node, or returns zero if empty. */
 static Uint16 ecs_table_poll_last_entity(struct ecs_table *entity_table)
 {

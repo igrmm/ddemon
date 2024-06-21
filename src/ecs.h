@@ -9,6 +9,7 @@ struct ecs;
 struct ecs_node;
 struct ecs_table;
 
+void ecs_table_clear(struct ecs_table *table);
 void ecs_table_add_entity(struct ecs_table *entity_table, Uint16 entity);
 void ecs_table_remove_entity(struct ecs_table *entity_table, Uint16 entity);
 struct ecs *ecs_create(void);

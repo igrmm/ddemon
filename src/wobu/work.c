@@ -318,14 +318,10 @@ static void work_state_select(SDL_Event *event, struct app *app)
 
     if (SDL_PointInFRect(&mouse_work_coord, &grid_rect)) {
         // clear selected_entities
+        ecs_table_clear(app->selected_entities);
+
         Uint16 entity;
         struct ecs_node *node = NULL;
-        while (ecs_table_iterate_entities(app->selected_entities, &node,
-                                          &entity)) {
-            ecs_table_remove_entity(app->selected_entities, entity);
-        }
-
-        node = NULL;
         SDL_FRect entity_rect = {0};
         while (ecs_iterate_entities(app->ecs, &node, &entity)) {
             struct component *cmp_rect =
@@ -342,13 +338,10 @@ static void work_state_select(SDL_Event *event, struct app *app)
 static void work_state_entity_rect(SDL_Event *event, struct app *app)
 {
     // clear selected_entities
-    Uint16 entity;
-    struct ecs_node *node = NULL;
-    while (ecs_table_iterate_entities(app->selected_entities, &node, &entity))
-        ecs_table_remove_entity(app->selected_entities, entity);
+    ecs_table_clear(app->selected_entities);
 
     enum component_tag_type tag = CMP_TAG_WAYPOINT;
-    entity = ecs_create_entity(app->ecs);
+    Uint16 entity = ecs_create_entity(app->ecs);
     struct component cmp_tag = {.type = CMP_TYPE_TAG,
                                 .entity = entity,
                                 .alive = SDL_TRUE,
