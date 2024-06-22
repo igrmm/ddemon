@@ -72,16 +72,29 @@ static void ecs_list_remove_node(struct ecs_list *list, struct ecs_node *node)
     node->next = node->prev = NULL;
 }
 
-void ecs_table_clear(struct ecs_table *table)
+static int ecs_iterate_nodes(struct ecs_list *list, struct ecs_node **node)
 {
-    struct ecs_node *node = table->list.head, *to_remove = NULL;
-    while (node != NULL) {
-        to_remove = node;
-        node = node->next;
-        ecs_list_remove_node(&table->list, to_remove);
-        *to_remove = (struct ecs_node){0};
-        table->count--;
+    /** if the list is empty, stop the iteration */
+    if (list->head == NULL)
+        return 0;
+
+    /** this is the start of the iteration, the given node will become the first
+     * item of the list, returns 1 to indicate that this item is not NULL */
+    if ((*node) == NULL) {
+        *node = list->head;
+        return 1;
     }
+
+    /** node becomes next item on the list */
+    *node = (*node)->next;
+
+    /** this is the end of the iteration, NULL node means that the end of the
+     * list was reached */
+    if ((*node) == NULL)
+        return 0;
+
+    /** returns 1 to indicate that "next" item is not NULL */
+    return 1;
 }
 
 /* Retrieves and removes the last entity node, or returns zero if empty. */
@@ -95,6 +108,18 @@ static Uint16 ecs_table_poll_last_entity(struct ecs_table *entity_table)
     ecs_list_remove_node(list, node);
     entity_table->count--;
     return entity;
+}
+
+void ecs_table_clear(struct ecs_table *table)
+{
+    struct ecs_node *node = table->list.head, *to_remove = NULL;
+    while (node != NULL) {
+        to_remove = node;
+        node = node->next;
+        ecs_list_remove_node(&table->list, to_remove);
+        *to_remove = (struct ecs_node){0};
+        table->count--;
+    }
 }
 
 /* Appends the specified entity node to the end of this table. */
@@ -116,6 +141,24 @@ void ecs_table_remove_entity(struct ecs_table *entity_table, Uint16 entity)
     entity_table->count--;
 }
 
+struct ecs_table *ecs_create_table(void)
+{
+    struct ecs_table *table = SDL_calloc(1, sizeof(*table));
+    return table;
+}
+
+int ecs_table_iterate_entities(struct ecs_table *entity_table,
+                               struct ecs_node **node, Uint16 *entity)
+{
+    struct ecs_list *list = &entity_table->list;
+    int ret = ecs_iterate_nodes(list, node);
+    if (ret)
+        *entity = (*node)->data.entity;
+    return ret;
+}
+
+Uint16 ecs_table_get_count(struct ecs_table *table) { return table->count; }
+
 struct ecs *ecs_create(void)
 {
     struct ecs *ecs = SDL_calloc(1, sizeof(*ecs));
@@ -125,12 +168,6 @@ struct ecs *ecs_create(void)
     for (Uint16 entity = 0; entity < ECS_BUFSIZ; entity++)
         ecs_table_add_entity(&ecs->entity_pool, entity);
     return ecs;
-}
-
-struct ecs_table *ecs_create_table(void)
-{
-    struct ecs_table *table = SDL_calloc(1, sizeof(*table));
-    return table;
 }
 
 void ecs_remove_entity(struct ecs *ecs, Uint16 entity)
@@ -184,41 +221,6 @@ struct component *ecs_get_component(struct ecs *ecs, enum component_type type,
     return component;
 }
 
-static int ecs_iterate_nodes(struct ecs_list *list, struct ecs_node **node)
-{
-    /** if the list is empty, stop the polling */
-    if (list->head == NULL)
-        return 0;
-
-    /** this is the start of the polling, the given node will become the first
-     * item of the list, returns 1 to indicate that this item is not NULL */
-    if ((*node) == NULL) {
-        *node = list->head;
-        return 1;
-    }
-
-    /** node becomes next item on the list */
-    *node = (*node)->next;
-
-    /** this is the end of the polling, NULL node means that the end of the list
-     * was reached */
-    if ((*node) == NULL)
-        return 0;
-
-    /** returns 1 to indicate that "next" item is not NULL */
-    return 1;
-}
-
-int ecs_table_iterate_entities(struct ecs_table *entity_table,
-                               struct ecs_node **node, Uint16 *entity)
-{
-    struct ecs_list *list = &entity_table->list;
-    int ret = ecs_iterate_nodes(list, node);
-    if (ret)
-        *entity = (*node)->data.entity;
-    return ret;
-}
-
 int ecs_iterate_entities(struct ecs *ecs, struct ecs_node **node,
                          Uint16 *entity)
 {
@@ -235,5 +237,3 @@ int ecs_iterate_components(struct ecs *ecs, struct ecs_node **node,
         *component = &(*node)->data.component;
     return ret;
 }
-
-Uint16 ecs_table_get_count(struct ecs_table *table) { return table->count; }
