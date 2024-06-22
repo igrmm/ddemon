@@ -5,6 +5,7 @@
 #include "app.h"
 #include "map.h"
 #include "work.h"
+#include <SDL_rect.h>
 
 static SDL_FPoint work_offset;
 static SDL_FPoint work_pan_start_point;
@@ -21,6 +22,7 @@ static void work_state_erase(SDL_Event *event, struct app *app);
 static void work_state_erase_motion(SDL_Event *event, struct app *app);
 static void work_state_erase_rect(SDL_Event *event, struct app *app);
 static void work_state_select(SDL_Event *event, struct app *app);
+static void work_state_select_rect(SDL_Event *event, struct app *app);
 static void work_state_entity_rect(SDL_Event *event, struct app *app);
 
 static void (*work_state_table[WORK_STATE_TOTAL])(SDL_Event *event,
@@ -37,6 +39,7 @@ static void (*work_state_table[WORK_STATE_TOTAL])(SDL_Event *event,
     work_state_erase_motion,
     work_state_erase_rect,
     work_state_select,
+    work_state_select_rect,
     work_state_entity_rect,
     NULL,
     NULL
@@ -335,6 +338,29 @@ static void work_state_select(SDL_Event *event, struct app *app)
     }
 }
 
+static void work_state_select_rect(SDL_Event *event, struct app *app)
+{
+    // clear selected_entities
+    ecs_table_clear(app->selected_entities);
+
+    // add all intersecting entity rects with tool rect to selected entities
+    Uint16 entity;
+    struct ecs_node *node = NULL;
+    SDL_FRect entity_rect = {0};
+    while (ecs_iterate_entities(app->ecs, &node, &entity)) {
+        struct component *cmp_rect =
+            ecs_get_component(app->ecs, CMP_TYPE_RECT, entity);
+        entity_rect = cmp_rect->data.rect.rect;
+        if (SDL_HasIntersectionF(&app->work.tool_rect.rect, &entity_rect)) {
+            ecs_table_add_entity(app->selected_entities, entity);
+        }
+    }
+
+    // reset tool rect
+    app->work.tool_rect.rect = (SDL_FRect){0};
+    app->work.tool_rect.start = (SDL_FPoint){0};
+}
+
 static void work_state_entity_rect(SDL_Event *event, struct app *app)
 {
     // clear selected_entities
@@ -435,6 +461,13 @@ enum work_state work_get_state(struct app *app, SDL_Event *event)
     state = WORK_STATE_SELECT;
     if (event->type == SDL_MOUSEBUTTONDOWN &&
         event->button.button == SDL_BUTTON_LEFT &&
+        app->work.tool->type == TOOL_TYPE_SELECT) {
+        return state;
+    }
+
+    state = WORK_STATE_SELECT_RECT;
+    if (event->type == SDL_MOUSEBUTTONUP &&
+        event->button.button == SDL_BUTTON_RIGHT &&
         app->work.tool->type == TOOL_TYPE_SELECT) {
         return state;
     }
