@@ -5,7 +5,6 @@
 #include "app.h"
 #include "map.h"
 #include "work.h"
-#include <SDL_rect.h>
 
 static SDL_FPoint work_offset;
 static SDL_FPoint work_pan_start_point;
