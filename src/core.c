@@ -50,6 +50,9 @@ int core_setup(struct core *core, const char *window_title, int window_width,
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    // create fbo, will be used for postprocessing, offscreen rendering etc
+    glGenFramebuffers(1, &core->frame_buffer_object);
+
     // create vao
     glGenVertexArrays(1, &core->vertex_array_object);
     glBindVertexArray(core->vertex_array_object);
@@ -116,6 +119,7 @@ int core_setup(struct core *core, const char *window_title, int window_width,
 
 void core_shutdown(struct core *core)
 {
+    glDeleteFramebuffers(1, &core->frame_buffer_object);
     glDeleteVertexArrays(1, &core->vertex_array_object);
     glDeleteBuffers(1, &core->vertex_buffer_object);
     glDeleteBuffers(1, &core->element_buffer_object);

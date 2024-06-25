@@ -37,6 +37,7 @@ struct core {
     Uint32 vertex_buffer_object;
     Uint32 element_buffer_object;
     Uint32 instance_vertex_buffer_object;
+    Uint32 frame_buffer_object;
     Uint32 current_shader;
 
     // CORE
