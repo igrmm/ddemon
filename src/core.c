@@ -319,3 +319,20 @@ void core_restore_gl_state(struct core *core)
     glUseProgram(core->current_shader);
     glBindTexture(GL_TEXTURE_2D, core->current_texture->id);
 }
+
+void core_offscreen_rendering_begin(struct core *core,
+                                    struct core_texture *target_texture)
+{
+    // bind frame buffer object
+    glBindFramebuffer(GL_FRAMEBUFFER, core->frame_buffer_object);
+
+    // attatch target texture to bound frame buffer object
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+                           target_texture->id, 0);
+}
+
+void core_offscreen_rendering_end(void)
+{
+    // unbind frame buffer object, bind to the default fbo
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
