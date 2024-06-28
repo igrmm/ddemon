@@ -12,7 +12,7 @@ void main()
     //            |-position x-|   |----------------width---------------|
     tex_coord.x = texture_rect.x + texture_rect.z * is_width_or_height.x;
     //            |-position y-|   |----------------height--------------|
-    tex_coord.y = texture_rect.y + texture_rect.w * is_width_or_height.y;
+    tex_coord.y = texture_rect.y - texture_rect.w * is_width_or_height.y; //the minus "-" is because stbi loads image upside down
 
     //              |--position x-|   |----------------width----------------|
     gl_Position.x = instance_rect.x + instance_rect.z * is_width_or_height.x;

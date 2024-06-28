@@ -69,7 +69,6 @@ int assets_load(struct assets *assets)
     /**
      * Load all textures
      * */
-    stbi_set_flip_vertically_on_load(1);
     for (int i = 0; i < ASSET_TEXTURE_MAX; i++) {
         // load img from file using sdl's crossplatform api for files
         buffer[0] = 0;
