@@ -17,17 +17,19 @@ enum asset_texture {
 enum asset_font { ASSET_FONT_SMALL = 0, ASSET_FONT_MAX };
 enum asset_shader {
     ASSET_SHADER_DEFAULT = 0,
+    ASSET_SHADER_ATLAS,
     ASSET_SHADER_PRIMITIVE,
     ASSET_SHADER_MAX
 };
 
 struct assets {
-    struct core_texture textures[ASSET_TEXTURE_MAX];
+    SDL_FRect texture_regions[ASSET_TEXTURE_MAX];
+    struct core_texture atlas;
     struct txt_font *fonts[ASSET_FONT_MAX];
     Uint32 shaders[ASSET_SHADER_MAX];
 };
 
-int assets_load(struct assets *assets);
+int assets_load(struct core *core, struct assets *assets);
 void assets_dispose(struct assets *assets);
 
 #endif

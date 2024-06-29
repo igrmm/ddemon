@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
         core_shutdown(&core);
 
     struct assets assets = {0};
-    if (assets_load(&assets) < 0) {
+    if (assets_load(&core, &assets) < 0) {
         SDL_Log("Error loading assets.");
         assets_dispose(&assets);
         core_shutdown(&core);
@@ -43,7 +43,9 @@ int main(int argc, char *argv[])
         core_clear_screen(0.5f, 0.0f, 0.0f, 1.0f);
         core_use_shader(&core, assets.shaders[ASSET_SHADER_DEFAULT]);
 
-        core_bind_texture(&core, &assets.textures[ASSET_TEXTURE_TILEMAP]);
+        core_bind_texture(&core, &assets.atlas);
+
+        SDL_FRect tex_region = assets.texture_regions[ASSET_TEXTURE_TILEMAP];
         SDL_FRect src_rect = {0, 0, 32, 32};
         SDL_FRect dst_rect = {0, 0, 32, 32};
         for (int l = 0; l < 6; l++) {
@@ -52,7 +54,8 @@ int main(int argc, char *argv[])
                     dst_rect.x = x * 32;
                     dst_rect.y = y * 32;
                     src_rect.x = l * 32;
-                    core_add_drawing_tex(&core, &src_rect, &dst_rect);
+                    core_add_drawing_tex(&core, &tex_region, &src_rect,
+                                         &dst_rect);
                 }
             }
         }

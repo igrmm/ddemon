@@ -223,12 +223,21 @@ static int core_get_drawing_instance(struct core *core, int *instance)
     return 0;
 }
 
-void core_add_drawing_tex(struct core *core, SDL_FRect *src_rect,
-                          SDL_FRect *dst_rect)
+void core_add_drawing_tex(struct core *core, SDL_FRect *tex_region,
+                          SDL_FRect *src_rect, SDL_FRect *dst_rect)
 {
     int instance;
     if (core_get_drawing_instance(core, &instance) < 0)
         return;
+
+    float atlas_x = src_rect->x;
+    float atlas_y = src_rect->y;
+
+    // verify if drawing is part of other texture or atlas
+    if (tex_region != NULL) {
+        atlas_x += tex_region->x;
+        atlas_y += tex_region->y;
+    }
 
     // set up instance to be draw
     core->drawing_pool[instance] = (struct core_drawing){
@@ -236,8 +245,8 @@ void core_add_drawing_tex(struct core *core, SDL_FRect *src_rect,
         .y = dst_rect->y / core->viewport_height * 2.0f - 1.0f,
         .w = 1.0f / core->viewport_width * 2.0f * dst_rect->w,
         .h = 1.0f / core->viewport_height * 2.0f * dst_rect->h,
-        .data1 = src_rect->x / core->current_texture->width,
-        .data2 = src_rect->y / core->current_texture->height,
+        .data1 = atlas_x / core->current_texture->width,
+        .data2 = atlas_y / core->current_texture->height,
         .data3 = src_rect->w / core->current_texture->width,
         .data4 = src_rect->h / core->current_texture->height};
 }
