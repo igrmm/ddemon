@@ -222,8 +222,8 @@ static int core_get_drawing_instance(struct core *core, int *instance)
     return 0;
 }
 
-void core_add_drawing_tex(struct core *core, SDL_FRect *tex_region,
-                          SDL_FRect *src_rect, SDL_FRect *dst_rect)
+void core_add_drawing_tex(struct core *core, const SDL_FRect *tex_region,
+                          const SDL_FRect *src_rect, const SDL_FRect *dst_rect)
 {
     int instance;
     if (core_get_drawing_instance(core, &instance) < 0)
