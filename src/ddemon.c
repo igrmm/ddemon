@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
         core_clear_screen(0.5f, 0.0f, 0.0f, 1.0f);
         core_use_shader(&core, assets.shaders[ASSET_SHADER_DEFAULT]);
 
-        core_bind_texture(&core, &assets.atlas);
+        core_bind_texture(&core, assets.atlas);
 
         SDL_FRect tex_region = assets.texture_regions[ASSET_TEXTURE_TILEMAP];
         SDL_FRect src_rect = {0, 0, 32, 32};

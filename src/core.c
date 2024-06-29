@@ -196,11 +196,10 @@ struct core_texture core_create_texture(int width, int height,
     return texture;
 }
 
-void core_bind_texture(struct core *core, struct core_texture *texture)
+void core_bind_texture(struct core *core, struct core_texture texture)
 {
-    if (core->current_texture == NULL ||
-        core->current_texture->id != texture->id) {
-        glBindTexture(GL_TEXTURE_2D, texture->id);
+    if (core->current_texture.id != texture.id) {
+        glBindTexture(GL_TEXTURE_2D, texture.id);
         core->current_texture = texture;
     }
 }
@@ -245,10 +244,10 @@ void core_add_drawing_tex(struct core *core, SDL_FRect *tex_region,
         .y = dst_rect->y / core->viewport_height * 2.0f - 1.0f,
         .w = 1.0f / core->viewport_width * 2.0f * dst_rect->w,
         .h = 1.0f / core->viewport_height * 2.0f * dst_rect->h,
-        .data1 = atlas_x / core->current_texture->width,
-        .data2 = atlas_y / core->current_texture->height,
-        .data3 = src_rect->w / core->current_texture->width,
-        .data4 = src_rect->h / core->current_texture->height};
+        .data1 = atlas_x / core->current_texture.width,
+        .data2 = atlas_y / core->current_texture.height,
+        .data3 = src_rect->w / core->current_texture.width,
+        .data4 = src_rect->h / core->current_texture.height};
 }
 
 void core_add_drawing_fill_rect(struct core *core, SDL_FRect *rect,
@@ -326,7 +325,7 @@ void core_restore_gl_state(struct core *core)
     glBindBuffer(GL_ARRAY_BUFFER, core->instance_vertex_buffer_object);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, core->element_buffer_object);
     glUseProgram(core->current_shader);
-    glBindTexture(GL_TEXTURE_2D, core->current_texture->id);
+    glBindTexture(GL_TEXTURE_2D, core->current_texture.id);
 }
 
 void core_offscreen_rendering_begin(struct core *core,

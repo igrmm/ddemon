@@ -42,7 +42,7 @@ struct core {
 
     // CORE
     int viewport_width, viewport_height;
-    struct core_texture *current_texture;
+    struct core_texture current_texture;
     struct core_drawing drawing_pool[CORE_DRAWING_POOL_SIZE];
     int drawing_queue_size;
 };
@@ -57,7 +57,7 @@ void core_use_shader(struct core *core, Uint32 shader);
 void core_delete_texture(struct core_texture *texture);
 struct core_texture core_create_texture(int width, int height,
                                         const Uint8 *texture_data);
-void core_bind_texture(struct core *core, struct core_texture *texture);
+void core_bind_texture(struct core *core, struct core_texture texture);
 void core_clear_screen(float r, float g, float b, float a);
 void core_add_drawing_tex(struct core *core, SDL_FRect *tex_region,
                           SDL_FRect *src_rect, SDL_FRect *dst_rect);

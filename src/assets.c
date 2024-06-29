@@ -156,7 +156,7 @@ int assets_load(struct core *core, struct assets *assets)
     core_clear_screen(0.0f, 0.0f, 0.0f, 0.0f);
     core_use_shader(core, assets->shaders[ASSET_SHADER_ATLAS]);
     for (int i = 0; i < ASSET_TEXTURE_MAX; i++) {
-        core_bind_texture(core, &textures_tmp[i]);
+        core_bind_texture(core, textures_tmp[i]);
         SDL_FRect src_rect = {0, 0, texture_rects[i].w, texture_rects[i].h};
         SDL_FRect dst_rect = {texture_rects[i].x, texture_rects[i].y,
                               texture_rects[i].w, texture_rects[i].h};
