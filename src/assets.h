@@ -23,13 +23,17 @@ enum asset_shader {
 };
 
 struct assets {
-    SDL_FRect texture_regions[ASSET_TEXTURE_MAX];
-    struct core_texture atlas;
+    struct asset_atlas *atlas;
+    int texture_region_ids[ASSET_TEXTURE_MAX];
     struct txt_font *fonts[ASSET_FONT_MAX];
     Uint32 shaders[ASSET_SHADER_MAX];
 };
 
 int assets_load(struct core *core, struct assets *assets);
 void assets_dispose(struct assets *assets);
+void assets_atlas_get_texture_region(struct asset_atlas *atlas,
+                                     int texture_region_id,
+                                     SDL_FRect *texture_region);
+struct core_texture assets_atlas_get_texture(struct asset_atlas *atlas);
 
 #endif

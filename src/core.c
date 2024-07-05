@@ -177,16 +177,19 @@ void core_delete_texture(struct core_texture *texture)
     glDeleteTextures(1, &texture->id);
 }
 
-struct core_texture core_create_texture(int width, int height,
-                                        const Uint8 *texture_data)
+static struct core_texture core_create_texture(Uint32 format,
+                                               Uint32 unpack_alignment,
+                                               int width, int height,
+                                               const Uint8 *texture_data)
 {
+    glPixelStorei(GL_UNPACK_ALIGNMENT, unpack_alignment);
     Uint32 texture_id;
     glGenTextures(1, &texture_id);
     glBindTexture(GL_TEXTURE_2D, texture_id);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
                     GL_NEAREST_MIPMAP_NEAREST);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
+    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format,
                  GL_UNSIGNED_BYTE, texture_data);
     glGenerateMipmap(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, 0); // unbind texture
@@ -194,6 +197,18 @@ struct core_texture core_create_texture(int width, int height,
     struct core_texture texture = {width, height, texture_id};
 
     return texture;
+}
+
+struct core_texture core_create_stbi_texture(int width, int height,
+                                             const Uint8 *texture_data)
+{
+    return core_create_texture(GL_RGBA, 4, width, height, texture_data);
+}
+
+struct core_texture core_create_stbtt_texture(int width, int height,
+                                              const Uint8 *texture_data)
+{
+    return core_create_texture(GL_ALPHA, 1, width, height, texture_data);
 }
 
 void core_bind_texture(struct core *core, struct core_texture texture)

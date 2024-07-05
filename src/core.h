@@ -55,8 +55,27 @@ Uint32 core_create_shader(const char *vert_src, const char *frag_src,
                           int *status, char *log, size_t log_size);
 void core_use_shader(struct core *core, Uint32 shader);
 void core_delete_texture(struct core_texture *texture);
-struct core_texture core_create_texture(int width, int height,
-                                        const Uint8 *texture_data);
+
+/**
+ * Create an opengl texture from a image loaded with the stbi library.
+ *
+ * core_create_stbi_texture() uses GL_UNPACK_ALIGNMENT of value 4 (the default
+ * value) so it is expected that the width of the image is power of two and a
+ * 4 channel image (RGBA)
+ *
+ */
+struct core_texture core_create_stbi_texture(int width, int height,
+                                             const Uint8 *texture_data);
+/**
+ * Create an opengl texture from a image loaded with the stbtt library.
+ *
+ * core_create_stbtt_texture() uses GL_UNPACK_ALIGNMENT of value 1 because
+ * stb_truetype may create bitmap with width not power of two and only one
+ * channel(R->ALPHA)
+ *
+ */
+struct core_texture core_create_stbtt_texture(int width, int height,
+                                              const Uint8 *texture_data);
 void core_bind_texture(struct core *core, struct core_texture texture);
 void core_clear_screen(float r, float g, float b, float a);
 
