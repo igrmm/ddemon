@@ -61,7 +61,7 @@ void core_delete_texture(struct core_texture *texture);
  *
  * core_create_stbi_texture() uses GL_UNPACK_ALIGNMENT of value 4 (the default
  * value) so it is expected that the width of the image is power of two and a
- * 4 channel image (RGBA)
+ * 4 channel image (RGBA).
  *
  */
 struct core_texture core_create_stbi_texture(int width, int height,
@@ -70,8 +70,8 @@ struct core_texture core_create_stbi_texture(int width, int height,
  * Create an opengl texture from a image loaded with the stbtt library.
  *
  * core_create_stbtt_texture() uses GL_UNPACK_ALIGNMENT of value 1 because
- * stb_truetype may create bitmap with width not power of two and only one
- * channel(R->ALPHA)
+ * stb_truetype may create bitmap with width not power of two. The image created
+ * have one channel(R->RED), so we use a swizzle mask to make it white.
  *
  */
 struct core_texture core_create_stbtt_texture(int width, int height,
