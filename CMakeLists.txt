@@ -14,6 +14,7 @@ add_executable(${PROJECT_NAME}
     src/assets.c
     src/ecs.c
     src/core.c
+    src/txt.c
     )
 
 if (CMAKE_C_COMPILER_ID STREQUAL "GNU")

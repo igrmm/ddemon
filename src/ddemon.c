@@ -2,6 +2,7 @@
 
 #include "assets.h"
 #include "core.h"
+#include "txt.h"
 
 int main(int argc, char *argv[])
 {
@@ -64,6 +65,8 @@ int main(int argc, char *argv[])
                 }
             }
         }
+        txt("THIS IS NOT A GAME", 0, 100, assets.fonts[ASSET_FONT_SMALL],
+            &core);
         core_draw_queue(&core);
         core_update_window(core.window);
     }

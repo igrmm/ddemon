@@ -1,6 +1,9 @@
 #define STB_RECT_PACK_IMPLEMENTATION
 #include "../external/stb/stb_rect_pack.h"
 
+#define STB_TRUETYPE_IMPLEMENTATION
+#include "../external/stb/stb_truetype.h"
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "../external/stb/stb_image.h"
 
@@ -8,6 +11,7 @@
 
 #include "assets.h"
 #include "core.h"
+#include "txt.h"
 
 #define ASSET_BUFSIZ 512000
 
@@ -216,7 +220,60 @@ int assets_load(struct core *core, struct assets *assets)
     /**
      * Load all fonts (TO-DO)
      * */
-    assets->fonts[ASSET_FONT_SMALL] = NULL;
+
+    // cache ASCII codepoints
+    struct txt_codepoint_cache *cache = txt_create_codepoint_cache();
+    if (cache == NULL)
+        return -1;
+    for (int i = '!'; i < '~'; i++) {
+        char str[] = " ";
+        str[0] = i;
+        txt_cache_codepoints(cache, str);
+    }
+
+    // load font ttf
+    buffer[0] = 0;
+    file_path = FONT_PATH;
+    file_size = 0;
+    if (assets_load_raw(buffer, ASSET_BUFSIZ, file_path, &file_size) != 0)
+        return -1;
+
+    // create glyph textures
+    stbtt_fontinfo info;
+    if (!stbtt_InitFont(&info, buffer, 0)) {
+        SDL_Log("Font init failed.");
+        return -1;
+    }
+
+    assets->fonts[ASSET_FONT_SMALL] = txt_create_font(assets->atlas);
+    if (assets->fonts[ASSET_FONT_SMALL] == NULL)
+        return -1;
+
+    for (Uint32 codepoint = 0; codepoint < TXT_UNICODE_MAX; codepoint++) {
+        if (txt_is_codepoint_cached(cache, codepoint)) {
+
+            // hardcoded sdf values for now
+            int font_size = 20;
+            float pixel_dist_scale = 255.0;
+            int onedge_value = 240;
+            int padding = 3;
+
+            float scale = stbtt_ScaleForPixelHeight(&info, font_size);
+            int width, height;
+            Uint8 *texture_data = stbtt_GetCodepointSDF(
+                &info, scale, codepoint, padding, onedge_value,
+                pixel_dist_scale, &width, &height, 0, 0);
+            struct core_texture texture_tmp =
+                core_create_stbtt_texture(width, height, texture_data);
+            int texture_region_id;
+            assets_atlas_cache_texture(assets->atlas, texture_tmp,
+                                       &texture_region_id);
+            txt_set_glyph(assets->fonts[ASSET_FONT_SMALL], codepoint,
+                          texture_region_id);
+            SDL_free(texture_data);
+        }
+    }
+    SDL_free(cache);
 
     /**
      * Make the atlas
@@ -253,5 +310,9 @@ void assets_dispose(struct assets *assets)
 
     for (int i = 0; i < ASSET_SHADER_MAX; i++) {
         core_delete_shader(assets->shaders[i]);
+    }
+
+    for (int i = 0; i < ASSET_FONT_MAX; i++) {
+        txt_destroy_font(assets->fonts[i]);
     }
 }
