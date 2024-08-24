@@ -1,3 +1,9 @@
+/* disable gcc stack-usage warning for this headers */
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstack-usage="
+#endif
+
 #define STB_RECT_PACK_IMPLEMENTATION
 #include "../external/stb/stb_rect_pack.h"
 
@@ -6,6 +12,11 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "../external/stb/stb_image.h"
+
+/* restore warnings */
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
 
 #include "SDL.h" // IWYU pragma: keep //clangd
 
