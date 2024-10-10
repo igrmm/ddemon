@@ -54,6 +54,7 @@ static const char *SHADER_VERTEX_PATHS[] = {
     [ASSET_SHADER_DEFAULT] = "default.vs",
     [ASSET_SHADER_ATLAS] = "atlas.vs",
     [ASSET_SHADER_PRIMITIVE] = "primitive.vs",
+    [ASSET_SHADER_SDF] = "sdf.vs",
     [ASSET_SHADER_MAX] = 0
 };
 
@@ -61,6 +62,7 @@ static const char *SHADER_FRAGMENT_PATHS[] = {
     [ASSET_SHADER_DEFAULT] = "default.fs",
     [ASSET_SHADER_ATLAS] = "atlas.fs",
     [ASSET_SHADER_PRIMITIVE] = "primitive.fs",
+    [ASSET_SHADER_SDF] = "sdf.fs",
     [ASSET_SHADER_MAX] = 0
 };
 // clang-format on
