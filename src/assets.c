@@ -266,10 +266,10 @@ int assets_load(struct core *core, struct assets *assets)
         if (txt_is_codepoint_cached(cache, codepoint)) {
 
             // hardcoded sdf values for now
-            int font_size = 20;
-            float pixel_dist_scale = 255.0;
-            int onedge_value = 240;
-            int padding = 3;
+            int font_size = 64;
+            float pixel_dist_scale = 45.0;
+            int onedge_value = 185;
+            int padding = 5;
 
             float scale = stbtt_ScaleForPixelHeight(&info, font_size);
             int width, height;
