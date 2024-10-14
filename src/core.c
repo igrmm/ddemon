@@ -48,7 +48,11 @@ int core_setup(struct core *core, const char *window_title, int window_width,
 
     // enable transparency
     glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    // this step is necessary to preserve alpha channel because we create atlas
+    // texture with offscreen rendering, see atlas shader and
+    // https://stackoverflow.com/questions/24346585/opengl-render-to-texture-with-partial-transparancy-translucency-and-then-rende
+    glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_DST_ALPHA,
+                        GL_ONE);
 
     // create fbo, will be used for postprocessing, offscreen rendering etc
     glGenFramebuffers(1, &core->frame_buffer_object);
