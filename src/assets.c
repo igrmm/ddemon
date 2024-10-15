@@ -54,7 +54,6 @@ static const char *SHADER_VERTEX_PATHS[] = {
     [ASSET_SHADER_DEFAULT] = "default.vs",
     [ASSET_SHADER_ATLAS] = "atlas.vs",
     [ASSET_SHADER_PRIMITIVE] = "primitive.vs",
-    [ASSET_SHADER_SDF] = "sdf.vs",
     [ASSET_SHADER_MAX] = 0
 };
 
@@ -62,7 +61,6 @@ static const char *SHADER_FRAGMENT_PATHS[] = {
     [ASSET_SHADER_DEFAULT] = "default.fs",
     [ASSET_SHADER_ATLAS] = "atlas.fs",
     [ASSET_SHADER_PRIMITIVE] = "primitive.fs",
-    [ASSET_SHADER_SDF] = "sdf.fs",
     [ASSET_SHADER_MAX] = 0
 };
 // clang-format on
@@ -264,18 +262,11 @@ int assets_load(struct core *core, struct assets *assets)
 
     for (Uint32 codepoint = 0; codepoint < TXT_UNICODE_MAX; codepoint++) {
         if (txt_is_codepoint_cached(cache, codepoint)) {
-
-            // hardcoded sdf values for now
             int font_size = 64;
-            float pixel_dist_scale = 45.0;
-            int onedge_value = 185;
-            int padding = 5;
-
             float scale = stbtt_ScaleForPixelHeight(&info, font_size);
             int width, height;
-            Uint8 *texture_data = stbtt_GetCodepointSDF(
-                &info, scale, codepoint, padding, onedge_value,
-                pixel_dist_scale, &width, &height, 0, 0);
+            Uint8 *texture_data = stbtt_GetCodepointBitmap(
+                &info, scale, scale, codepoint, &width, &height, 0, 0);
             struct core_texture texture_tmp =
                 core_create_stbtt_texture(width, height, texture_data);
             int texture_region_id;
