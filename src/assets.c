@@ -249,32 +249,86 @@ int assets_load(struct core *core, struct assets *assets)
     if (assets_load_raw(buffer, ASSET_BUFSIZ, file_path, &file_size) != 0)
         return -1;
 
-    // create glyph textures
+    // initialize stb font and create txt font
     stbtt_fontinfo info;
     if (!stbtt_InitFont(&info, buffer, 0)) {
         SDL_Log("Font init failed.");
         return -1;
     }
-
+    int font_size = 22;
+    float scale = stbtt_ScaleForPixelHeight(&info, font_size);
     assets->fonts[ASSET_FONT_SMALL] = txt_create_font(assets->atlas);
     if (assets->fonts[ASSET_FONT_SMALL] == NULL)
         return -1;
 
+    // get the lowest descent (like the tail in letter 'g'), descent = y1
+    int lowest_descent = 0;
     for (Uint32 codepoint = 0; codepoint < TXT_UNICODE_MAX; codepoint++) {
         if (txt_is_codepoint_cached(cache, codepoint)) {
-            int font_size = 64;
-            float scale = stbtt_ScaleForPixelHeight(&info, font_size);
-            int width, height;
+            int descent;
+            stbtt_GetCodepointBitmapBox(&info, codepoint, scale, scale, 0, 0, 0,
+                                        &descent);
+            if (descent > lowest_descent)
+                lowest_descent = descent;
+        }
+    }
+
+    // loop through cached codepoints, create aligned tex and store in atlas
+    for (Uint32 codepoint = 0; codepoint < TXT_UNICODE_MAX; codepoint++) {
+        if (txt_is_codepoint_cached(cache, codepoint)) {
+            int width, height, yoff;
             Uint8 *texture_data = stbtt_GetCodepointBitmap(
-                &info, scale, scale, codepoint, &width, &height, 0, 0);
-            struct core_texture texture_tmp =
+                &info, scale, scale, codepoint, &width, &height, 0, &yoff);
+            struct core_texture texture_boundingbox =
                 core_create_stbtt_texture(width, height, texture_data);
+            SDL_free(texture_data);
+
+            // align glyph on Y axis with baseline (origin)
+            /**
+             * The initial texture_boundingbox is made of the bounding box of
+             * the glyph without any padding. We want to store these glyphs
+             * aligned with the font's baseline (glyph origin point) on
+             * atlas. To do this, we will render these bounding boxes a little
+             * bit up into another texture (texture_aligned). The glyphs with
+             * the lowest descent, like the letter 'g', will not be rendered up,
+             * beacause they will be touching the bottom of the texture (they
+             * already are), thus, the lowest descent will be used as a
+             * reference. For this reason, the final texture will have a bigger
+             * height (new_height). STB_TRUE_TYPE uses y-down, so to render up
+             * we will be subtracting y. Also, when a glyph have a yoff
+             * (top-left of the bounding box to the origin) bigger than the
+             * glyph height, in order to align with baseline, we subtract
+             * new_height with descent and make descent = 0.
+             */
+            int new_height = height + lowest_descent;
+            int descent = height + yoff;
+            if (descent < 0) {
+                new_height -= descent;
+                descent = 0;
+            }
+
+            // render to texture, store into atlas, set glyph on txt_font
+            struct core_texture texture_aligned =
+                core_create_stbi_texture(width, new_height, 0);
+            core_offscreen_rendering_begin(core, &texture_aligned);
+            core_update_viewport(core, width, new_height);
+            core_clear_screen(0.0f, 0.0f, 0.0f, 0.0f);
+            core_use_shader(core, assets->shaders[ASSET_SHADER_DEFAULT]);
+            core_bind_texture(core, texture_boundingbox);
+            SDL_FRect src_rect = {0, 0, width, height};
+            SDL_FRect dst_rect = {0, descent, width, height};
+            core_add_drawing_tex(core, NULL, &src_rect, &dst_rect);
+            core_draw_queue(core);
+            core_offscreen_rendering_end();
             int texture_region_id;
-            assets_atlas_cache_texture(assets->atlas, texture_tmp,
+            assets_atlas_cache_texture(assets->atlas, texture_aligned,
                                        &texture_region_id);
             txt_set_glyph(assets->fonts[ASSET_FONT_SMALL], codepoint,
                           texture_region_id);
-            SDL_free(texture_data);
+
+            // unbind texture_boundinbox so we can free it from gpu's memory
+            core_bind_texture(core, (struct core_texture){0, 0, 0});
+            core_delete_texture(&texture_boundingbox);
         }
     }
     SDL_free(cache);
