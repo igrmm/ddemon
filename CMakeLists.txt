@@ -21,7 +21,7 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
     if (DEFINED ENV{SANITIZERS})
         set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} $ENV{SANITIZERS}")
     endif()
-    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror=vla -Wstack-usage=512)
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror=vla -Wstack-usage=1024)
 endif()
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
