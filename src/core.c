@@ -211,9 +211,11 @@ struct core_texture core_create_stbtt_texture(int width, int height,
     glGenTextures(1, &texture_id);
     glBindTexture(GL_TEXTURE_2D, texture_id);
 
-    // this mask is used to make 1 channel red stbtt image into white one
-    GLint swizzleMask[] = {1, 1, 1, GL_RED};
-    glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
+    // this step necessary to make 1 ch red stbtt image into white one w/ alpha
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, 1);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, 1);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, 1);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_RED);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
