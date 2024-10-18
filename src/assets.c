@@ -362,6 +362,14 @@ struct core_texture assets_atlas_get_texture(struct asset_atlas *atlas)
 void assets_dispose(struct assets *assets)
 {
     if (assets->atlas != NULL) {
+        // delete incomplete atlas's cached opengl texture from gpu
+        for (int i = 0; i < ASSET_ATLAS_TEXTURE_MAX; i++) {
+            int id = assets->atlas->texture_regions[i].id;
+            if (id > 0) {
+                struct core_texture texture = {.id = id};
+                core_delete_texture(&texture);
+            }
+        }
         core_delete_texture(&assets->atlas->texture);
         SDL_free(assets->atlas);
     }
