@@ -130,8 +130,8 @@ static void assets_atlas_compute(struct core *core, struct asset_atlas *atlas,
     core_offscreen_rendering_end();
 }
 
-static int assets_load_raw(Uint8 *buffer, size_t bufsiz, const char *file_path,
-                           size_t *file_size)
+static int assets_load_file(Uint8 *buffer, size_t bufsiz, const char *file_path,
+                            size_t *file_size)
 {
     SDL_RWops *file = SDL_RWFromFile(file_path, "r");
     if (file == NULL) {
@@ -170,13 +170,13 @@ int assets_load(struct core *core, struct assets *assets)
         // load vertex shader from file using sdl's crossplatform api for files
         Uint8 vert_src[ASSET_BUFSIZ] = {0}; // stack only for now
         file_path = SHADER_VERTEX_PATHS[i];
-        if (assets_load_raw(vert_src, ASSET_BUFSIZ, file_path, NULL) != 0)
+        if (assets_load_file(vert_src, ASSET_BUFSIZ, file_path, NULL) != 0)
             return -1;
 
         // load frag shader from file using sdl's crossplatform api for files
         Uint8 frag_src[ASSET_BUFSIZ] = {0}; // stack only for now
         file_path = SHADER_FRAGMENT_PATHS[i];
-        if (assets_load_raw(frag_src, ASSET_BUFSIZ, file_path, NULL) != 0)
+        if (assets_load_file(frag_src, ASSET_BUFSIZ, file_path, NULL) != 0)
             return -1;
 
         int status;
@@ -205,7 +205,7 @@ int assets_load(struct core *core, struct assets *assets)
         buffer[0] = 0;
         file_path = TEXTURE_PATHS[i];
         file_size = 0;
-        if (assets_load_raw(buffer, ASSET_BUFSIZ, file_path, &file_size) != 0)
+        if (assets_load_file(buffer, ASSET_BUFSIZ, file_path, &file_size) != 0)
             return -1;
 
         // load img data from memory using stbi and create the texture
@@ -246,7 +246,7 @@ int assets_load(struct core *core, struct assets *assets)
     buffer[0] = 0;
     file_path = FONT_PATH;
     file_size = 0;
-    if (assets_load_raw(buffer, ASSET_BUFSIZ, file_path, &file_size) != 0)
+    if (assets_load_file(buffer, ASSET_BUFSIZ, file_path, &file_size) != 0)
         return -1;
 
     // initialize stb font and create txt font
