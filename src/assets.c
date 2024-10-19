@@ -156,6 +156,56 @@ static int assets_load_file(Uint8 *buffer, size_t bufsiz, const char *file_path,
     return 0;
 }
 
+int assets_load_shaders(struct assets *assets)
+{
+    Uint8 *vertex_file_buffer = SDL_malloc(ASSET_BUFSIZ * sizeof(Uint8));
+    if (vertex_file_buffer == NULL)
+        return -1;
+
+    Uint8 *fragment_file_buffer = SDL_malloc(ASSET_BUFSIZ * sizeof(Uint8));
+    if (fragment_file_buffer == NULL) {
+        SDL_free(vertex_file_buffer);
+        return -1;
+    }
+
+    int ret = 0;
+
+    for (int i = 0; i < ASSET_SHADER_MAX; i++) {
+        // load vertex shader from file using sdl's crossplatform api for files
+        vertex_file_buffer[0] = 0;
+        if (assets_load_file(vertex_file_buffer, ASSET_BUFSIZ,
+                             SHADER_VERTEX_PATHS[i], NULL) != 0) {
+            ret = -1;
+            break;
+        }
+
+        // load frag shader from file using sdl's crossplatform api for files
+        fragment_file_buffer[0] = 0;
+        if (assets_load_file(fragment_file_buffer, ASSET_BUFSIZ,
+                             SHADER_FRAGMENT_PATHS[i], NULL) != 0) {
+            ret = -1;
+            break;
+        }
+
+        int status;
+        char log[512] = {0};
+        const char *vert_src = (const char *)vertex_file_buffer;
+        const char *frag_src = (const char *)fragment_file_buffer;
+        assets->shaders[i] =
+            core_create_shader(vert_src, frag_src, &status, log, 512);
+        if (!status) {
+            SDL_Log("shader error: \n\n%s\n", log);
+            ret = -1;
+            break;
+        }
+    }
+
+    SDL_free(vertex_file_buffer);
+    SDL_free(fragment_file_buffer);
+
+    return ret;
+}
+
 // to do: split function per asset type
 int assets_load(struct core *core, struct assets *assets)
 {
@@ -166,28 +216,8 @@ int assets_load(struct core *core, struct assets *assets)
     /**
      * Load all shaders
      * */
-    for (int i = 0; i < ASSET_SHADER_MAX; i++) {
-        // load vertex shader from file using sdl's crossplatform api for files
-        Uint8 vert_src[ASSET_BUFSIZ] = {0}; // stack only for now
-        file_path = SHADER_VERTEX_PATHS[i];
-        if (assets_load_file(vert_src, ASSET_BUFSIZ, file_path, NULL) != 0)
-            return -1;
-
-        // load frag shader from file using sdl's crossplatform api for files
-        Uint8 frag_src[ASSET_BUFSIZ] = {0}; // stack only for now
-        file_path = SHADER_FRAGMENT_PATHS[i];
-        if (assets_load_file(frag_src, ASSET_BUFSIZ, file_path, NULL) != 0)
-            return -1;
-
-        int status;
-        char log[512] = {0};
-        assets->shaders[i] = core_create_shader(
-            (const char *)vert_src, (const char *)frag_src, &status, log, 512);
-        if (!status) {
-            SDL_Log("shader error: \n\n%s\n", log);
-            return -1;
-        }
-    }
+    if (assets_load_shaders(assets) != 0)
+        return -1;
 
     /**
      * Load all textures
