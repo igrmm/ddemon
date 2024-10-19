@@ -156,7 +156,7 @@ static int assets_load_file(Uint8 *buffer, size_t bufsiz, const char *file_path,
     return 0;
 }
 
-int assets_load_shaders(struct assets *assets)
+static int assets_load_shaders(struct assets *assets)
 {
     Uint8 *vertex_file_buffer = SDL_malloc(ASSET_BUFSIZ * sizeof(Uint8));
     if (vertex_file_buffer == NULL)
@@ -171,7 +171,7 @@ int assets_load_shaders(struct assets *assets)
     int ret = 0;
 
     for (int i = 0; i < ASSET_SHADER_MAX; i++) {
-        // load vertex shader from file using sdl's crossplatform api for files
+        // load vertex shader source from file
         vertex_file_buffer[0] = 0;
         if (assets_load_file(vertex_file_buffer, ASSET_BUFSIZ,
                              SHADER_VERTEX_PATHS[i], NULL) != 0) {
@@ -179,7 +179,7 @@ int assets_load_shaders(struct assets *assets)
             break;
         }
 
-        // load frag shader from file using sdl's crossplatform api for files
+        // load fragment shader source from file
         fragment_file_buffer[0] = 0;
         if (assets_load_file(fragment_file_buffer, ASSET_BUFSIZ,
                              SHADER_FRAGMENT_PATHS[i], NULL) != 0) {
@@ -206,12 +206,64 @@ int assets_load_shaders(struct assets *assets)
     return ret;
 }
 
+static int assets_load_textures(struct assets *assets)
+{
+    size_t file_size = 0;
+    Uint8 *file_buffer = SDL_malloc(ASSET_BUFSIZ * sizeof(Uint8));
+    if (file_buffer == NULL)
+        return -1;
+
+    int ret = 0;
+
+    for (int i = 0; i < ASSET_TEXTURE_MAX; i++) {
+        // load img from file
+        file_buffer[0] = 0;
+        file_size = 0;
+        if (assets_load_file(file_buffer, ASSET_BUFSIZ, TEXTURE_PATHS[i],
+                             &file_size) != 0) {
+            ret = -1;
+            break;
+        }
+
+        // load img data from memory using stbi and create the texture
+        int width, height, nrChannels;
+        Uint8 *texture_data =
+            stbi_load_from_memory(file_buffer, file_size, &width, &height,
+                                  &nrChannels, STBI_rgb_alpha);
+        if (texture_data == NULL) {
+            SDL_Log("Failed to loading texture from memory: %s",
+                    stbi_failure_reason());
+            ret = -1;
+            break;
+        }
+
+        // store texture in altas for computation
+        struct core_texture texture =
+            core_create_stbi_texture(width, height, texture_data);
+        int texture_region_id;
+        assets_atlas_cache_texture(assets->atlas, texture, &texture_region_id);
+        assets->texture_region_ids[i] = texture_region_id;
+        stbi_image_free(texture_data);
+    }
+
+    SDL_free(file_buffer);
+
+    return ret;
+}
+
 // to do: split function per asset type
 int assets_load(struct core *core, struct assets *assets)
 {
     Uint8 buffer[ASSET_BUFSIZ] = {0}; // stack only for now
     const char *file_path = NULL;
     size_t file_size = 0;
+
+    // alloc mem for atlas
+    assets->atlas = SDL_calloc(1, sizeof(*assets->atlas));
+    if (assets->atlas == NULL)
+        return -1;
+    assets->atlas->texture =
+        core_create_stbi_texture(ASSET_ATLAS_WIDTH, ASSET_ATLAS_HEIGHT, 0);
 
     /**
      * Load all shaders
@@ -222,41 +274,8 @@ int assets_load(struct core *core, struct assets *assets)
     /**
      * Load all textures
      * */
-
-    // alloc mem for atlas
-    assets->atlas = SDL_calloc(1, sizeof(*assets->atlas));
-    if (assets->atlas == NULL)
+    if (assets_load_textures(assets) != 0)
         return -1;
-    assets->atlas->texture =
-        core_create_stbi_texture(ASSET_ATLAS_WIDTH, ASSET_ATLAS_HEIGHT, 0);
-
-    for (int i = 0; i < ASSET_TEXTURE_MAX; i++) {
-        // load img from file using sdl's crossplatform api for files
-        buffer[0] = 0;
-        file_path = TEXTURE_PATHS[i];
-        file_size = 0;
-        if (assets_load_file(buffer, ASSET_BUFSIZ, file_path, &file_size) != 0)
-            return -1;
-
-        // load img data from memory using stbi and create the texture
-        int width, height, nrChannels;
-        Uint8 *texture_data = stbi_load_from_memory(
-            buffer, file_size, &width, &height, &nrChannels, STBI_rgb_alpha);
-        if (texture_data == NULL) {
-            SDL_Log("Failed to loading texture from memory: %s",
-                    stbi_failure_reason());
-            return -1;
-        }
-
-        // store texture in altas for computation
-        struct core_texture texture_tmp =
-            core_create_stbi_texture(width, height, texture_data);
-        int texture_region_id;
-        assets_atlas_cache_texture(assets->atlas, texture_tmp,
-                                   &texture_region_id);
-        assets->texture_region_ids[i] = texture_region_id;
-        stbi_image_free(texture_data);
-    }
 
     /**
      * Load all fonts (TO-DO)
