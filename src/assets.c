@@ -1,5 +1,4 @@
 /* disable gcc stack-usage warning for this headers */
-#include <SDL_stdinc.h>
 #ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstack-usage="
@@ -136,7 +135,7 @@ static int assets_load_file(Uint8 *buffer, size_t bufsiz, const char *file_path,
 {
     SDL_RWops *file = SDL_RWFromFile(file_path, "r");
     if (file == NULL) {
-        SDL_Log("Error opening asset: %s (not found?)", file_path);
+        SDL_Log("Error loading file: %s", file_path);
         return -1;
     }
     for (size_t i = 0; i < bufsiz; i++) {
@@ -148,7 +147,7 @@ static int assets_load_file(Uint8 *buffer, size_t bufsiz, const char *file_path,
             break;
         } else if (i >= bufsiz - 1) {
             // buffer exploded and loading is not done, abort
-            SDL_Log("Buffer overflow when loading asset: %s", file_path);
+            SDL_Log("Buffer overflow when loading file: %s", file_path);
             SDL_RWclose(file);
             return -1;
         }
@@ -169,23 +168,23 @@ static int assets_load_shaders(struct assets *assets)
         return -1;
     }
 
-    int ret = 0;
-
     for (int i = 0; i < ASSET_SHADER_MAX; i++) {
         // load vertex shader source from file
         vertex_file_buffer[0] = 0;
         if (assets_load_file(vertex_file_buffer, ASSET_BUFSIZ,
                              SHADER_VERTEX_PATHS[i], NULL) != 0) {
-            ret = -1;
-            break;
+            SDL_free(vertex_file_buffer);
+            SDL_free(fragment_file_buffer);
+            return -1;
         }
 
         // load fragment shader source from file
         fragment_file_buffer[0] = 0;
         if (assets_load_file(fragment_file_buffer, ASSET_BUFSIZ,
                              SHADER_FRAGMENT_PATHS[i], NULL) != 0) {
-            ret = -1;
-            break;
+            SDL_free(vertex_file_buffer);
+            SDL_free(fragment_file_buffer);
+            return -1;
         }
 
         int status;
@@ -196,15 +195,16 @@ static int assets_load_shaders(struct assets *assets)
             core_create_shader(vert_src, frag_src, &status, log, 512);
         if (!status) {
             SDL_Log("shader error: \n\n%s\n", log);
-            ret = -1;
-            break;
+            SDL_free(vertex_file_buffer);
+            SDL_free(fragment_file_buffer);
+            return -1;
         }
     }
 
     SDL_free(vertex_file_buffer);
     SDL_free(fragment_file_buffer);
 
-    return ret;
+    return 0;
 }
 
 static int assets_load_textures(struct assets *assets)
@@ -214,16 +214,14 @@ static int assets_load_textures(struct assets *assets)
     if (file_buffer == NULL)
         return -1;
 
-    int ret = 0;
-
     for (int i = 0; i < ASSET_TEXTURE_MAX; i++) {
         // load img from file
         file_buffer[0] = 0;
         file_size = 0;
         if (assets_load_file(file_buffer, ASSET_BUFSIZ, TEXTURE_PATHS[i],
                              &file_size) != 0) {
-            ret = -1;
-            break;
+            SDL_free(file_buffer);
+            return -1;
         }
 
         // load img data from memory using stbi and create the texture
@@ -234,8 +232,8 @@ static int assets_load_textures(struct assets *assets)
         if (texture_data == NULL) {
             SDL_Log("Failed to loading texture from memory: %s",
                     stbi_failure_reason());
-            ret = -1;
-            break;
+            SDL_free(file_buffer);
+            return -1;
         }
 
         // store texture in altas for computation
@@ -249,8 +247,9 @@ static int assets_load_textures(struct assets *assets)
 
     SDL_free(file_buffer);
 
-    return ret;
+    return 0;
 }
+
 static int assets_load_fonts(struct core *core, struct assets *assets)
 {
     // create file buffer
