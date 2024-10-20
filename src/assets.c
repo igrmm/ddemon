@@ -1,4 +1,5 @@
 /* disable gcc stack-usage warning for this headers */
+#include <SDL_stdinc.h>
 #ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstack-usage="
@@ -250,65 +251,55 @@ static int assets_load_textures(struct assets *assets)
 
     return ret;
 }
-
-// to do: split function per asset type
-int assets_load(struct core *core, struct assets *assets)
+static int assets_load_fonts(struct core *core, struct assets *assets)
 {
-    Uint8 buffer[ASSET_BUFSIZ] = {0}; // stack only for now
-    const char *file_path = NULL;
+    // create file buffer
     size_t file_size = 0;
-
-    // alloc mem for atlas
-    assets->atlas = SDL_calloc(1, sizeof(*assets->atlas));
-    if (assets->atlas == NULL)
-        return -1;
-    assets->atlas->texture =
-        core_create_stbi_texture(ASSET_ATLAS_WIDTH, ASSET_ATLAS_HEIGHT, 0);
-
-    /**
-     * Load all shaders
-     * */
-    if (assets_load_shaders(assets) != 0)
+    Uint8 *file_buffer = SDL_malloc(ASSET_BUFSIZ * sizeof(Uint8));
+    if (file_buffer == NULL)
         return -1;
 
-    /**
-     * Load all textures
-     * */
-    if (assets_load_textures(assets) != 0)
-        return -1;
-
-    /**
-     * Load all fonts (TO-DO)
-     * */
-
-    // cache ASCII codepoints
+    // cache ascii codepoints
     struct txt_codepoint_cache *cache = txt_create_codepoint_cache();
-    if (cache == NULL)
+    if (cache == NULL) {
+        SDL_free(file_buffer);
         return -1;
-    for (int i = '!'; i < '~'; i++) {
-        char str[] = " ";
-        str[0] = i;
-        txt_cache_codepoints(cache, str);
+    } else {
+        for (int i = '!'; i < '~'; i++) {
+            char str[] = " ";
+            str[0] = i;
+            txt_cache_codepoints(cache, str);
+        }
     }
 
-    // load font ttf
-    buffer[0] = 0;
-    file_path = FONT_PATH;
-    file_size = 0;
-    if (assets_load_file(buffer, ASSET_BUFSIZ, file_path, &file_size) != 0)
+    // load ttf file
+    if (assets_load_file(file_buffer, ASSET_BUFSIZ, FONT_PATH, &file_size) !=
+        0) {
+        SDL_Log("Error opening font: %s", FONT_PATH);
+        SDL_free(file_buffer);
+        SDL_free(cache);
         return -1;
+    }
 
-    // initialize stb font and create txt font
+    // initialize stb true type font
     stbtt_fontinfo info;
-    if (!stbtt_InitFont(&info, buffer, 0)) {
-        SDL_Log("Font init failed.");
+    if (!stbtt_InitFont(&info, file_buffer, 0)) {
+        SDL_Log("Font init failed: %s", FONT_PATH);
+        SDL_free(file_buffer);
+        SDL_free(cache);
         return -1;
     }
     int font_size = 22;
     float scale = stbtt_ScaleForPixelHeight(&info, font_size);
+
+    // create txt_font
     assets->fonts[ASSET_FONT_SMALL] = txt_create_font(assets->atlas);
-    if (assets->fonts[ASSET_FONT_SMALL] == NULL)
+    if (assets->fonts[ASSET_FONT_SMALL] == NULL) {
+        SDL_Log("txt_font creation failed: %s", FONT_PATH);
+        SDL_free(file_buffer);
+        SDL_free(cache);
         return -1;
+    }
 
     // get the lowest descent (like the tail in letter 'g'), descent = y1
     int lowest_descent = 0;
@@ -328,6 +319,13 @@ int assets_load(struct core *core, struct assets *assets)
             int width, height, yoff;
             Uint8 *texture_data = stbtt_GetCodepointBitmap(
                 &info, scale, scale, codepoint, &width, &height, 0, &yoff);
+            if (texture_data == NULL) {
+                SDL_Log("stb_truetype failed getting codepoint bitmap: '%c'",
+                        codepoint);
+                SDL_free(file_buffer);
+                SDL_free(cache);
+                return -1;
+            }
             struct core_texture texture_boundingbox =
                 core_create_stbtt_texture(width, height, texture_data);
             SDL_free(texture_data);
@@ -380,13 +378,41 @@ int assets_load(struct core *core, struct assets *assets)
             core_delete_texture(&texture_boundingbox);
         }
     }
+
+    SDL_free(file_buffer);
     SDL_free(cache);
 
-    /**
-     * Make the atlas
-     * */
-    if (assets_atlas_pack_rects(assets->atlas) < 0)
+    return 0;
+}
+
+int assets_load(struct core *core, struct assets *assets)
+{
+    assets->atlas = SDL_calloc(1, sizeof(*assets->atlas));
+    if (assets->atlas == NULL)
         return -1;
+    assets->atlas->texture =
+        core_create_stbi_texture(ASSET_ATLAS_WIDTH, ASSET_ATLAS_HEIGHT, 0);
+
+    if (assets_load_shaders(assets) != 0) {
+        assets_dispose(assets);
+        return -1;
+    }
+
+    if (assets_load_textures(assets) != 0) {
+        assets_dispose(assets);
+        return -1;
+    }
+
+    if (assets_load_fonts(core, assets) != 0) {
+        assets_dispose(assets);
+        return -1;
+    }
+
+    if (assets_atlas_pack_rects(assets->atlas) != 0) {
+        assets_dispose(assets);
+        return -1;
+    }
+
     assets_atlas_compute(core, assets->atlas,
                          assets->shaders[ASSET_SHADER_ATLAS]);
 
