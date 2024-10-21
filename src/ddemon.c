@@ -18,13 +18,14 @@ int main(int argc, char *argv[])
         core_shutdown(&core);
     }
 
+    char fps[12];
     int frames = 0;
     Uint32 last_frame_time = 0;
     SDL_bool running = SDL_TRUE;
     while (running) {
         Uint32 now = SDL_GetTicks64();
         if (now - last_frame_time >= 1000) {
-            SDL_Log("FPS: %i", frames);
+            SDL_snprintf(fps, SDL_arraysize(fps), "%i", frames);
             last_frame_time = now;
             frames = 0;
         }
@@ -65,8 +66,10 @@ int main(int argc, char *argv[])
                 }
             }
         }
-        txt("THIS IS NOT A GAME", 0, 100, assets.fonts[ASSET_FONT_SMALL],
-            &core);
+        char text[64] = "";
+        SDL_snprintf(text, SDL_arraysize(text), "THIS IS NOT A GAME. FPS=%s",
+                     fps);
+        txt(text, 0, 100, assets.fonts[ASSET_FONT_SMALL], &core);
         core_draw_queue(&core);
         core_update_window(core.window);
     }
