@@ -65,9 +65,9 @@ static const char *SHADER_FRAGMENT_PATHS[] = {
 };
 // clang-format on
 
-static int assets_atlas_cache_texture(struct asset_atlas *atlas,
-                                      struct core_texture texture,
-                                      int *texture_region_id)
+static int assets_cache_texture_in_atlas(struct asset_atlas *atlas,
+                                         struct core_texture texture,
+                                         int *texture_region_id)
 {
     // check if there is available textures in atlas pool
     if (atlas->texture_count + 1 >= ASSET_ATLAS_TEXTURE_MAX)
@@ -87,7 +87,7 @@ static int assets_atlas_cache_texture(struct asset_atlas *atlas,
     return 0;
 }
 
-static int assets_atlas_pack_rects(struct asset_atlas *atlas)
+static int assets_pack_atlas_rects(struct asset_atlas *atlas)
 {
     struct stbrp_context ctx;
     int num_tex_regions = SDL_arraysize(atlas->texture_regions);
@@ -101,7 +101,7 @@ static int assets_atlas_pack_rects(struct asset_atlas *atlas)
     return 0;
 }
 
-static void assets_atlas_compute(struct core *core, struct asset_atlas *atlas,
+static void assets_compute_atlas(struct core *core, struct asset_atlas *atlas,
                                  Uint32 atlas_shader)
 {
     core_offscreen_rendering_begin(core, &atlas->texture);
@@ -240,7 +240,8 @@ static int assets_load_textures(struct assets *assets)
         struct core_texture texture =
             core_create_stbi_texture(width, height, texture_data);
         int texture_region_id;
-        assets_atlas_cache_texture(assets->atlas, texture, &texture_region_id);
+        assets_cache_texture_in_atlas(assets->atlas, texture,
+                                      &texture_region_id);
         assets->texture_region_ids[i] = texture_region_id;
         stbi_image_free(texture_data);
     }
@@ -370,8 +371,8 @@ static int assets_load_fonts(struct core *core, struct assets *assets)
             core_draw_queue(core);
             core_offscreen_rendering_end();
             int texture_region_id;
-            assets_atlas_cache_texture(assets->atlas, texture_aligned,
-                                       &texture_region_id);
+            assets_cache_texture_in_atlas(assets->atlas, texture_aligned,
+                                          &texture_region_id);
             txt_set_glyph(assets->fonts[ASSET_FONT_SMALL], codepoint,
                           texture_region_id);
 
@@ -410,20 +411,19 @@ int assets_load(struct core *core, struct assets *assets)
         return -1;
     }
 
-    if (assets_atlas_pack_rects(assets->atlas) != 0) {
+    if (assets_pack_atlas_rects(assets->atlas) != 0) {
         assets_dispose(assets);
         return -1;
     }
 
-    assets_atlas_compute(core, assets->atlas,
+    assets_compute_atlas(core, assets->atlas,
                          assets->shaders[ASSET_SHADER_ATLAS]);
 
     return 0;
 }
 
-void assets_atlas_get_texture_region(struct asset_atlas *atlas,
-                                     int texture_region_id,
-                                     SDL_FRect *texture_region)
+void assets_get_texture_region(struct asset_atlas *atlas, int texture_region_id,
+                               SDL_FRect *texture_region)
 {
     texture_region->x = atlas->texture_regions[texture_region_id].x;
     texture_region->y = atlas->texture_regions[texture_region_id].y;
@@ -431,7 +431,7 @@ void assets_atlas_get_texture_region(struct asset_atlas *atlas,
     texture_region->h = atlas->texture_regions[texture_region_id].h;
 }
 
-struct core_texture assets_atlas_get_texture(struct asset_atlas *atlas)
+struct core_texture assets_get_atlas_texture(struct asset_atlas *atlas)
 {
     return atlas->texture;
 }

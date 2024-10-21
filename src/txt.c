@@ -98,8 +98,8 @@ int txt(const char *str, float x, float y, struct txt_font *font,
 
         int texture_region_id = font->texture_region_ids[codepoints[i]];
         SDL_FRect texture_region;
-        assets_atlas_get_texture_region(font->atlas, texture_region_id,
-                                        &texture_region);
+        assets_get_texture_region(font->atlas, texture_region_id,
+                                  &texture_region);
 
         src_rect = (SDL_FRect){0, 0, texture_region.w, texture_region.h};
         dst_rect = (SDL_FRect){0, y, texture_region.w, texture_region.h};
