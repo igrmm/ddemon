@@ -14,7 +14,9 @@ enum asset_texture {
     ASSET_TEXTURE_ICON_SELECT,
     ASSET_TEXTURE_MAX
 };
+
 enum asset_font { ASSET_FONT_SMALL = 0, ASSET_FONT_MAX };
+
 enum asset_shader {
     ASSET_SHADER_DEFAULT = 0,
     ASSET_SHADER_ATLAS,
