@@ -315,9 +315,9 @@ static int assets_load_fonts(struct core *core, struct assets *assets)
     // loop through cached codepoints, create aligned tex and store in atlas
     for (Uint32 codepoint = 0; codepoint < TXT_UNICODE_MAX; codepoint++) {
         if (txt_is_codepoint_cached(cache, codepoint)) {
-            int width, height, yoff;
+            int width, height, xoff, yoff;
             Uint8 *texture_data = stbtt_GetCodepointBitmap(
-                &info, scale, scale, codepoint, &width, &height, 0, &yoff);
+                &info, scale, scale, codepoint, &width, &height, &xoff, &yoff);
             if (texture_data == NULL) {
                 SDL_Log("stb_truetype failed getting codepoint bitmap: '%c'",
                         codepoint);
@@ -353,16 +353,19 @@ static int assets_load_fonts(struct core *core, struct assets *assets)
                 descent = 0;
             }
 
+            // align glyph on X axis with baseline (origin)
+            int new_width = width + xoff;
+
             // render to texture, store into atlas, set glyph on txt_font
             struct core_texture texture_aligned =
-                core_create_stbi_texture(width, new_height, 0);
+                core_create_stbi_texture(new_width, new_height, 0);
             core_offscreen_rendering_begin(core, &texture_aligned);
-            core_update_viewport(core, width, new_height);
+            core_update_viewport(core, new_width, new_height);
             core_clear_screen(0.0f, 0.0f, 0.0f, 0.0f);
             core_use_shader(core, assets->shaders[ASSET_SHADER_DEFAULT]);
             core_bind_texture(core, texture_boundingbox);
             SDL_FRect src_rect = {0, 0, width, height};
-            SDL_FRect dst_rect = {0, descent, width, height};
+            SDL_FRect dst_rect = {xoff, descent, width, height};
             core_add_drawing_tex(core, NULL, &src_rect, &dst_rect);
             core_draw_queue(core);
             core_offscreen_rendering_end();

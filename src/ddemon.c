@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
         core_shutdown(&core);
     }
 
-    char fps[12];
+    char fps[12] = {0};
     int frames = 0;
     Uint32 last_frame_time = 0;
     SDL_bool running = SDL_TRUE;
