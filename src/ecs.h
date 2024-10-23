@@ -15,13 +15,14 @@ struct ecs_table;
 /**
  * This functions manage struct ecs_table directly
  */
-void ecs_table_clear(struct ecs_table *table);
-void ecs_table_add_entity(struct ecs_table *entity_table, Uint16 entity);
-void ecs_table_remove_entity(struct ecs_table *entity_table, Uint16 entity);
+void ecs_clear_table(struct ecs_table *table);
+void ecs_add_entity_to_table(struct ecs_table *entity_table, Uint16 entity);
+void ecs_remove_entity_from_table(struct ecs_table *entity_table,
+                                  Uint16 entity);
 struct ecs_table *ecs_create_table(void);
-int ecs_table_iterate_entities(struct ecs_table *entity_table,
+int ecs_iterate_table_entities(struct ecs_table *entity_table,
                                struct ecs_node **node, Uint16 *entity);
-Uint16 ecs_table_get_count(struct ecs_table *table);
+Uint16 ecs_get_table_count(struct ecs_table *table);
 
 /**
  * This functions manage ecs_table indirectly via struct ecs
