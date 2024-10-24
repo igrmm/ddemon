@@ -397,22 +397,22 @@ int assets_load(struct core *core, struct assets *assets)
         core_create_stbi_texture(ASSET_ATLAS_WIDTH, ASSET_ATLAS_HEIGHT, 0);
 
     if (assets_load_shaders(assets) != 0) {
-        assets_dispose(assets);
+        SDL_Log("Error loading shaders.");
         return -1;
     }
 
     if (assets_load_textures(assets) != 0) {
-        assets_dispose(assets);
+        SDL_Log("Error loading textures.");
         return -1;
     }
 
     if (assets_load_fonts(core, assets) != 0) {
-        assets_dispose(assets);
+        SDL_Log("Error loading fonts.");
         return -1;
     }
 
     if (assets_pack_atlas_rects(assets->atlas) != 0) {
-        assets_dispose(assets);
+        SDL_Log("Error packing rectangles for atlas creation.");
         return -1;
     }
 
