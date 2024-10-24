@@ -133,27 +133,46 @@ static void assets_compute_atlas(struct core *core, struct asset_atlas *atlas,
 static int assets_load_file(Uint8 *buffer, size_t bufsiz, const char *file_path,
                             size_t *file_size)
 {
+    // try to open file
     SDL_RWops *file = SDL_RWFromFile(file_path, "r");
     if (file == NULL) {
-        SDL_Log("Error loading file: %s", file_path);
+        SDL_Log("%s", SDL_GetError());
         return -1;
     }
+
+    // try to load bytes from file until end of buffer
+    int status = 0;
     for (size_t i = 0; i < bufsiz; i++) {
-        if (SDL_RWread(file, &buffer[i], sizeof(Uint8), 1) <= 0) {
-            // loading is done, lets wrap it up
+        size_t bytes_read = SDL_RWread(file, &buffer[i], sizeof(Uint8), 1);
+        if (bytes_read == 0) {
+            // check for error
+            const char *error = SDL_GetError();
+            if (SDL_strlen(error) != 0) {
+                SDL_Log("%s", error);
+                status = -1;
+                break;
+            }
+            // loading is done whithout error
             buffer[i] = 0;
             if (file_size != NULL)
                 *file_size = i;
             break;
-        } else if (i >= bufsiz - 1) {
-            // buffer exploded and loading is not done, abort
+        }
+
+        // check for buffer overflow
+        if (i >= bufsiz - 1) {
             SDL_Log("Buffer overflow when loading file: %s", file_path);
-            SDL_RWclose(file);
-            return -1;
+            status = -1;
+            break;
         }
     }
-    SDL_RWclose(file);
-    return 0;
+
+    if (SDL_RWclose(file) != 0) {
+        SDL_Log("%s", SDL_GetError());
+        status = -1;
+    }
+
+    return status;
 }
 
 static int assets_load_shaders(struct assets *assets)
