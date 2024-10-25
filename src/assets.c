@@ -235,8 +235,10 @@ static int assets_load_textures(struct assets *assets)
 {
     size_t file_size = 0;
     Uint8 *file_buffer = SDL_malloc(ASSET_BUFSIZ * sizeof(Uint8));
-    if (file_buffer == NULL)
+    if (file_buffer == NULL) {
+        SDL_Log("Error loading textures: malloc failed (file_buffer)");
         return -1;
+    }
 
     for (int i = 0; i < ASSET_TEXTURE_MAX; i++) {
         // load img from file
@@ -264,8 +266,10 @@ static int assets_load_textures(struct assets *assets)
         struct core_texture texture =
             core_create_stbi_texture(width, height, texture_data);
         int texture_region_id;
-        assets_cache_texture_in_atlas(assets->atlas, texture,
-                                      &texture_region_id);
+        if (assets_cache_texture_in_atlas(assets->atlas, texture,
+                                          &texture_region_id) != 0)
+            return -1;
+
         assets->texture_region_ids[i] = texture_region_id;
         stbi_image_free(texture_data);
     }
