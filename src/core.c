@@ -123,11 +123,21 @@ int core_setup(struct core *core, const char *window_title, int window_width,
 
 void core_shutdown(struct core *core)
 {
-    glDeleteFramebuffers(1, &core->frame_buffer_object);
-    glDeleteVertexArrays(1, &core->vertex_array_object);
-    glDeleteBuffers(1, &core->instance_vertex_buffer_object);
-    glDeleteBuffers(1, &core->vertex_buffer_object);
-    glDeleteBuffers(1, &core->element_buffer_object);
+    if (core->frame_buffer_object > 0)
+        glDeleteFramebuffers(1, &core->frame_buffer_object);
+
+    if (core->vertex_array_object > 0)
+        glDeleteVertexArrays(1, &core->vertex_array_object);
+
+    if (core->instance_vertex_buffer_object > 0)
+        glDeleteBuffers(1, &core->instance_vertex_buffer_object);
+
+    if (core->vertex_buffer_object > 0)
+        glDeleteBuffers(1, &core->vertex_buffer_object);
+
+    if (core->element_buffer_object > 0)
+        glDeleteBuffers(1, &core->element_buffer_object);
+
     SDL_GL_DeleteContext(core->ctx);
     SDL_DestroyWindow(core->window);
     SDL_Quit();
