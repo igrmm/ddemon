@@ -259,12 +259,12 @@ static int core_get_drawing_instance(struct core *core, int *instance)
     return 0;
 }
 
-void core_add_drawing_tex(struct core *core, const SDL_FRect *tex_region,
-                          const SDL_FRect *src_rect, const SDL_FRect *dst_rect)
+int core_add_drawing_tex(struct core *core, const SDL_FRect *tex_region,
+                         const SDL_FRect *src_rect, const SDL_FRect *dst_rect)
 {
     int instance;
     if (core_get_drawing_instance(core, &instance) < 0)
-        return;
+        return -1;
 
     float atlas_x = src_rect->x;
     float atlas_y = src_rect->y;
@@ -285,14 +285,16 @@ void core_add_drawing_tex(struct core *core, const SDL_FRect *tex_region,
         .data2 = atlas_y / core->current_texture.height,
         .data3 = src_rect->w / core->current_texture.width,
         .data4 = src_rect->h / core->current_texture.height};
+
+    return 0;
 }
 
-void core_add_drawing_fill_rect(struct core *core, SDL_FRect *rect,
-                                struct core_color *color)
+int core_add_drawing_fill_rect(struct core *core, SDL_FRect *rect,
+                               struct core_color *color)
 {
     int instance;
     if (core_get_drawing_instance(core, &instance) < 0)
-        return;
+        return -1;
 
     // set up instance to be draw
     core->drawing_pool[instance] = (struct core_drawing){
@@ -304,10 +306,12 @@ void core_add_drawing_fill_rect(struct core *core, SDL_FRect *rect,
         .data2 = color->g,
         .data3 = color->b,
         .data4 = color->a};
+
+    return 0;
 }
 
-void core_add_drawing_rect(struct core *core, SDL_FRect *rect,
-                           struct core_color *color, float thickness)
+int core_add_drawing_rect(struct core *core, SDL_FRect *rect,
+                          struct core_color *color, float thickness)
 {
     SDL_FRect line = {0};
 
@@ -316,21 +320,27 @@ void core_add_drawing_rect(struct core *core, SDL_FRect *rect,
     line.y = rect->y;
     line.w = rect->w;
     line.h = thickness;
-    core_add_drawing_fill_rect(core, &line, color);
+    if (core_add_drawing_fill_rect(core, &line, color) != 0)
+        return -1;
 
     // line top
     line.y = rect->y + rect->h - thickness;
-    core_add_drawing_fill_rect(core, &line, color);
+    if (core_add_drawing_fill_rect(core, &line, color) != 0)
+        return -1;
 
     // line left
     line.y = rect->y;
     line.w = thickness;
     line.h = rect->h;
-    core_add_drawing_fill_rect(core, &line, color);
+    if (core_add_drawing_fill_rect(core, &line, color) != 0)
+        return -1;
 
     // line right
     line.x = rect->x + rect->w - thickness;
-    core_add_drawing_fill_rect(core, &line, color);
+    if (core_add_drawing_fill_rect(core, &line, color) != 0)
+        return -1;
+
+    return 0;
 }
 
 void core_draw_queue(struct core *core)
