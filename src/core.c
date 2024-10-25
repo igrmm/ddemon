@@ -125,6 +125,7 @@ void core_shutdown(struct core *core)
 {
     glDeleteFramebuffers(1, &core->frame_buffer_object);
     glDeleteVertexArrays(1, &core->vertex_array_object);
+    glDeleteBuffers(1, &core->instance_vertex_buffer_object);
     glDeleteBuffers(1, &core->vertex_buffer_object);
     glDeleteBuffers(1, &core->element_buffer_object);
     SDL_GL_DeleteContext(core->ctx);
