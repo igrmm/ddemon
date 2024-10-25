@@ -284,8 +284,10 @@ static int assets_load_fonts(struct core *core, struct assets *assets)
     // create file buffer
     size_t file_size = 0;
     Uint8 *file_buffer = SDL_malloc(ASSET_BUFSIZ * sizeof(Uint8));
-    if (file_buffer == NULL)
+    if (file_buffer == NULL) {
+        SDL_Log("Error loading fonts: malloc failed (file_buffer)");
         return -1;
+    }
 
     // cache ascii codepoints
     struct txt_codepoint_cache *cache = txt_create_codepoint_cache();
@@ -296,14 +298,17 @@ static int assets_load_fonts(struct core *core, struct assets *assets)
         for (int i = '!'; i < '~'; i++) {
             char str[] = " ";
             str[0] = i;
-            txt_cache_codepoints(cache, str);
+            if (txt_cache_codepoints(cache, str) != 0) {
+                SDL_free(file_buffer);
+                SDL_free(cache);
+                return -1;
+            }
         }
     }
 
     // load ttf file
     if (assets_load_file(file_buffer, ASSET_BUFSIZ, FONT_PATH, &file_size) !=
         0) {
-        SDL_Log("Error opening font: %s", FONT_PATH);
         SDL_free(file_buffer);
         SDL_free(cache);
         return -1;
@@ -312,7 +317,7 @@ static int assets_load_fonts(struct core *core, struct assets *assets)
     // initialize stb true type font
     stbtt_fontinfo info;
     if (!stbtt_InitFont(&info, file_buffer, 0)) {
-        SDL_Log("Font init failed: %s", FONT_PATH);
+        SDL_Log("stbtt_InitFont failed: %s", FONT_PATH);
         SDL_free(file_buffer);
         SDL_free(cache);
         return -1;
@@ -323,7 +328,6 @@ static int assets_load_fonts(struct core *core, struct assets *assets)
     // create txt_font
     assets->fonts[ASSET_FONT_SMALL] = txt_create_font(assets->atlas);
     if (assets->fonts[ASSET_FONT_SMALL] == NULL) {
-        SDL_Log("txt_font creation failed: %s", FONT_PATH);
         SDL_free(file_buffer);
         SDL_free(cache);
         return -1;
@@ -399,8 +403,12 @@ static int assets_load_fonts(struct core *core, struct assets *assets)
             core_draw_queue(core);
             core_offscreen_rendering_end();
             int texture_region_id;
-            assets_cache_texture_in_atlas(assets->atlas, texture_aligned,
-                                          &texture_region_id);
+            if (assets_cache_texture_in_atlas(assets->atlas, texture_aligned,
+                                              &texture_region_id) != 0) {
+                SDL_free(file_buffer);
+                SDL_free(cache);
+                return -1;
+            }
             txt_set_glyph(assets->fonts[ASSET_FONT_SMALL], codepoint,
                           texture_region_id);
 
