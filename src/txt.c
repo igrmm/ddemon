@@ -24,8 +24,10 @@ int txt_decode_codepoints(Uint32 *cp, size_t cp_maxlen, const char *str)
     size_t cp_i = 0;
     for (size_t str_i = 0; str_i < str_len; str_i++) {
         byte1 = str[str_i];
-        if (byte1 > 0x7f || cp_i >= cp_maxlen)
+        if (byte1 > 0x7f || cp_i >= cp_maxlen) {
+            SDL_Log("Error decoding non ascii unicode: not implemented.");
             return -1;
+        }
         cp[cp_i] = byte1;
         cp_i++;
     }
@@ -58,14 +60,18 @@ struct txt_codepoint_cache *txt_create_codepoint_cache(void)
 {
     struct txt_codepoint_cache *cache =
         SDL_calloc(1, sizeof(struct txt_codepoint_cache));
+    if (cache == NULL)
+        SDL_Log("Error creating codepoint cache: calloc failed.");
     return cache;
 }
 
 struct txt_font *txt_create_font(struct asset_atlas *atlas)
 {
     struct txt_font *font = SDL_calloc(1, sizeof(struct txt_font));
-    if (font == NULL)
+    if (font == NULL) {
+        SDL_Log("Error creating txt_font: calloc failed.");
         return font;
+    }
     font->atlas = atlas;
     return font;
 }
