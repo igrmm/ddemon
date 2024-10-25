@@ -145,6 +145,8 @@ void ecs_remove_entity_from_table(struct ecs_table *entity_table, Uint16 entity)
 struct ecs_table *ecs_create_table(void)
 {
     struct ecs_table *table = SDL_calloc(1, sizeof(*table));
+    if (table == NULL)
+        SDL_Log("Error creating ecs_table: calloc failed.");
     return table;
 }
 
@@ -163,8 +165,10 @@ Uint16 ecs_get_table_count(struct ecs_table *table) { return table->count; }
 struct ecs *ecs_create(void)
 {
     struct ecs *ecs = SDL_calloc(1, sizeof(*ecs));
-    if (ecs == NULL)
+    if (ecs == NULL) {
+        SDL_Log("Error creating ecs: malloc failed.");
         return NULL;
+    }
     // fill entity pool
     for (Uint16 entity = 0; entity < ECS_BUFSIZ; entity++)
         ecs_add_entity_to_table(&ecs->entity_pool, entity);
