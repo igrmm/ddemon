@@ -70,8 +70,10 @@ static int assets_cache_texture_in_atlas(struct asset_atlas *atlas,
                                          int *texture_region_id)
 {
     // check if there is available textures in atlas pool
-    if (atlas->texture_count + 1 >= ASSET_ATLAS_TEXTURE_MAX)
+    if (atlas->texture_count + 1 >= ASSET_ATLAS_TEXTURE_MAX) {
+        SDL_Log("Error caching texture in atlas: reached max texture pool.");
         return -1;
+    }
 
     // set out parameter "texture_region_id"
     *texture_region_id = atlas->texture_count;
