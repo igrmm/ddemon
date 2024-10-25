@@ -180,11 +180,14 @@ static int assets_load_file(Uint8 *buffer, size_t bufsiz, const char *file_path,
 static int assets_load_shaders(struct assets *assets)
 {
     Uint8 *vertex_file_buffer = SDL_malloc(ASSET_BUFSIZ * sizeof(Uint8));
-    if (vertex_file_buffer == NULL)
+    if (vertex_file_buffer == NULL) {
+        SDL_Log("Error loading shaders: malloc failed (vertex_file_buffer)");
         return -1;
+    }
 
     Uint8 *fragment_file_buffer = SDL_malloc(ASSET_BUFSIZ * sizeof(Uint8));
     if (fragment_file_buffer == NULL) {
+        SDL_Log("Error loading shaders: malloc failed (fragment_file_buffer)");
         SDL_free(vertex_file_buffer);
         return -1;
     }
