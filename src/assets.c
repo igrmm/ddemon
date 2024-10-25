@@ -427,30 +427,24 @@ static int assets_load_fonts(struct core *core, struct assets *assets)
 int assets_load(struct core *core, struct assets *assets)
 {
     assets->atlas = SDL_calloc(1, sizeof(*assets->atlas));
-    if (assets->atlas == NULL)
+    if (assets->atlas == NULL) {
+        SDL_Log("Error allocating memory for atlas in assets_load()");
         return -1;
+    }
     assets->atlas->texture =
         core_create_stbi_texture(ASSET_ATLAS_WIDTH, ASSET_ATLAS_HEIGHT, 0);
 
-    if (assets_load_shaders(assets) != 0) {
-        SDL_Log("Error loading shaders.");
+    if (assets_load_shaders(assets) != 0)
         return -1;
-    }
 
-    if (assets_load_textures(assets) != 0) {
-        SDL_Log("Error loading textures.");
+    if (assets_load_textures(assets) != 0)
         return -1;
-    }
 
-    if (assets_load_fonts(core, assets) != 0) {
-        SDL_Log("Error loading fonts.");
+    if (assets_load_fonts(core, assets) != 0)
         return -1;
-    }
 
-    if (assets_pack_atlas_rects(assets->atlas) != 0) {
-        SDL_Log("Error packing rectangles for atlas creation.");
+    if (assets_pack_atlas_rects(assets->atlas) != 0)
         return -1;
-    }
 
     assets_compute_atlas(core, assets->atlas,
                          assets->shaders[ASSET_SHADER_ATLAS]);
