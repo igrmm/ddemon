@@ -4,8 +4,6 @@
 #include "core.h"
 #include "txt.h"
 
-#define TXT_CODEPOINT_BUFSIZ 1024
-
 struct txt_font {
     struct asset_atlas *atlas;
     int texture_region_ids[TXT_UNICODE_MAX];
@@ -16,43 +14,31 @@ struct txt_codepoint_cache {
     size_t count;
 };
 
-int txt_decode_codepoints(Uint32 *cp, size_t cp_maxlen, const char *str)
+int txt_get_codepoint(Uint32 *codepoint, const char **iterator)
 {
     // ASCII ONLY FOR NOW
-    unsigned char byte1;
-    size_t str_len = SDL_strlen(str);
-    size_t cp_i = 0;
-    for (size_t str_i = 0; str_i < str_len; str_i++) {
-        byte1 = str[str_i];
-        if (byte1 > 0x7f || cp_i >= cp_maxlen) {
-            SDL_Log("Error decoding non ascii unicode: not implemented.");
-            return -1;
-        }
-        cp[cp_i] = byte1;
-        cp_i++;
+    unsigned char byte1 = **iterator;
+    if (byte1 > 0x7f) {
+        SDL_Log("Error decoding non ascii unicode: not implemented.");
+        return -1;
     }
-
+    *codepoint = byte1;
     return 0;
 }
 
 int txt_cache_codepoints(struct txt_codepoint_cache *cache, const char *str)
 {
-    // convert utf8 string to array of codepoints (decimal, int)
-    Uint32 buffer[TXT_CODEPOINT_BUFSIZ] = {0};
-    size_t bufsiz = SDL_arraysize(buffer);
-    if (txt_decode_codepoints(buffer, bufsiz, str) < 0)
-        return -1;
-
-    // this loop will flag unique codepoints true
     Uint32 codepoint;
-    for (size_t i = 0; i < bufsiz; i++) {
-        codepoint = buffer[i];
+    const char *iterator = str;
+    while (*iterator != '\0') {
+        if (txt_get_codepoint(&codepoint, &iterator) != 0)
+            return -1;
         if (cache->codepoints[codepoint] == SDL_FALSE && codepoint > 0) {
             cache->codepoints[codepoint] = SDL_TRUE;
             cache->count++;
         }
+        iterator++;
     }
-
     return 0;
 }
 
@@ -85,35 +71,31 @@ void txt_destroy_font(struct txt_font *font)
 int txt(const char *str, float x, float y, struct txt_font *font,
         struct core *core)
 {
-    Uint32 codepoints[TXT_CODEPOINT_BUFSIZ] = {0};
     SDL_FRect src_rect, dst_rect;
     int cursor_x = 0;
+    Uint32 codepoint;
+    const char *iterator = str;
 
-    if (txt_decode_codepoints(codepoints, TXT_CODEPOINT_BUFSIZ, str) < 0)
-        return -1;
+    while (*iterator != '\0') {
+        if (txt_get_codepoint(&codepoint, &iterator) != 0)
+            return -1;
 
-    for (int i = 0; i < TXT_CODEPOINT_BUFSIZ; i++) {
-        if (codepoints[i] == 0)
-            break;
+        iterator++;
 
         // TODO hardcoded: size of "space"
-        if (codepoints[i] == ' ') {
+        if (codepoint == ' ') {
             cursor_x += 32;
             continue;
         }
 
-        int texture_region_id = font->texture_region_ids[codepoints[i]];
+        int texture_region_id = font->texture_region_ids[codepoint];
         SDL_FRect texture_region;
         assets_get_texture_region(font->atlas, texture_region_id,
                                   &texture_region);
-
         src_rect = (SDL_FRect){0, 0, texture_region.w, texture_region.h};
         dst_rect = (SDL_FRect){0, y, texture_region.w, texture_region.h};
-
         dst_rect.x = x + cursor_x;
-
         core_add_drawing_tex(core, &texture_region, &src_rect, &dst_rect);
-
         cursor_x += texture_region.w + 1;
     }
 

@@ -12,13 +12,29 @@ struct txt_font;
 struct txt_codepoint_cache;
 
 /**
- * This function decodes codepoints of given string into decimal values and
- * store in cp, an array of Uint32. Essentially this converts a given utf8
- * string into an array of ints representing the unicode codepoints as decimal
- * values.
+ * This function decodes the character of some string pointed by the iterator
+ * into a unicode codepoint, a decimal value. If the character is encoded in
+ * more than one byte, the function will advance the iterator until the decoding
+ * is done, or fail.
+ *
+ * Example:
+ * const char utf8[] = "this is a string";
+ * const char *iterator = utf8;
+ * while(*iterator != '\0') {
+ *     Uint32 codepoint;
+ *     if(txt_get_codepoint(&codepoint, &iterator) != 0)
+ *         break;
+ *     iterator++;
+ * }
+ *
+ * \param codepoint a pointer filled in with the unicode codepoint, a decimal
+ * value representing the character.
+ * \param iterator a double pointer pointing to a character of a utf8 string
+ * that will be decoded to a unicode codepoint.
+ * \returns 0 on success or -1 on error.
  *
  */
-int txt_decode_codepoints(Uint32 *cp, size_t cp_maxlen, const char *str);
+int txt_get_codepoint(Uint32 *codepoint, const char **iterator);
 
 /**
  * Caches unique codepoints as flags (true or false) of given string in an array
