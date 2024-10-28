@@ -16,13 +16,47 @@ struct txt_codepoint_cache {
 
 int txt_get_codepoint(Uint32 *codepoint, const char **iterator)
 {
-    // ASCII ONLY FOR NOW
-    unsigned char byte1 = **iterator;
-    if (byte1 > 0x7f) {
-        SDL_Log("Error decoding non ascii unicode: not implemented.");
+    unsigned char byte = **iterator;
+
+    // check if the character is ascii
+    if ((byte & 0x80) == 0) {
+        *codepoint = byte;
+        return 0;
+    }
+
+    // check how many bytes are encoded
+    int num_bytes = 0;
+    if ((byte & 0xE0) == 0xC0) {
+        num_bytes = 2;
+    } else if ((byte & 0xF0) == 0xE0) {
+        num_bytes = 3;
+    } else if ((byte & 0xF8) == 0xF0) {
+        num_bytes = 4;
+    } else {
+        SDL_Log("Error getting codepoint: invalid utf8.");
         return -1;
     }
-    *codepoint = byte1;
+
+    for (int i = 0; i < num_bytes; i++) {
+        /**
+         * If this is the first byte of the encoding, skip first bits
+         * accordinly to num_bytes, else add next bytes (with the first 2 bits
+         * skipped) of the encoding to the codepoint
+         */
+        if (i == 0) {
+            *codepoint = (byte & ((1 << (7 - num_bytes)) - 1));
+        } else {
+            *codepoint <<= 6;
+            *codepoint |= (byte & 63);
+        }
+
+        // don't advance the iterator if this is the last iteration of the loop
+        if (i < num_bytes - 1) {
+            (*iterator)++;
+            byte = **iterator;
+        }
+    }
+
     return 0;
 }
 
