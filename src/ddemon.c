@@ -8,14 +8,17 @@ int main(int argc, char *argv[])
 {
     struct core core = {0};
     if (core_setup(&core, "DDEMON", 800, 600, SDL_WINDOW_FULLSCREEN_DESKTOP) <
-        0)
+        0) {
         core_shutdown(&core);
+        return -1;
+    }
 
     struct assets assets = {0};
     if (assets_load(&core, &assets) < 0) {
         SDL_Log("Error loading assets.");
         assets_dispose(&assets);
         core_shutdown(&core);
+        return -1;
     }
 
     char fps[12] = {0};
