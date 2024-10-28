@@ -43,7 +43,7 @@ struct core {
     // CORE
     int viewport_width, viewport_height;
     struct core_texture current_texture;
-    struct core_drawing drawing_pool[CORE_DRAWING_POOL_SIZE];
+    struct core_drawing *drawing_pool;
     int drawing_queue_size;
 };
 

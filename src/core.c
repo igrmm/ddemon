@@ -43,6 +43,14 @@ int core_setup(struct core *core, const char *window_title, int window_width,
     SDL_Log("PLATFORM: %s, PROFILE: %i, VERSION: %i", platform, profile,
             version);
 
+    // malloc memory for drawing pool
+    core->drawing_pool =
+        SDL_malloc(CORE_DRAWING_POOL_SIZE * sizeof(struct core_drawing));
+    if (core->drawing_pool == NULL) {
+        SDL_Log("Error in core_setup(): malloc failed (drawing_pool)");
+        return -1;
+    }
+
     // vsync off so we can see fps
     SDL_GL_SetSwapInterval(0);
 
@@ -138,6 +146,7 @@ void core_shutdown(struct core *core)
     if (core->element_buffer_object > 0)
         glDeleteBuffers(1, &core->element_buffer_object);
 
+    SDL_free(core->drawing_pool);
     SDL_GL_DeleteContext(core->ctx);
     SDL_DestroyWindow(core->window);
     SDL_Quit();
