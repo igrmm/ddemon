@@ -91,16 +91,24 @@ static int assets_cache_texture_in_atlas(struct asset_atlas *atlas,
 
 static int assets_pack_atlas_rects(struct asset_atlas *atlas)
 {
+    int status = 0;
     struct stbrp_context ctx;
     int num_tex_regions = SDL_arraysize(atlas->texture_regions);
-    struct stbrp_node nodes[ASSET_STB_RECT_PACK_NUM_NODES];
+    struct stbrp_node *nodes =
+        SDL_malloc(ASSET_STB_RECT_PACK_NUM_NODES * sizeof(struct stbrp_node));
+    if (nodes == NULL) {
+        SDL_Log("Error packing rectangles for atlas creation: malloc failed "
+                "(nodes)");
+        return -1;
+    }
     stbrp_init_target(&ctx, ASSET_ATLAS_WIDTH, ASSET_ATLAS_HEIGHT, nodes,
                       ASSET_STB_RECT_PACK_NUM_NODES);
     if (stbrp_pack_rects(&ctx, atlas->texture_regions, num_tex_regions) != 1) {
         SDL_Log("Error packing rectangles for atlas creation.");
-        return -1;
+        status = -1;
     }
-    return 0;
+    SDL_free(nodes);
+    return status;
 }
 
 static void assets_compute_atlas(struct core *core, struct asset_atlas *atlas,
