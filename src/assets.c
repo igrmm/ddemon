@@ -416,7 +416,8 @@ static int assets_load_fonts(struct core *core, struct assets *assets)
                 SDL_free(cache);
                 return -1;
             }
-            txt_set_glyph(assets->fonts[ASSET_FONT_SMALL], codepoint, index);
+            txt_set_glyph_atlas_index(assets->fonts[ASSET_FONT_SMALL],
+                                      codepoint, index);
 
             // unbind texture_boundinbox so we can free it from gpu's memory
             core_bind_texture(core, (struct core_texture){0, 0, 0});

@@ -56,7 +56,7 @@ int txt(const char *str, float x, float y, struct txt_font *font,
         struct core *core);
 SDL_bool txt_is_codepoint_cached(struct txt_codepoint_cache *cache,
                                  Uint32 codepoint);
-void txt_set_glyph(struct txt_font *font, Uint32 codepoint,
-                   Uint32 texture_region_id);
+void txt_set_glyph_atlas_index(struct txt_font *font, Uint32 codepoint,
+                               Uint32 index);
 
 #endif

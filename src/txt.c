@@ -144,8 +144,8 @@ SDL_bool txt_is_codepoint_cached(struct txt_codepoint_cache *cache,
     return SDL_FALSE;
 }
 
-void txt_set_glyph(struct txt_font *font, Uint32 codepoint,
-                   Uint32 texture_region_id)
+void txt_set_glyph_atlas_index(struct txt_font *font, Uint32 codepoint,
+                               Uint32 index)
 {
-    font->glyph_atlas_indexes[codepoint] = texture_region_id;
+    font->glyph_atlas_indexes[codepoint] = index;
 }
