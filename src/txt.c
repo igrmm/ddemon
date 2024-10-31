@@ -124,7 +124,7 @@ int txt(const char *str, float x, float y, struct txt_font *font,
 
         int index = font->glyph_atlas_indexes[codepoint];
         SDL_FRect glyph_region;
-        assets_get_texture_region(font->atlas, index, &glyph_region);
+        assets_get_atlas_region(font->atlas, index, &glyph_region);
         src_rect = (SDL_FRect){0, 0, glyph_region.w, glyph_region.h};
         dst_rect = (SDL_FRect){0, y, glyph_region.w, glyph_region.h};
         dst_rect.x = x + cursor_x;

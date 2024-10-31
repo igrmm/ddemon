@@ -459,13 +459,13 @@ int assets_load(struct core *core, struct assets *assets)
     return 0;
 }
 
-void assets_get_texture_region(struct asset_atlas *atlas, int texture_region_id,
-                               SDL_FRect *texture_region)
+void assets_get_atlas_region(struct asset_atlas *atlas, int index,
+                                      SDL_FRect *region)
 {
-    texture_region->x = atlas->regions[texture_region_id].x;
-    texture_region->y = atlas->regions[texture_region_id].y;
-    texture_region->w = atlas->regions[texture_region_id].w;
-    texture_region->h = atlas->regions[texture_region_id].h;
+    region->x = atlas->regions[index].x;
+    region->y = atlas->regions[index].y;
+    region->w = atlas->regions[index].w;
+    region->h = atlas->regions[index].h;
 }
 
 struct core_texture assets_get_atlas_texture(struct asset_atlas *atlas)
