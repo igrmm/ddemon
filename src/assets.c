@@ -29,7 +29,7 @@
 #define ASSET_ATLAS_TEXTURE_MAX 1000
 #define ASSET_ATLAS_WIDTH 1024
 #define ASSET_ATLAS_HEIGHT ASSET_ATLAS_WIDTH
-#define ASSET_STB_RECT_PACK_NUM_NODES ASSET_ATLAS_WIDTH * 2
+#define ASSET_STBRP_NODES_SIZE ASSET_ATLAS_WIDTH * 2
 
 struct asset_atlas {
     stbrp_rect texture_regions[ASSET_ATLAS_TEXTURE_MAX];
@@ -93,17 +93,17 @@ static int assets_pack_atlas_rects(struct asset_atlas *atlas)
 {
     int status = 0;
     struct stbrp_context ctx;
-    int num_tex_regions = SDL_arraysize(atlas->texture_regions);
     struct stbrp_node *nodes =
-        SDL_malloc(ASSET_STB_RECT_PACK_NUM_NODES * sizeof(struct stbrp_node));
+        SDL_malloc(ASSET_STBRP_NODES_SIZE * sizeof(struct stbrp_node));
     if (nodes == NULL) {
         SDL_Log("Error packing rectangles for atlas creation: malloc failed "
                 "(nodes)");
         return -1;
     }
     stbrp_init_target(&ctx, ASSET_ATLAS_WIDTH, ASSET_ATLAS_HEIGHT, nodes,
-                      ASSET_STB_RECT_PACK_NUM_NODES);
-    if (stbrp_pack_rects(&ctx, atlas->texture_regions, num_tex_regions) != 1) {
+                      ASSET_STBRP_NODES_SIZE);
+    if (stbrp_pack_rects(&ctx, atlas->texture_regions, atlas->texture_count) !=
+        1) {
         SDL_Log("Error packing rectangles for atlas creation.");
         status = -1;
     }
