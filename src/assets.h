@@ -35,6 +35,9 @@ int assets_load(struct core *core, struct assets *assets);
 void assets_dispose(struct assets *assets);
 void assets_get_atlas_region(struct asset_atlas *atlas, int index,
                              SDL_FRect *region);
+void assets_get_texture_region(struct assets *assets,
+                               enum asset_texture asset_texture,
+                               SDL_FRect *region);
 struct core_texture assets_get_atlas_texture(struct asset_atlas *atlas);
 
 #endif

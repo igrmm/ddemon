@@ -460,12 +460,20 @@ int assets_load(struct core *core, struct assets *assets)
 }
 
 void assets_get_atlas_region(struct asset_atlas *atlas, int index,
-                                      SDL_FRect *region)
+                             SDL_FRect *region)
 {
     region->x = atlas->regions[index].x;
     region->y = atlas->regions[index].y;
     region->w = atlas->regions[index].w;
     region->h = atlas->regions[index].h;
+}
+
+void assets_get_texture_region(struct assets *assets,
+                               enum asset_texture asset_texture,
+                               SDL_FRect *region)
+{
+    assets_get_atlas_region(
+        assets->atlas, assets->texture_atlas_indexes[asset_texture], region);
 }
 
 struct core_texture assets_get_atlas_texture(struct asset_atlas *atlas)

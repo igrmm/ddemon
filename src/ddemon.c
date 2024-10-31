@@ -53,9 +53,7 @@ int main(int argc, char *argv[])
         SDL_FRect src_rect = {0, 0, 32, 32};
         SDL_FRect dst_rect = {0, 0, 32, 32};
         SDL_FRect tex_region;
-        assets_get_atlas_region(
-            assets.atlas, assets.texture_atlas_indexes[ASSET_TEXTURE_TILEMAP],
-            &tex_region);
+        assets_get_texture_region(&assets, ASSET_TEXTURE_TILEMAP, &tex_region);
 
         // render 13k images on screen
         for (int l = 0; l < 6; l++) {
