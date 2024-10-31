@@ -6,7 +6,7 @@
 
 struct txt_font {
     struct asset_atlas *atlas;
-    int texture_region_ids[TXT_UNICODE_MAX];
+    int glyph_atlas_indexes[TXT_UNICODE_MAX];
 };
 
 struct txt_codepoint_cache {
@@ -122,15 +122,14 @@ int txt(const char *str, float x, float y, struct txt_font *font,
             continue;
         }
 
-        int texture_region_id = font->texture_region_ids[codepoint];
-        SDL_FRect texture_region;
-        assets_get_texture_region(font->atlas, texture_region_id,
-                                  &texture_region);
-        src_rect = (SDL_FRect){0, 0, texture_region.w, texture_region.h};
-        dst_rect = (SDL_FRect){0, y, texture_region.w, texture_region.h};
+        int index = font->glyph_atlas_indexes[codepoint];
+        SDL_FRect glyph_region;
+        assets_get_texture_region(font->atlas, index, &glyph_region);
+        src_rect = (SDL_FRect){0, 0, glyph_region.w, glyph_region.h};
+        dst_rect = (SDL_FRect){0, y, glyph_region.w, glyph_region.h};
         dst_rect.x = x + cursor_x;
-        core_add_drawing_tex(core, &texture_region, &src_rect, &dst_rect);
-        cursor_x += texture_region.w + 1;
+        core_add_drawing_tex(core, &glyph_region, &src_rect, &dst_rect);
+        cursor_x += glyph_region.w + 1;
     }
 
     return 0;
@@ -148,5 +147,5 @@ SDL_bool txt_is_codepoint_cached(struct txt_codepoint_cache *cache,
 void txt_set_glyph(struct txt_font *font, Uint32 codepoint,
                    Uint32 texture_region_id)
 {
-    font->texture_region_ids[codepoint] = texture_region_id;
+    font->glyph_atlas_indexes[codepoint] = texture_region_id;
 }

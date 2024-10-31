@@ -26,7 +26,7 @@ enum asset_shader {
 
 struct assets {
     struct asset_atlas *atlas;
-    int texture_region_ids[ASSET_TEXTURE_MAX];
+    int texture_atlas_indexes[ASSET_TEXTURE_MAX];
     struct txt_font *fonts[ASSET_FONT_MAX];
     Uint32 shaders[ASSET_SHADER_MAX];
 };

@@ -26,14 +26,14 @@
 
 #define ASSET_BUFSIZ 512000
 
-#define ASSET_ATLAS_TEXTURE_MAX 1000
+#define ASSET_ATLAS_SIZE 1000
 #define ASSET_ATLAS_WIDTH 1024
 #define ASSET_ATLAS_HEIGHT ASSET_ATLAS_WIDTH
 #define ASSET_STBRP_NODES_SIZE ASSET_ATLAS_WIDTH * 2
 
 struct asset_atlas {
-    stbrp_rect texture_regions[ASSET_ATLAS_TEXTURE_MAX];
-    int texture_count;
+    stbrp_rect regions[ASSET_ATLAS_SIZE];
+    int count;
     struct core_texture texture;
 };
 
@@ -67,24 +67,24 @@ static const char *SHADER_FRAGMENT_PATHS[] = {
 
 static int assets_cache_texture_in_atlas(struct asset_atlas *atlas,
                                          struct core_texture texture,
-                                         int *texture_region_id)
+                                         int *index)
 {
-    // check if there is available textures in atlas pool
-    if (atlas->texture_count + 1 >= ASSET_ATLAS_TEXTURE_MAX) {
-        SDL_Log("Error caching texture in atlas: reached max texture pool.");
+    // check if there is available regions in atlas
+    if (atlas->count + 1 >= ASSET_ATLAS_SIZE) {
+        SDL_Log("Error caching texture in atlas: reached max regions.");
         return -1;
     }
 
-    // set out parameter "texture_region_id"
-    *texture_region_id = atlas->texture_count;
-    atlas->texture_count++;
+    // set out parameter "index"
+    *index = atlas->count;
+    atlas->count++;
 
-    // set texture region width and height
-    atlas->texture_regions[*texture_region_id].w = texture.width;
-    atlas->texture_regions[*texture_region_id].h = texture.height;
+    // set region width and height
+    atlas->regions[*index].w = texture.width;
+    atlas->regions[*index].h = texture.height;
 
     // temporarily use stbrp_reck field "id" to store opengl texture
-    atlas->texture_regions[*texture_region_id].id = texture.id;
+    atlas->regions[*index].id = texture.id;
 
     return 0;
 }
@@ -102,8 +102,7 @@ static int assets_pack_atlas_rects(struct asset_atlas *atlas)
     }
     stbrp_init_target(&ctx, ASSET_ATLAS_WIDTH, ASSET_ATLAS_HEIGHT, nodes,
                       ASSET_STBRP_NODES_SIZE);
-    if (stbrp_pack_rects(&ctx, atlas->texture_regions, atlas->texture_count) !=
-        1) {
+    if (stbrp_pack_rects(&ctx, atlas->regions, atlas->count) != 1) {
         SDL_Log("Error packing rectangles for atlas creation.");
         status = -1;
     }
@@ -120,12 +119,12 @@ static void assets_compute_atlas(struct core *core, struct asset_atlas *atlas,
     core_use_shader(core, atlas_shader);
 
     // draw textures into atlas
-    for (int i = 0; i < atlas->texture_count; i++) {
-        float x = atlas->texture_regions[i].x;
-        float y = atlas->texture_regions[i].y;
-        float w = atlas->texture_regions[i].w;
-        float h = atlas->texture_regions[i].h;
-        int id = atlas->texture_regions[i].id;
+    for (int i = 0; i < atlas->count; i++) {
+        float x = atlas->regions[i].x;
+        float y = atlas->regions[i].y;
+        float w = atlas->regions[i].w;
+        float h = atlas->regions[i].h;
+        int id = atlas->regions[i].id;
         struct core_texture texture = {w, h, id};
         core_bind_texture(core, texture);
         SDL_FRect src_rect = {0, 0, w, h};
@@ -135,7 +134,7 @@ static void assets_compute_atlas(struct core *core, struct asset_atlas *atlas,
 
         // free tmp texture from gpu's memory
         core_delete_texture(&texture);
-        atlas->texture_regions[i].id = 0;
+        atlas->regions[i].id = 0;
     }
     core_offscreen_rendering_end();
 }
@@ -273,12 +272,10 @@ static int assets_load_textures(struct assets *assets)
         // store texture in altas for computation
         struct core_texture texture =
             core_create_stbi_texture(width, height, texture_data);
-        int texture_region_id;
-        if (assets_cache_texture_in_atlas(assets->atlas, texture,
-                                          &texture_region_id) != 0)
+        int index;
+        if (assets_cache_texture_in_atlas(assets->atlas, texture, &index) != 0)
             return -1;
-
-        assets->texture_region_ids[i] = texture_region_id;
+        assets->texture_atlas_indexes[i] = index;
         stbi_image_free(texture_data);
     }
 
@@ -397,7 +394,7 @@ static int assets_load_fonts(struct core *core, struct assets *assets)
             // align glyph on X axis with baseline (origin)
             int new_width = width + xoff;
 
-            // render to texture, store into atlas, set glyph on txt_font
+            // render to texture
             struct core_texture texture_aligned =
                 core_create_stbi_texture(new_width, new_height, 0);
             core_offscreen_rendering_begin(core, &texture_aligned);
@@ -410,15 +407,16 @@ static int assets_load_fonts(struct core *core, struct assets *assets)
             core_add_drawing_tex(core, NULL, &src_rect, &dst_rect);
             core_draw_queue(core);
             core_offscreen_rendering_end();
-            int texture_region_id;
+
+            // store texture into atlas, set glyph on txt_font
+            int index;
             if (assets_cache_texture_in_atlas(assets->atlas, texture_aligned,
-                                              &texture_region_id) != 0) {
+                                              &index) != 0) {
                 SDL_free(file_buffer);
                 SDL_free(cache);
                 return -1;
             }
-            txt_set_glyph(assets->fonts[ASSET_FONT_SMALL], codepoint,
-                          texture_region_id);
+            txt_set_glyph(assets->fonts[ASSET_FONT_SMALL], codepoint, index);
 
             // unbind texture_boundinbox so we can free it from gpu's memory
             core_bind_texture(core, (struct core_texture){0, 0, 0});
@@ -463,10 +461,10 @@ int assets_load(struct core *core, struct assets *assets)
 void assets_get_texture_region(struct asset_atlas *atlas, int texture_region_id,
                                SDL_FRect *texture_region)
 {
-    texture_region->x = atlas->texture_regions[texture_region_id].x;
-    texture_region->y = atlas->texture_regions[texture_region_id].y;
-    texture_region->w = atlas->texture_regions[texture_region_id].w;
-    texture_region->h = atlas->texture_regions[texture_region_id].h;
+    texture_region->x = atlas->regions[texture_region_id].x;
+    texture_region->y = atlas->regions[texture_region_id].y;
+    texture_region->w = atlas->regions[texture_region_id].w;
+    texture_region->h = atlas->regions[texture_region_id].h;
 }
 
 struct core_texture assets_get_atlas_texture(struct asset_atlas *atlas)
@@ -478,8 +476,8 @@ void assets_dispose(struct assets *assets)
 {
     if (assets->atlas != NULL) {
         // delete incomplete atlas's cached opengl texture from gpu
-        for (int i = 0; i < ASSET_ATLAS_TEXTURE_MAX; i++) {
-            int id = assets->atlas->texture_regions[i].id;
+        for (int i = 0; i < ASSET_ATLAS_SIZE; i++) {
+            int id = assets->atlas->regions[i].id;
             if (id > 0) {
                 struct core_texture texture = {.id = id};
                 core_delete_texture(&texture);
