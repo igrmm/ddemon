@@ -327,8 +327,8 @@ static int assets_load_fonts(struct core *core, struct assets *assets)
         SDL_free(cache);
         return -1;
     }
-    int font_size = 22;
-    float scale = stbtt_ScaleForPixelHeight(&info, font_size);
+    int font_height = 22;
+    float scale = stbtt_ScaleForPixelHeight(&info, font_height);
 
     // create txt_font
     assets->fonts[ASSET_FONT_SMALL] = txt_create_font(assets->atlas);
