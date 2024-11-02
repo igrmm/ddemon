@@ -5,6 +5,7 @@
 #include "txt.h"
 
 struct txt_font {
+    int height;
     struct asset_atlas *atlas;
     int glyph_atlas_indexes[TXT_UNICODE_MAX];
 };
@@ -85,13 +86,14 @@ struct txt_codepoint_cache *txt_create_codepoint_cache(void)
     return cache;
 }
 
-struct txt_font *txt_create_font(struct asset_atlas *atlas)
+struct txt_font *txt_create_font(int height, struct asset_atlas *atlas)
 {
     struct txt_font *font = SDL_calloc(1, sizeof(struct txt_font));
     if (font == NULL) {
         SDL_Log("Error creating txt_font: calloc failed.");
         return font;
     }
+    font->height = height;
     font->atlas = atlas;
     return font;
 }

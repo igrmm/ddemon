@@ -44,7 +44,7 @@ int txt_get_codepoint(Uint32 *codepoint, const char **iterator);
 int txt_cache_codepoints(struct txt_codepoint_cache *cache, const char *str);
 
 struct txt_codepoint_cache *txt_create_codepoint_cache(void);
-struct txt_font *txt_create_font(struct asset_atlas *atlas);
+struct txt_font *txt_create_font(int height, struct asset_atlas *atlas);
 void txt_destroy_font(struct txt_font *font);
 
 /**
