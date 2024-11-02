@@ -151,3 +151,5 @@ void txt_set_glyph_atlas_index(struct txt_font *font, Uint32 codepoint,
 {
     font->glyph_atlas_indexes[codepoint] = index;
 }
+
+int txt_get_font_height(struct txt_font *font) { return font->height; }
