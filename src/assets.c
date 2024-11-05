@@ -311,6 +311,13 @@ static int assets_load_fonts(struct core *core, struct assets *assets)
         }
     }
 
+    // cache window ui buttons codepoints
+    if (txt_cache_codepoints(cache, "⊕⊗⊖◢") != 0) {
+        SDL_free(file_buffer);
+        SDL_free(cache);
+        return -1;
+    }
+
     // load ttf file
     if (assets_load_file(file_buffer, ASSET_BUFSIZ, FONT_PATH, &file_size) !=
         0) {
@@ -331,7 +338,8 @@ static int assets_load_fonts(struct core *core, struct assets *assets)
     float scale = stbtt_ScaleForPixelHeight(&info, font_height);
 
     // create txt_font
-    assets->fonts[ASSET_FONT_SMALL] = txt_create_font(assets->atlas);
+    assets->fonts[ASSET_FONT_SMALL] =
+        txt_create_font(font_height, assets->atlas);
     if (assets->fonts[ASSET_FONT_SMALL] == NULL) {
         SDL_free(file_buffer);
         SDL_free(cache);
