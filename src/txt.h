@@ -59,5 +59,7 @@ SDL_bool txt_is_codepoint_cached(struct txt_codepoint_cache *cache,
 void txt_set_glyph_atlas_index(struct txt_font *font, Uint32 codepoint,
                                Uint32 index);
 int txt_get_font_height(struct txt_font *font);
+void txt_get_glyph_region(SDL_FRect *region, Uint32 codepoint,
+                          struct txt_font *font);
 
 #endif

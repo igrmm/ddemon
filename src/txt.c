@@ -153,3 +153,10 @@ void txt_set_glyph_atlas_index(struct txt_font *font, Uint32 codepoint,
 }
 
 int txt_get_font_height(struct txt_font *font) { return font->height; }
+
+void txt_get_glyph_region(SDL_FRect *region, Uint32 codepoint,
+                          struct txt_font *font)
+{
+    int index = font->glyph_atlas_indexes[codepoint];
+    assets_get_atlas_region(font->atlas, index, region);
+}
