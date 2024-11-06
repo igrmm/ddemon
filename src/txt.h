@@ -48,8 +48,15 @@ struct txt_font *txt_create_font(int height, struct asset_atlas *atlas);
 void txt_destroy_font(struct txt_font *font);
 
 /**
- * Draw text on screen made of str string. The text will be with maximum of
- * TXT_CODEPOINT_BUFSIZ codepoints.
+ * Draw text on screen made of "str" string with a maximum "length" line length
+ * in pixels.
+ *
+ */
+int txt_length(const char *str, float x, float y, float length,
+               struct txt_font *font, struct core *core);
+
+/**
+ * Draw text on screen made of "str" string with no length limit.
  *
  */
 int txt(const char *str, float x, float y, struct txt_font *font,

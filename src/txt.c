@@ -104,8 +104,8 @@ void txt_destroy_font(struct txt_font *font)
         SDL_free(font);
 }
 
-int txt(const char *str, float x, float y, struct txt_font *font,
-        struct core *core)
+int txt_length(const char *str, float x, float y, float length,
+               struct txt_font *font, struct core *core)
 {
     SDL_FRect src_rect, dst_rect;
     int cursor_x = 0;
@@ -130,11 +130,21 @@ int txt(const char *str, float x, float y, struct txt_font *font,
         src_rect = (SDL_FRect){0, 0, glyph_region.w, glyph_region.h};
         dst_rect = (SDL_FRect){0, y, glyph_region.w, glyph_region.h};
         dst_rect.x = x + cursor_x;
+
+        if (length > 0 && (cursor_x + dst_rect.w) > length)
+            break;
+
         core_add_drawing_tex(core, &glyph_region, &src_rect, &dst_rect);
         cursor_x += glyph_region.w + 1;
     }
 
     return 0;
+}
+
+int txt(const char *str, float x, float y, struct txt_font *font,
+        struct core *core)
+{
+    return txt_length(str, x, y, 0, font, core);
 }
 
 SDL_bool txt_is_codepoint_cached(struct txt_codepoint_cache *cache,
