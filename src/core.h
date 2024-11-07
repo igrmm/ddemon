@@ -21,10 +21,14 @@ struct core_texture {
 };
 
 struct core_drawing {
-    // rectangle
-    float x, y, w, h;
-    // texture rectangle or rgba color
-    float data1, data2, data3, data4;
+    // the destination rectangle to be drawn on screen with opengl coords;
+    // the texture will be stretched to fill the given rectangle
+    float dst_rect_x, dst_rect_y, dst_rect_w, dst_rect_h;
+    // the source rectangle representing a portion of the bound texture with
+    // opengl coords
+    float src_rect_x, src_rect_y, src_rect_w, src_rect_h;
+    // texture rgb color
+    float r, g, b;
 };
 
 struct core {
@@ -78,6 +82,11 @@ struct core_texture core_create_stbtt_texture(int width, int height,
                                               const Uint8 *texture_data);
 void core_bind_texture(struct core *core, struct core_texture texture);
 void core_clear_screen(float r, float g, float b, float a);
+
+int core_add_drawing_color_tex(struct core *core, const SDL_FRect *tex_region,
+                               const SDL_FRect *src_rect,
+                               const SDL_FRect *dst_rect,
+                               const struct core_color *color);
 
 /**
  * Add a drawing of a region of a texture to the drawing queue.

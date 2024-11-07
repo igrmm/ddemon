@@ -113,13 +113,17 @@ int core_setup(struct core *core, const char *window_title, int window_width,
     // put the vertex atrib of the instance vbo in the vao
     glBindBuffer(GL_ARRAY_BUFFER, core->instance_vertex_buffer_object);
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 11 * sizeof(float),
                           (void *)0);
     glVertexAttribDivisor(1, 1); // create instance
     glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
+    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 11 * sizeof(float),
                           (void *)(4 * sizeof(float)));
-    glVertexAttribDivisor(2, 1);      // create instance
+    glVertexAttribDivisor(2, 1); // create instance
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float),
+                          (void *)(8 * sizeof(float)));
+    glVertexAttribDivisor(3, 1);      // create instance
     glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind instance vbo
 
     // bind ebo and instance vbo to be used throughout the whole program
@@ -279,34 +283,50 @@ static int core_get_drawing_instance(struct core *core, int *instance)
     return 0;
 }
 
-int core_add_drawing_tex(struct core *core, const SDL_FRect *tex_region,
-                         const SDL_FRect *src_rect, const SDL_FRect *dst_rect)
+int core_add_drawing_color_tex(struct core *core, const SDL_FRect *tex_region,
+                               const SDL_FRect *src_rect,
+                               const SDL_FRect *dst_rect,
+                               const struct core_color *color)
 {
     int instance;
     if (core_get_drawing_instance(core, &instance) < 0)
         return -1;
 
-    float atlas_x = src_rect->x;
-    float atlas_y = src_rect->y;
+    float offset_x = 0, offset_y = 0;
 
-    // verify if drawing is part of other texture or atlas
+    // verify if drawing is part of other texture
     if (tex_region != NULL) {
-        atlas_x += tex_region->x;
-        atlas_y += tex_region->y;
+        offset_x = tex_region->x;
+        offset_y = tex_region->y;
     }
 
-    // set up instance to be draw
+    // check given color
+    struct core_color c = {1.0f, 1.0f, 1.0f, 0.0f};
+    if (color != NULL)
+        c = *color;
+
+    // set up instance to be draw with opengl coords
     core->drawing_pool[instance] = (struct core_drawing){
-        .x = dst_rect->x / core->viewport_width * 2.0f - 1.0f,
-        .y = dst_rect->y / core->viewport_height * 2.0f - 1.0f,
-        .w = 1.0f / core->viewport_width * 2.0f * dst_rect->w,
-        .h = 1.0f / core->viewport_height * 2.0f * dst_rect->h,
-        .data1 = atlas_x / core->current_texture.width,
-        .data2 = atlas_y / core->current_texture.height,
-        .data3 = src_rect->w / core->current_texture.width,
-        .data4 = src_rect->h / core->current_texture.height};
+        .dst_rect_x = dst_rect->x / core->viewport_width * 2.0f - 1.0f,
+        .dst_rect_y = dst_rect->y / core->viewport_height * 2.0f - 1.0f,
+        .dst_rect_w = 1.0f / core->viewport_width * 2.0f * dst_rect->w,
+        .dst_rect_h = 1.0f / core->viewport_height * 2.0f * dst_rect->h,
+        .src_rect_x = (src_rect->x + offset_x) / core->current_texture.width,
+        .src_rect_y = (src_rect->y + offset_y) / core->current_texture.height,
+        .src_rect_w = src_rect->w / core->current_texture.width,
+        .src_rect_h = src_rect->h / core->current_texture.height,
+        .r = c.r,
+        .g = c.g,
+        .b = c.b};
 
     return 0;
+}
+
+int core_add_drawing_tex(struct core *core, const SDL_FRect *tex_region,
+                         const SDL_FRect *src_rect, const SDL_FRect *dst_rect)
+{
+    return core_add_drawing_color_tex(core, tex_region, src_rect, dst_rect,
+                                      NULL);
 }
 
 int core_add_drawing_fill_rect(struct core *core, SDL_FRect *rect,
@@ -317,15 +337,18 @@ int core_add_drawing_fill_rect(struct core *core, SDL_FRect *rect,
         return -1;
 
     // set up instance to be draw
-    core->drawing_pool[instance] = (struct core_drawing){
-        .x = rect->x / core->viewport_width * 2.0f - 1.0f,
-        .y = rect->y / core->viewport_height * 2.0f - 1.0f,
-        .w = 1.0f / core->viewport_width * 2.0f * rect->w,
-        .h = 1.0f / core->viewport_height * 2.0f * rect->h,
-        .data1 = color->r,
-        .data2 = color->g,
-        .data3 = color->b,
-        .data4 = color->a};
+    // core->drawing_pool[instance] = (struct core_drawing){
+    //    .x = rect->x / core->viewport_width * 2.0f - 1.0f,
+    //    .y = rect->y / core->viewport_height * 2.0f - 1.0f,
+    //    .w = 1.0f / core->viewport_width * 2.0f * rect->w,
+    //    .h = 1.0f / core->viewport_height * 2.0f * rect->h,
+    //    .tex_x = 1023 / core->current_texture.width,
+    //    .data2 = 0 / core->current_texture.height,
+    //    .data3 = 1 / core->current_texture.width,
+    //    .data4 = 1 / core->current_texture.height,
+    //    .data5 = color->r,
+    //    .data6 = color->g,
+    //    .data7 = color->b};
 
     return 0;
 }
