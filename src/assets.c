@@ -45,6 +45,7 @@ static const char *TEXTURE_PATHS[] = {
     [ASSET_TEXTURE_ICON_ERASER] = "eraser.png",
     [ASSET_TEXTURE_ICON_ENTITY] = "entity.png",
     [ASSET_TEXTURE_ICON_SELECT] = "select.png",
+    [ASSET_TEXTURE_PIXEL] = 0,
     [ASSET_TEXTURE_MAX] = 0
 };
 
@@ -53,14 +54,12 @@ static const char FONT_PATH[] = "NotoSansMono-Regular.ttf";
 static const char *SHADER_VERTEX_PATHS[] = {
     [ASSET_SHADER_DEFAULT] = "default.vs",
     [ASSET_SHADER_ATLAS] = "atlas.vs",
-    [ASSET_SHADER_PRIMITIVE] = "primitive.vs",
     [ASSET_SHADER_MAX] = 0
 };
 
 static const char *SHADER_FRAGMENT_PATHS[] = {
     [ASSET_SHADER_DEFAULT] = "default.fs",
     [ASSET_SHADER_ATLAS] = "atlas.fs",
-    [ASSET_SHADER_PRIMITIVE] = "primitive.fs",
     [ASSET_SHADER_MAX] = 0
 };
 // clang-format on
@@ -238,7 +237,7 @@ static int assets_load_shaders(struct assets *assets)
     return 0;
 }
 
-static int assets_load_textures(struct assets *assets)
+static int assets_load_textures(struct core *core, struct assets *assets)
 {
     size_t file_size = 0;
     Uint8 *file_buffer = SDL_malloc(ASSET_BUFSIZ * sizeof(Uint8));
@@ -248,6 +247,21 @@ static int assets_load_textures(struct assets *assets)
     }
 
     for (int i = 0; i < ASSET_TEXTURE_MAX; i++) {
+        // create texture (single white pixel) for primitive drawing
+        if (i == ASSET_TEXTURE_PIXEL) {
+            struct core_texture texture = core_create_stbi_texture(1, 1, 0);
+            core_offscreen_rendering_begin(core, &texture);
+            core_update_viewport(core, 1, 1);
+            core_clear_screen(1.0f, 1.0f, 1.0f, 1.0f);
+            core_offscreen_rendering_end();
+            int index;
+            if (assets_cache_texture_in_atlas(assets->atlas, texture, &index) !=
+                0)
+                return -1;
+            assets->texture_atlas_indexes[i] = index;
+            continue;
+        }
+
         // load img from file
         file_buffer[0] = 0;
         file_size = 0;
@@ -452,7 +466,7 @@ int assets_load(struct core *core, struct assets *assets)
     if (assets_load_shaders(assets) != 0)
         return -1;
 
-    if (assets_load_textures(assets) != 0)
+    if (assets_load_textures(core, assets) != 0)
         return -1;
 
     if (assets_load_fonts(core, assets) != 0)

@@ -329,32 +329,18 @@ int core_add_drawing_tex(struct core *core, const SDL_FRect *tex_region,
                                       NULL);
 }
 
-int core_add_drawing_fill_rect(struct core *core, SDL_FRect *rect,
-                               struct core_color *color)
+int core_add_drawing_fill_rect(struct core *core,
+                               const SDL_FRect *pixel_tex_region,
+                               SDL_FRect *rect, struct core_color *color)
 {
-    int instance;
-    if (core_get_drawing_instance(core, &instance) < 0)
-        return -1;
-
-    // set up instance to be draw
-    // core->drawing_pool[instance] = (struct core_drawing){
-    //    .x = rect->x / core->viewport_width * 2.0f - 1.0f,
-    //    .y = rect->y / core->viewport_height * 2.0f - 1.0f,
-    //    .w = 1.0f / core->viewport_width * 2.0f * rect->w,
-    //    .h = 1.0f / core->viewport_height * 2.0f * rect->h,
-    //    .tex_x = 1023 / core->current_texture.width,
-    //    .data2 = 0 / core->current_texture.height,
-    //    .data3 = 1 / core->current_texture.width,
-    //    .data4 = 1 / core->current_texture.height,
-    //    .data5 = color->r,
-    //    .data6 = color->g,
-    //    .data7 = color->b};
-
-    return 0;
+    SDL_FRect src_rect = {0, 0, pixel_tex_region->w, pixel_tex_region->h};
+    return core_add_drawing_color_tex(core, pixel_tex_region, &src_rect, rect,
+                                      color);
 }
 
-int core_add_drawing_rect(struct core *core, SDL_FRect *rect,
-                          struct core_color *color, float thickness)
+int core_add_drawing_rect(struct core *core, const SDL_FRect *pixel_tex_region,
+                          SDL_FRect *rect, struct core_color *color,
+                          float thickness)
 {
     SDL_FRect line = {0};
 
@@ -363,24 +349,24 @@ int core_add_drawing_rect(struct core *core, SDL_FRect *rect,
     line.y = rect->y;
     line.w = rect->w;
     line.h = thickness;
-    if (core_add_drawing_fill_rect(core, &line, color) != 0)
+    if (core_add_drawing_fill_rect(core, pixel_tex_region, &line, color) != 0)
         return -1;
 
     // line top
     line.y = rect->y + rect->h - thickness;
-    if (core_add_drawing_fill_rect(core, &line, color) != 0)
+    if (core_add_drawing_fill_rect(core, pixel_tex_region, &line, color) != 0)
         return -1;
 
     // line left
     line.y = rect->y;
     line.w = thickness;
     line.h = rect->h;
-    if (core_add_drawing_fill_rect(core, &line, color) != 0)
+    if (core_add_drawing_fill_rect(core, pixel_tex_region, &line, color) != 0)
         return -1;
 
     // line right
     line.x = rect->x + rect->w - thickness;
-    if (core_add_drawing_fill_rect(core, &line, color) != 0)
+    if (core_add_drawing_fill_rect(core, pixel_tex_region, &line, color) != 0)
         return -1;
 
     return 0;

@@ -99,10 +99,12 @@ int core_add_drawing_color_tex(struct core *core, const SDL_FRect *tex_region,
  */
 int core_add_drawing_tex(struct core *core, const SDL_FRect *tex_region,
                          const SDL_FRect *src_rect, const SDL_FRect *dst_rect);
-int core_add_drawing_fill_rect(struct core *core, SDL_FRect *rect,
-                               struct core_color *color);
-int core_add_drawing_rect(struct core *core, SDL_FRect *rect,
-                          struct core_color *color, float thickness);
+int core_add_drawing_fill_rect(struct core *core,
+                               const SDL_FRect *pixel_tex_region,
+                               SDL_FRect *rect, struct core_color *color);
+int core_add_drawing_rect(struct core *core, const SDL_FRect *pixel_tex_region,
+                          SDL_FRect *rect, struct core_color *color,
+                          float thickness);
 void core_draw_queue(struct core *core);
 void core_update_window(SDL_Window *window);
 void core_update_viewport(struct core *core, int viewport_width,

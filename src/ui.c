@@ -1,5 +1,6 @@
 #include "SDL.h" // IWYU pragma: keep //clangd
 
+#include "assets.h"
 #include "core.h"
 #include "txt.h"
 #include "ui.h"
@@ -11,30 +12,31 @@
 void ui_mk_window(struct ui_window *ui_window, struct assets *assets,
                   struct core *core)
 {
-    core_use_shader(core, assets->shaders[ASSET_SHADER_PRIMITIVE]);
+    SDL_FRect pixel_tex_region;
+    assets_get_texture_region(assets, ASSET_TEXTURE_PIXEL, &pixel_tex_region);
 
     // draw window
-    core_add_drawing_fill_rect(core, &ui_window->rect, &ui_window->bg_color);
+    core_add_drawing_fill_rect(core, &pixel_tex_region, &ui_window->rect,
+                               &ui_window->bg_color);
 
     // draw bar
     int bar_height = txt_get_font_height(assets->fonts[ASSET_FONT_SMALL]);
     SDL_FRect bar_rect = {ui_window->rect.x,
                           ui_window->rect.y + ui_window->rect.h - bar_height,
                           ui_window->rect.w, bar_height};
-    core_add_drawing_fill_rect(core, &bar_rect, &ui_window->fg_color);
+    core_add_drawing_fill_rect(core, &pixel_tex_region, &bar_rect,
+                               &ui_window->fg_color);
 
     // draw window border
-    core_add_drawing_rect(core, &ui_window->rect, &ui_window->fg_color, 1);
+    core_add_drawing_rect(core, &pixel_tex_region, &ui_window->rect,
+                          &ui_window->fg_color, 1);
 
     // draw scale button
     SDL_FRect scale_btn_rect = {
         ui_window->rect.x + ui_window->rect.w - bar_height / 2.0f - 2,
         ui_window->rect.y + 2, bar_height / 2.0f, bar_height / 2.0f};
-    core_add_drawing_fill_rect(core, &scale_btn_rect, &ui_window->fg_color);
-
-    core_draw_queue(core);
-
-    core_use_shader(core, assets->shaders[ASSET_SHADER_DEFAULT]);
+    core_add_drawing_fill_rect(core, &pixel_tex_region, &scale_btn_rect,
+                               &ui_window->fg_color);
 
     // draw window title on bar
     txt(ui_window->title, bar_rect.x + 1, bar_rect.y + 1,
@@ -65,6 +67,4 @@ void ui_mk_window(struct ui_window *ui_window, struct assets *assets,
     SDL_FRect minim_btn_rect = {maxim_btn_rect.x - btn_region.w - 1,
                                 bar_rect.y + 1, btn_region.w, btn_region.h};
     core_add_drawing_tex(core, &btn_region, &src_rect, &minim_btn_rect);
-
-    core_draw_queue(core);
 }
