@@ -9,7 +9,7 @@
 #define UI_MINIM_BUTTON_CODEPOINT 8854
 #define UI_MAXIM_BUTTON_CODEPOINT 8853
 
-void ui_mk_window(struct ui_window *window, struct assets *assets,
+void ui_mk_window(struct ui_window *window, int *row_y, struct assets *assets,
                   struct core *core)
 {
     SDL_FRect pixel_tex_region;
@@ -26,6 +26,8 @@ void ui_mk_window(struct ui_window *window, struct assets *assets,
                           window->rect.w, bar_height};
     core_add_drawing_fill_rect(core, &pixel_tex_region, &bar_rect,
                                &window->fg_color);
+    if (row_y != NULL)
+        *row_y = bar_rect.y;
 
     // draw window border
     core_add_drawing_rect(core, &pixel_tex_region, &window->rect,
