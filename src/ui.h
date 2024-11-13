@@ -9,10 +9,11 @@
 struct ui_window {
     struct core_color bg_color, fg_color;
     SDL_FRect rect;
+    int row_y;
     const char *title;
 };
 
-void ui_mk_window(struct ui_window *window, int *row_y, struct assets *assets,
+void ui_mk_window(struct ui_window *window, struct assets *assets,
                   struct core *core);
 
 #endif
