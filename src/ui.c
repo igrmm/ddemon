@@ -9,6 +9,17 @@
 #define UI_MINIM_BUTTON_CODEPOINT 8854
 #define UI_MAXIM_BUTTON_CODEPOINT 8853
 
+void ui_mk_label(struct ui_label *label, struct assets *assets,
+                 struct core *core)
+{
+    txt_length(label->text, label->rect.x + label->padding,
+               label->rect.y + label->padding,
+               label->rect.w - label->padding * 2,
+               assets->fonts[ASSET_FONT_SMALL], core);
+
+    // todo handle events
+}
+
 void ui_mk_window(struct ui_window *window, struct assets *assets,
                   struct core *core)
 {
@@ -40,8 +51,16 @@ void ui_mk_window(struct ui_window *window, struct assets *assets,
                                &window->fg_color);
 
     // draw window title on bar
-    txt(window->title, bar_rect.x + 1, bar_rect.y + 1,
-        assets->fonts[ASSET_FONT_SMALL], core);
+    struct ui_label bar_title_label = {
+        .padding = 1,
+        .rect = {.x = bar_rect.x, // will be handled by layout func
+                 .y = bar_rect.y, // will be handled by layout func
+                 // pref value
+                 .h = txt_get_font_height(assets->fonts[ASSET_FONT_SMALL]),
+                 // pref value
+                 .w = 120.0f},
+        .text = window->title};
+    ui_mk_label(&bar_title_label, assets, core);
 
     SDL_FRect btn_region, src_rect;
 
