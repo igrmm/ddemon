@@ -53,7 +53,8 @@ void txt_destroy_font(struct txt_font *font);
  *
  */
 int txt_length(const char *str, float x, float y, float length,
-               struct txt_font *font, struct core *core);
+               struct core_color *color, struct txt_font *font,
+               struct core *core);
 
 /**
  * Draw text on screen made of "str" string with no length limit.

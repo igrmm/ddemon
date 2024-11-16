@@ -21,12 +21,20 @@ static struct ui_style ui_get_default_style(void)
 void ui_mk_label(struct ui_element *label, struct assets *assets,
                  struct core *core)
 {
+    struct ui_style style;
+    if (label->style == NULL) {
+        style = ui_get_default_style();
+    } else {
+        style = *label->style;
+    }
+
     const char *text = label->widget.label.text;
     float text_x = label->rect.x + label->padding;
     float text_y = label->rect.y + label->padding;
     float text_w = label->rect.w - label->padding * 2;
-    txt_length(text, text_x, text_y, text_w, assets->fonts[ASSET_FONT_SMALL],
-               core);
+    struct core_color *text_color = &style.font_color;
+    txt_length(text, text_x, text_y, text_w, text_color,
+               assets->fonts[ASSET_FONT_SMALL], core);
 
     // todo handle events
 }
