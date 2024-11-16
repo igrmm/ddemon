@@ -35,6 +35,8 @@ struct ui_element {
     union ui_widget widget;
 };
 
+void ui_set_style(struct ui_style *in_style);
+struct ui_style ui_get_style(void);
 void ui_mk_label(struct ui_element *label, struct assets *assets,
                  struct core *core);
 void ui_mk_window(struct ui_element *window, struct assets *assets,

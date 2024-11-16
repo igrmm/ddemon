@@ -9,25 +9,19 @@
 #define UI_MINIM_BUTTON_CODEPOINT 8854
 #define UI_MAXIM_BUTTON_CODEPOINT 8853
 
-static struct ui_style ui_get_default_style(void)
-{
-    return (struct ui_style){.background_color = {0.16f, 0.16f, 0.21f, 0},
-                             .foreground_color = {0.74f, 0.58f, 0.98f, 0},
-                             .font_color = {0.27f, 0.28f, 0.35f, 0},
-                             .hover_color = {0.23f, 0.24f, 0.31f, 0},
-                             .click_color = {0.21f, 0.22f, 0.30f, 0}};
-}
+static struct ui_style style = {.background_color = {0.16f, 0.16f, 0.21f, 0},
+                                .foreground_color = {0.74f, 0.58f, 0.98f, 0},
+                                .font_color = {0.27f, 0.28f, 0.35f, 0},
+                                .hover_color = {0.23f, 0.24f, 0.31f, 0},
+                                .click_color = {0.21f, 0.22f, 0.30f, 0}};
+
+void ui_set_style(struct ui_style *in_style) { style = *in_style; }
+
+struct ui_style ui_get_style(void) { return style; }
 
 void ui_mk_label(struct ui_element *label, struct assets *assets,
                  struct core *core)
 {
-    struct ui_style style;
-    if (label->style == NULL) {
-        style = ui_get_default_style();
-    } else {
-        style = *label->style;
-    }
-
     const char *text = label->widget.label.text;
     float text_x = label->rect.x + label->padding;
     float text_y = label->rect.y + label->padding;
@@ -42,13 +36,6 @@ void ui_mk_label(struct ui_element *label, struct assets *assets,
 void ui_mk_window(struct ui_element *window, struct assets *assets,
                   struct core *core)
 {
-    struct ui_style style;
-    if (window->style == NULL) {
-        style = ui_get_default_style();
-    } else {
-        style = *window->style;
-    }
-
     SDL_FRect pixel_tex_region;
     assets_get_texture_region(assets, ASSET_TEXTURE_PIXEL, &pixel_tex_region);
 
