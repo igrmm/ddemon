@@ -6,6 +6,12 @@
 #include "assets.h"
 #include "core.h"
 
+struct ui_button {
+    const char *text;
+    float text_width;
+    SDL_FRect tex_region;
+};
+
 struct ui_label {
     const char *text;
 };
@@ -24,8 +30,9 @@ struct ui_style {
 };
 
 union ui_widget {
-    struct ui_window window;
+    struct ui_button button;
     struct ui_label label;
+    struct ui_window window;
 };
 
 struct ui_element {
@@ -38,6 +45,8 @@ struct ui_element {
 void ui_set_font(struct txt_font *in_font);
 void ui_set_style(struct ui_style *in_style);
 struct ui_style ui_get_style(void);
+void ui_mk_button(struct ui_element *button, struct assets *assets,
+                  struct core *core);
 void ui_mk_label(struct ui_element *label, struct assets *assets,
                  struct core *core);
 void ui_mk_window(struct ui_element *window, struct assets *assets,

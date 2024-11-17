@@ -23,6 +23,23 @@ void ui_set_style(struct ui_style *in_style) { style = *in_style; }
 
 struct ui_style ui_get_style(void) { return style; }
 
+void ui_mk_button(struct ui_element *button, struct assets *assets,
+                  struct core *core)
+{
+    if (font == NULL)
+        return;
+
+    SDL_FRect *tex_region = &button->widget.button.tex_region;
+    SDL_FRect src_rect = {.w = tex_region->w, .h = tex_region->h};
+    // todo: add text offset to dst_rect x position
+    SDL_FRect dst_rect = {.x = button->rect.x + button->padding,
+                          .y = button->rect.y + button->padding,
+                          .w = tex_region->w,
+                          .h = tex_region->h};
+    core_add_drawing_color_tex(core, tex_region, &src_rect, &dst_rect,
+                               &style.font_color);
+}
+
 void ui_mk_label(struct ui_element *label, struct assets *assets,
                  struct core *core)
 {
@@ -84,26 +101,41 @@ void ui_mk_window(struct ui_element *window, struct assets *assets,
         .widget = {.label = {.text = window->widget.window.title}}};
     ui_mk_label(&bar_title_label, assets, core);
 
-    SDL_FRect btn_region, src_rect;
+    SDL_FRect tex_region;
 
     // draw close button
-    txt_get_glyph_region(&btn_region, UI_CLOSE_BUTTON_CODEPOINT, font);
-    src_rect = (SDL_FRect){0, 0, btn_region.w, btn_region.h};
-    SDL_FRect close_btn_rect = {bar_rect.x + bar_rect.w - btn_region.w - 1,
-                                bar_rect.y + 1, btn_region.w, btn_region.h};
-    core_add_drawing_tex(core, &btn_region, &src_rect, &close_btn_rect);
+    txt_get_glyph_region(&tex_region, UI_CLOSE_BUTTON_CODEPOINT, font);
+    struct ui_element close_btn = {
+        .padding = 1,
+        .rect =
+            {
+                .x = bar_rect.x + bar_rect.w - tex_region.w - 2,
+                .y = bar_rect.y,
+            },
+        .widget = {.button = {.tex_region = tex_region}}};
+    ui_mk_button(&close_btn, assets, core);
 
     // draw maximize button
-    txt_get_glyph_region(&btn_region, UI_MAXIM_BUTTON_CODEPOINT, font);
-    src_rect = (SDL_FRect){0, 0, btn_region.w, btn_region.h};
-    SDL_FRect maxim_btn_rect = {close_btn_rect.x - btn_region.w - 1,
-                                bar_rect.y + 1, btn_region.w, btn_region.h};
-    core_add_drawing_tex(core, &btn_region, &src_rect, &maxim_btn_rect);
+    txt_get_glyph_region(&tex_region, UI_MAXIM_BUTTON_CODEPOINT, font);
+    struct ui_element maxim_btn = {
+        .padding = 1,
+        .rect =
+            {
+                .x = close_btn.rect.x - tex_region.w - 1,
+                .y = bar_rect.y,
+            },
+        .widget = {.button = {.tex_region = tex_region}}};
+    ui_mk_button(&maxim_btn, assets, core);
 
     // draw minimize button
-    txt_get_glyph_region(&btn_region, UI_MINIM_BUTTON_CODEPOINT, font);
-    src_rect = (SDL_FRect){0, 0, btn_region.w, btn_region.h};
-    SDL_FRect minim_btn_rect = {maxim_btn_rect.x - btn_region.w - 1,
-                                bar_rect.y + 1, btn_region.w, btn_region.h};
-    core_add_drawing_tex(core, &btn_region, &src_rect, &minim_btn_rect);
+    txt_get_glyph_region(&tex_region, UI_MINIM_BUTTON_CODEPOINT, font);
+    struct ui_element minim_btn = {
+        .padding = 1,
+        .rect =
+            {
+                .x = maxim_btn.rect.x - tex_region.w - 1,
+                .y = bar_rect.y,
+            },
+        .widget = {.button = {.tex_region = tex_region}}};
+    ui_mk_button(&minim_btn, assets, core);
 }
