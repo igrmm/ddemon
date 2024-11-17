@@ -6,6 +6,10 @@
 #include "assets.h"
 #include "core.h"
 
+struct ui_grow {
+    SDL_bool horizontal, vertical;
+};
+
 struct ui_button {
     const char *text;
     float text_width;
@@ -30,6 +34,7 @@ struct ui_style {
 };
 
 union ui_widget {
+    struct ui_grow grow;
     struct ui_button button;
     struct ui_label label;
     struct ui_window window;
