@@ -1,4 +1,4 @@
-#version 320 es
+#version 300 es
 precision mediump float;
 
 layout (location = 0) in vec2 is_width_or_height;
