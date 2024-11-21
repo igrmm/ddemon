@@ -23,11 +23,80 @@ void ui_set_style(struct ui_style *in_style) { style = *in_style; }
 
 struct ui_style ui_get_style(void) { return style; }
 
+static void ui_compute_button_size(int height, struct ui_element *button)
+{
+    int padding_num = 0;
+
+    // check if button have text or image
+    if (button->widget.button.text_width > 0 ||
+        button->widget.button.tex_region.w > 0)
+        padding_num = 2;
+
+    // check if button have both text and image
+    if (button->widget.button.text_width > 0 &&
+        button->widget.button.tex_region.w > 0)
+        padding_num = 3;
+
+    button->rect.w = button->widget.button.text_width +
+                     button->widget.button.tex_region.w +
+                     padding_num * button->padding;
+    button->rect.h = height;
+}
+
+static void ui_compute_label_size(int height, struct ui_element *label)
+{
+    if (label->widget.label.text_width > 0)
+        label->rect.w = label->widget.label.text_width + 2 * label->padding;
+    label->rect.h = height;
+}
+
+void ui_layout_row(struct ui_element *window, int height,
+                   struct ui_element *elements[], int elements_size)
+{
+    // calculate element rect, get amount of "free width" and growable elements
+    int row_free_width = window->rect.w, growable_elements_num = 0;
+    for (int i = 0; i < elements_size; i++) {
+        struct ui_element *element = elements[i];
+        if (element == NULL) {
+            growable_elements_num++;
+        } else if (element->type == UI_TYPE_BUTTON) {
+            ui_compute_button_size(height, element);
+            row_free_width -= element->rect.w;
+        } else if (element->type == UI_TYPE_LABEL) {
+            ui_compute_label_size(height, element);
+            row_free_width -= element->rect.w;
+        } else {
+            // NOT IMPLEMENTED
+        }
+    }
+
+    int grow_width = 0;
+    if (growable_elements_num > 0)
+        grow_width = row_free_width / growable_elements_num;
+
+    // layout
+    int x = window->rect.x;
+    int y = window->widget.window.row_y - height;
+    for (int i = 0; i < elements_size; i++) {
+        struct ui_element *element = elements[i];
+        if (element == NULL) {
+            x += grow_width;
+        } else {
+            element->rect.x = x;
+            element->rect.y = y;
+            x += element->rect.w;
+        }
+    }
+    window->widget.window.row_y = y;
+}
+
 void ui_mk_button(struct ui_element *button, struct assets *assets,
                   struct core *core)
 {
     if (font == NULL)
         return;
+
+    // todo: exit function if element isnt inside window
 
     SDL_FRect *tex_region = &button->widget.button.tex_region;
     SDL_FRect src_rect = {.w = tex_region->w, .h = tex_region->h};
@@ -45,6 +114,8 @@ void ui_mk_label(struct ui_element *label, struct assets *assets,
 {
     if (font == NULL)
         return;
+
+    // todo: exit function if element isnt inside window
 
     const char *text = label->widget.label.text;
     float text_x = label->rect.x + label->padding;
@@ -76,7 +147,7 @@ void ui_mk_window(struct ui_element *window, struct assets *assets,
                           window->rect.w, bar_height};
     core_add_drawing_fill_rect(core, &pixel_tex_region, &bar_rect,
                                &style.foreground_color);
-    window->widget.window.row_y = bar_rect.y;
+    window->widget.window.row_y = window->rect.y + window->rect.h;
 
     // draw window border
     core_add_drawing_rect(core, &pixel_tex_region, &window->rect,
@@ -89,53 +160,38 @@ void ui_mk_window(struct ui_element *window, struct assets *assets,
     core_add_drawing_fill_rect(core, &pixel_tex_region, &scale_btn_rect,
                                &style.foreground_color);
 
-    // draw window title on bar
-    struct ui_element bar_title_label = {
-        .padding = 1,
-        .rect = {.x = bar_rect.x, // will be handled by layout func
-                 .y = bar_rect.y, // will be handled by layout func
-                 // pref value
-                 .h = txt_get_font_height(font),
-                 // pref value
-                 .w = 120},
-        .widget = {.label = {.text = window->widget.window.title}}};
-    ui_mk_label(&bar_title_label, assets, core);
-
     SDL_FRect tex_region;
 
-    // draw close button
-    txt_get_glyph_region(&tex_region, UI_CLOSE_BUTTON_CODEPOINT, font);
-    struct ui_element close_btn = {
+    struct ui_element bar_title_label = {
         .padding = 1,
-        .rect =
-            {
-                .x = bar_rect.x + bar_rect.w - tex_region.w - 2,
-                .y = bar_rect.y,
-            },
-        .widget = {.button = {.tex_region = tex_region}}};
-    ui_mk_button(&close_btn, assets, core);
+        .type = UI_TYPE_LABEL,
+        .widget = {
+            .label = {.text = window->widget.window.title, .text_width = 120}}};
 
-    // draw maximize button
-    txt_get_glyph_region(&tex_region, UI_MAXIM_BUTTON_CODEPOINT, font);
-    struct ui_element maxim_btn = {
-        .padding = 1,
-        .rect =
-            {
-                .x = close_btn.rect.x - tex_region.w - 1,
-                .y = bar_rect.y,
-            },
-        .widget = {.button = {.tex_region = tex_region}}};
-    ui_mk_button(&maxim_btn, assets, core);
-
-    // draw minimize button
     txt_get_glyph_region(&tex_region, UI_MINIM_BUTTON_CODEPOINT, font);
     struct ui_element minim_btn = {
         .padding = 1,
-        .rect =
-            {
-                .x = maxim_btn.rect.x - tex_region.w - 1,
-                .y = bar_rect.y,
-            },
+        .type = UI_TYPE_BUTTON,
         .widget = {.button = {.tex_region = tex_region}}};
+
+    txt_get_glyph_region(&tex_region, UI_MAXIM_BUTTON_CODEPOINT, font);
+    struct ui_element maxim_btn = {
+        .padding = 1,
+        .type = UI_TYPE_BUTTON,
+        .widget = {.button = {.tex_region = tex_region}}};
+
+    txt_get_glyph_region(&tex_region, UI_CLOSE_BUTTON_CODEPOINT, font);
+    struct ui_element close_btn = {
+        .padding = 1,
+        .type = UI_TYPE_BUTTON,
+        .widget = {.button = {.tex_region = tex_region}}};
+
+    struct ui_element *elements[] = {&bar_title_label, NULL, &minim_btn,
+                                     &maxim_btn, &close_btn};
+    ui_layout_row(window, bar_height, elements, SDL_arraysize(elements));
+
+    ui_mk_label(&bar_title_label, assets, core);
+    ui_mk_button(&close_btn, assets, core);
+    ui_mk_button(&maxim_btn, assets, core);
     ui_mk_button(&minim_btn, assets, core);
 }

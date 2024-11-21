@@ -6,14 +6,17 @@
 #include "assets.h"
 #include "core.h"
 
+enum ui_type { UI_TYPE_BUTTON, UI_TYPE_LABEL, UI_TYPE_WINDOW };
+
 struct ui_button {
     const char *text;
-    float text_width;
+    int text_width;
     SDL_FRect tex_region;
 };
 
 struct ui_label {
     const char *text;
+    int text_width;
 };
 
 struct ui_window {
@@ -39,12 +42,25 @@ struct ui_element {
     SDL_FRect rect;
     int padding;
     struct ui_style *style;
+    enum ui_type type;
     union ui_widget widget;
 };
 
 void ui_set_font(struct txt_font *in_font);
 void ui_set_style(struct ui_style *in_style);
 struct ui_style ui_get_style(void);
+
+/**
+ * Layout ui elements horizontally.
+ *
+ * Layout ui elements horizontally with a maximum height of given height. Null
+ * pointers that are part of elements array will be treated as growable empty
+ * spaces.
+ *
+ */
+void ui_layout_row(struct ui_element *window, int height,
+                   struct ui_element *elements[], int elements_size);
+
 void ui_mk_button(struct ui_element *button, struct assets *assets,
                   struct core *core);
 void ui_mk_label(struct ui_element *label, struct assets *assets,
