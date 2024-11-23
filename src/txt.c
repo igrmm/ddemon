@@ -26,33 +26,33 @@ int txt_get_codepoint(Uint32 *codepoint, const char **iterator)
     }
 
     // check how many bytes are encoded
-    int num_bytes = 0;
+    int byte_count = 0;
     if ((byte & 0xE0) == 0xC0) {
-        num_bytes = 2;
+        byte_count = 2;
     } else if ((byte & 0xF0) == 0xE0) {
-        num_bytes = 3;
+        byte_count = 3;
     } else if ((byte & 0xF8) == 0xF0) {
-        num_bytes = 4;
+        byte_count = 4;
     } else {
         SDL_Log("Error getting codepoint: invalid utf8.");
         return -1;
     }
 
-    for (int i = 0; i < num_bytes; i++) {
+    for (int i = 0; i < byte_count; i++) {
         /**
          * If this is the first byte of the encoding, skip first bits
          * accordinly to num_bytes, else add next bytes (with the first 2 bits
          * skipped) of the encoding to the codepoint
          */
         if (i == 0) {
-            *codepoint = (byte & ((1 << (7 - num_bytes)) - 1));
+            *codepoint = (byte & ((1 << (7 - byte_count)) - 1));
         } else {
             *codepoint <<= 6;
             *codepoint |= (byte & 63);
         }
 
         // don't advance the iterator if this is the last iteration of the loop
-        if (i < num_bytes - 1) {
+        if (i < byte_count - 1) {
             (*iterator)++;
             byte = **iterator;
         }
