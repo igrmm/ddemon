@@ -41,7 +41,7 @@ int txt_get_codepoint(Uint32 *codepoint, const char **iterator)
     for (int i = 0; i < byte_count; i++) {
         /**
          * If this is the first byte of the encoding, skip first bits
-         * accordinly to num_bytes, else add next bytes (with the first 2 bits
+         * accordinly to byte_count, else add next bytes (with the first 2 bits
          * skipped) of the encoding to the codepoint
          */
         if (i == 0) {
