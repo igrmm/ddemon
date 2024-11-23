@@ -51,14 +51,14 @@ static void ui_compute_label_size(int height, struct ui_element *label)
 }
 
 void ui_layout_row(struct ui_element *window, int height,
-                   struct ui_element *elements[], int elements_size)
+                   struct ui_element *elements[], int element_count)
 {
     // calculate element rect, get amount of "free width" and growable elements
-    int row_free_width = window->rect.w, growable_elements_num = 0;
-    for (int i = 0; i < elements_size; i++) {
+    int row_free_width = window->rect.w, growable_element_count = 0;
+    for (int i = 0; i < element_count; i++) {
         struct ui_element *element = elements[i];
         if (element == NULL) {
-            growable_elements_num++;
+            growable_element_count++;
         } else if (element->type == UI_TYPE_BUTTON) {
             ui_compute_button_size(height, element);
             row_free_width -= element->rect.w;
@@ -71,13 +71,13 @@ void ui_layout_row(struct ui_element *window, int height,
     }
 
     int grow_width = 0;
-    if (growable_elements_num > 0)
-        grow_width = row_free_width / growable_elements_num;
+    if (growable_element_count > 0)
+        grow_width = row_free_width / growable_element_count;
 
     // layout
     int x = window->rect.x;
     int y = window->widget.window.row_y - height;
-    for (int i = 0; i < elements_size; i++) {
+    for (int i = 0; i < element_count; i++) {
         struct ui_element *element = elements[i];
         if (element == NULL) {
             x += grow_width;

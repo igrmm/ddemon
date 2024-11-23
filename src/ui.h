@@ -59,7 +59,7 @@ struct ui_style ui_get_style(void);
  *
  */
 void ui_layout_row(struct ui_element *window, int height,
-                   struct ui_element *elements[], int elements_size);
+                   struct ui_element *elements[], int element_count);
 
 void ui_mk_button(struct ui_element *button, struct assets *assets,
                   struct core *core);
