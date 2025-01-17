@@ -3,6 +3,7 @@
 #include "assets.h"
 #include "core.h"
 #include "txt.h"
+#include "ui.h"
 
 int main(int argc, char *argv[])
 {
@@ -20,6 +21,11 @@ int main(int argc, char *argv[])
         core_shutdown(&core);
         return -1;
     }
+
+    ui_set_font(assets.fonts[ASSET_FONT_SMALL]);
+    struct ui_element win = {.rect = {400, 400, 400, 400},
+                             .type = UI_TYPE_WINDOW,
+                             .widget.window = {.title = "TestWindow"}};
 
     char fps[12] = {0};
     int frames = 0;
@@ -71,6 +77,7 @@ int main(int argc, char *argv[])
         SDL_snprintf(text, SDL_arraysize(text), "THIS IS NOT A GAME. FPS=%s",
                      fps);
         txt(text, 0, 100, assets.fonts[ASSET_FONT_SMALL], &core);
+        ui_mk_window(&win, &assets, &core);
         core_draw_queue(&core);
         core_update_window(core.window);
     }
