@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
     ui_set_font(assets.fonts[ASSET_FONT_SMALL]);
     struct ui_element win = {.rect = {400, 400, 400, 400},
                              .type = UI_TYPE_WINDOW,
-                             .widget.window = {.title = "TestWindow"}};
+                             .data.window = {.title = "TestWindow"}};
 
     char fps[12] = {0};
     int frames = 0;
