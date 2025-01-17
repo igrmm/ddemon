@@ -28,25 +28,25 @@ static void ui_compute_button_size(int height, struct ui_element *button)
     int padding_num = 0;
 
     // check if button have text or image
-    if (button->widget.button.text_width > 0 ||
-        button->widget.button.tex_region.w > 0)
+    if (button->data.button.text_width > 0 ||
+        button->data.button.tex_region.w > 0)
         padding_num = 2;
 
     // check if button have both text and image
-    if (button->widget.button.text_width > 0 &&
-        button->widget.button.tex_region.w > 0)
+    if (button->data.button.text_width > 0 &&
+        button->data.button.tex_region.w > 0)
         padding_num = 3;
 
-    button->rect.w = button->widget.button.text_width +
-                     button->widget.button.tex_region.w +
+    button->rect.w = button->data.button.text_width +
+                     button->data.button.tex_region.w +
                      padding_num * button->padding;
     button->rect.h = height;
 }
 
 static void ui_compute_label_size(int height, struct ui_element *label)
 {
-    if (label->widget.label.text_width > 0)
-        label->rect.w = label->widget.label.text_width + 2 * label->padding;
+    if (label->data.label.text_width > 0)
+        label->rect.w = label->data.label.text_width + 2 * label->padding;
     label->rect.h = height;
 }
 
@@ -76,7 +76,7 @@ void ui_layout_row(struct ui_element *window, int height,
 
     // layout
     int x = window->rect.x;
-    int y = window->widget.window.row_y - height;
+    int y = window->data.window.row_y - height;
     for (int i = 0; i < element_count; i++) {
         struct ui_element *element = elements[i];
         if (element == NULL) {
@@ -87,7 +87,7 @@ void ui_layout_row(struct ui_element *window, int height,
             x += element->rect.w;
         }
     }
-    window->widget.window.row_y = y;
+    window->data.window.row_y = y;
 }
 
 void ui_mk_button(struct ui_element *button, struct assets *assets,
@@ -98,7 +98,7 @@ void ui_mk_button(struct ui_element *button, struct assets *assets,
 
     // todo: exit function if element isnt inside window
 
-    SDL_FRect *tex_region = &button->widget.button.tex_region;
+    SDL_FRect *tex_region = &button->data.button.tex_region;
     SDL_FRect src_rect = {.w = tex_region->w, .h = tex_region->h};
     // todo: add text offset to dst_rect x position
     SDL_FRect dst_rect = {.x = button->rect.x + button->padding,
@@ -117,7 +117,7 @@ void ui_mk_label(struct ui_element *label, struct assets *assets,
 
     // todo: exit function if element isnt inside window
 
-    const char *text = label->widget.label.text;
+    const char *text = label->data.label.text;
     float text_x = label->rect.x + label->padding;
     float text_y = label->rect.y + label->padding;
     float text_w = label->rect.w - label->padding * 2;
@@ -147,7 +147,7 @@ void ui_mk_window(struct ui_element *window, struct assets *assets,
                           window->rect.w, bar_height};
     core_add_drawing_fill_rect(core, &pixel_tex_region, &bar_rect,
                                &style.foreground_color);
-    window->widget.window.row_y = window->rect.y + window->rect.h;
+    window->data.window.row_y = window->rect.y + window->rect.h;
 
     // draw window border
     core_add_drawing_rect(core, &pixel_tex_region, &window->rect,
@@ -165,26 +165,26 @@ void ui_mk_window(struct ui_element *window, struct assets *assets,
     struct ui_element bar_title_label = {
         .padding = 1,
         .type = UI_TYPE_LABEL,
-        .widget = {
-            .label = {.text = window->widget.window.title, .text_width = 120}}};
+        .data = {
+            .label = {.text = window->data.window.title, .text_width = 120}}};
 
     txt_get_glyph_region(&tex_region, UI_MINIM_BUTTON_CODEPOINT, font);
     struct ui_element minim_btn = {
         .padding = 1,
         .type = UI_TYPE_BUTTON,
-        .widget = {.button = {.tex_region = tex_region}}};
+        .data = {.button = {.tex_region = tex_region}}};
 
     txt_get_glyph_region(&tex_region, UI_MAXIM_BUTTON_CODEPOINT, font);
     struct ui_element maxim_btn = {
         .padding = 1,
         .type = UI_TYPE_BUTTON,
-        .widget = {.button = {.tex_region = tex_region}}};
+        .data = {.button = {.tex_region = tex_region}}};
 
     txt_get_glyph_region(&tex_region, UI_CLOSE_BUTTON_CODEPOINT, font);
     struct ui_element close_btn = {
         .padding = 1,
         .type = UI_TYPE_BUTTON,
-        .widget = {.button = {.tex_region = tex_region}}};
+        .data = {.button = {.tex_region = tex_region}}};
 
     struct ui_element *elements[] = {&bar_title_label, NULL, &minim_btn,
                                      &maxim_btn, &close_btn};

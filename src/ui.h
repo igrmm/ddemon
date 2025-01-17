@@ -32,7 +32,7 @@ struct ui_style {
     struct core_color font_color;
 };
 
-union ui_widget {
+union ui_element_data {
     struct ui_button button;
     struct ui_label label;
     struct ui_window window;
@@ -43,7 +43,7 @@ struct ui_element {
     int padding;
     struct ui_style *style;
     enum ui_type type;
-    union ui_widget widget;
+    union ui_element_data data;
 };
 
 void ui_set_font(struct txt_font *in_font);
