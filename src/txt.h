@@ -1,7 +1,7 @@
 #ifndef TXT_H
 #define TXT_H
 
-#include "SDL.h" // IWYU pragma: keep //clangd
+#include <SDL3/SDL.h>
 
 #include "assets.h"
 #include "core.h"
@@ -62,8 +62,8 @@ int txt_length(const char *str, float x, float y, float length,
  */
 int txt(const char *str, float x, float y, struct txt_font *font,
         struct core *core);
-SDL_bool txt_is_codepoint_cached(struct txt_codepoint_cache *cache,
-                                 Uint32 codepoint);
+bool txt_is_codepoint_cached(struct txt_codepoint_cache *cache,
+                             Uint32 codepoint);
 void txt_set_glyph_atlas_index(struct txt_font *font, Uint32 codepoint,
                                Uint32 index);
 int txt_get_font_height(struct txt_font *font);

@@ -1,4 +1,5 @@
-#include "SDL.h" // IWYU pragma: keep //clangd
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_main.h>
 
 #include "assets.h"
 #include "core.h"
@@ -8,8 +9,7 @@
 int main(int argc, char *argv[])
 {
     struct core core = {0};
-    if (core_setup(&core, "DDEMON", 800, 600, SDL_WINDOW_FULLSCREEN_DESKTOP) <
-        0) {
+    if (core_setup(&core, "DDEMON", 800, 600, SDL_WINDOW_FULLSCREEN) < 0) {
         core_shutdown(&core);
         return -1;
     }
@@ -29,10 +29,10 @@ int main(int argc, char *argv[])
 
     char fps[12] = {0};
     int frames = 0;
-    Uint32 last_frame_time = 0;
-    SDL_bool running = SDL_TRUE;
+    Uint64 last_frame_time = 0;
+    bool running = true;
     while (running) {
-        Uint32 now = SDL_GetTicks64();
+        Uint64 now = SDL_GetTicks();
         if (now - last_frame_time >= 1000) {
             SDL_snprintf(fps, SDL_arraysize(fps), "%i", frames);
             last_frame_time = now;
@@ -42,11 +42,10 @@ int main(int argc, char *argv[])
 
         SDL_Event evt;
         while (SDL_PollEvent(&evt)) {
-            if (evt.type == SDL_QUIT)
-                running = SDL_FALSE;
+            if (evt.type == SDL_EVENT_QUIT)
+                running = false;
 
-            if (evt.type == SDL_WINDOWEVENT &&
-                evt.window.event == SDL_WINDOWEVENT_RESIZED) {
+            if (evt.type == SDL_EVENT_WINDOW_RESIZED) {
                 core_update_viewport(&core, evt.window.data1, evt.window.data2);
             }
         }

@@ -1,7 +1,7 @@
 #ifndef ASSETS_H
 #define ASSETS_H
 
-#include "SDL.h" // IWYU pragma: keep //clangd
+#include <SDL3/SDL.h>
 
 #include "core.h"
 

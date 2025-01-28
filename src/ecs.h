@@ -1,7 +1,7 @@
 #ifndef ECS_H
 #define ECS_H
 
-#include "SDL.h" // IWYU pragma: keep //clangd
+#include <SDL3/SDL.h>
 
 #include "components.h"
 

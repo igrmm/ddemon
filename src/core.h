@@ -7,7 +7,7 @@
 #ifndef CORE_H
 #define CORE_H
 
-#include "SDL.h" // IWYU pragma: keep //clangd
+#include <SDL3/SDL.h>
 
 #define CORE_DRAWING_POOL_SIZE 13000
 
@@ -34,7 +34,7 @@ struct core_drawing {
 struct core {
     // SDL
     SDL_Window *window;
-    SDL_GLContext *ctx;
+    SDL_GLContext ctx;
 
     // OPENGL
     Uint32 vertex_array_object;

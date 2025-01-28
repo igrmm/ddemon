@@ -18,7 +18,7 @@
 #pragma GCC diagnostic pop
 #endif
 
-#include "SDL.h" // IWYU pragma: keep //clangd
+#include <SDL3/SDL.h>
 
 #include "assets.h"
 #include "core.h"
@@ -142,7 +142,7 @@ static int assets_load_file(Uint8 *buffer, size_t bufsiz, const char *file_path,
                             size_t *file_size)
 {
     // try to open file
-    SDL_RWops *file = SDL_RWFromFile(file_path, "r");
+    SDL_IOStream *file = SDL_IOFromFile(file_path, "r");
     if (file == NULL) {
         SDL_Log("%s", SDL_GetError());
         return -1;
@@ -151,20 +151,21 @@ static int assets_load_file(Uint8 *buffer, size_t bufsiz, const char *file_path,
     // try to load bytes from file until end of buffer
     int status = 0;
     for (size_t i = 0; i < bufsiz; i++) {
-        size_t bytes_read = SDL_RWread(file, &buffer[i], sizeof(Uint8), 1);
+        size_t bytes_read = SDL_ReadIO(file, &buffer[i], sizeof(Uint8));
         if (bytes_read == 0) {
+            // loading is done whithout error
+            if (SDL_GetIOStatus(file) == SDL_IO_STATUS_EOF) {
+                buffer[i] = 0;
+                if (file_size != NULL)
+                    *file_size = i;
+                break;
+            }
             // check for error
-            const char *error = SDL_GetError();
-            if (SDL_strlen(error) != 0) {
-                SDL_Log("%s", error);
+            else {
+                SDL_Log("%s", SDL_GetError());
                 status = -1;
                 break;
             }
-            // loading is done whithout error
-            buffer[i] = 0;
-            if (file_size != NULL)
-                *file_size = i;
-            break;
         }
 
         // check for buffer overflow
@@ -175,7 +176,7 @@ static int assets_load_file(Uint8 *buffer, size_t bufsiz, const char *file_path,
         }
     }
 
-    if (SDL_RWclose(file) != 0) {
+    if (!SDL_CloseIO(file)) {
         SDL_Log("%s", SDL_GetError());
         status = -1;
     }

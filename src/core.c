@@ -1,21 +1,20 @@
 #define GLAD_GL_IMPLEMENTATION
 #include "../external/glad.h"
 
-#include "SDL.h" // IWYU pragma: keep //clangd
+#include <SDL3/SDL.h>
 
 #include "core.h"
 
 int core_setup(struct core *core, const char *window_title, int window_width,
                int window_height, int window_flag)
 {
-    if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
         SDL_Log("SDL_Init Error: %s\n", SDL_GetError());
         return -1;
     }
 
-    core->window = SDL_CreateWindow(
-        window_title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-        window_width, window_height, window_flag | SDL_WINDOW_OPENGL);
+    core->window = SDL_CreateWindow(window_title, window_width, window_height,
+                                    window_flag | SDL_WINDOW_OPENGL);
     if (core->window == NULL) {
         SDL_Log("SDL_CreateWindow Error: %s\n", SDL_GetError());
         return -1;
@@ -151,7 +150,7 @@ void core_shutdown(struct core *core)
         glDeleteBuffers(1, &core->element_buffer_object);
 
     SDL_free(core->drawing_pool);
-    SDL_GL_DeleteContext(core->ctx);
+    SDL_GL_DestroyContext(core->ctx);
     SDL_DestroyWindow(core->window);
     SDL_Quit();
 }

@@ -1,7 +1,7 @@
 #ifndef COMPONENTS_H
 #define COMPONENTS_H
 
-#include "SDL.h" // IWYU pragma: keep //clangd
+#include <SDL3/SDL.h>
 
 #define CMP_STRINGBUF_SIZE 24
 
@@ -42,7 +42,7 @@ union component_data {
 struct component {
     enum component_type type;
     Uint32 entity;
-    SDL_bool alive;
+    bool alive;
     struct component *next;
     struct component *prev;
     union component_data data;

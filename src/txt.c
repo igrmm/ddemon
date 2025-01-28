@@ -1,4 +1,4 @@
-#include "SDL.h" // IWYU pragma: keep //clangd
+#include <SDL3/SDL.h>
 
 #include "assets.h"
 #include "core.h"
@@ -11,7 +11,7 @@ struct txt_font {
 };
 
 struct txt_codepoint_cache {
-    SDL_bool codepoints[TXT_UNICODE_MAX];
+    bool codepoints[TXT_UNICODE_MAX];
     size_t count;
 };
 
@@ -68,8 +68,8 @@ int txt_cache_codepoints(struct txt_codepoint_cache *cache, const char *str)
     while (*iterator != '\0') {
         if (txt_get_codepoint(&codepoint, &iterator) != 0)
             return -1;
-        if (cache->codepoints[codepoint] == SDL_FALSE && codepoint > 0) {
-            cache->codepoints[codepoint] = SDL_TRUE;
+        if (!cache->codepoints[codepoint] && codepoint > 0) {
+            cache->codepoints[codepoint] = true;
             cache->count++;
         }
         iterator++;
@@ -149,13 +149,13 @@ int txt(const char *str, float x, float y, struct txt_font *font,
     return txt_length(str, x, y, 0, NULL, font, core);
 }
 
-SDL_bool txt_is_codepoint_cached(struct txt_codepoint_cache *cache,
-                                 Uint32 codepoint)
+bool txt_is_codepoint_cached(struct txt_codepoint_cache *cache,
+                             Uint32 codepoint)
 {
     size_t cache_size = SDL_arraysize(cache->codepoints);
     if (codepoint > 0 && codepoint < cache_size)
         return cache->codepoints[codepoint];
-    return SDL_FALSE;
+    return false;
 }
 
 void txt_set_glyph_atlas_index(struct txt_font *font, Uint32 codepoint,

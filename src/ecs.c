@@ -1,4 +1,4 @@
-#include "SDL.h" // IWYU pragma: keep //clangd
+#include <SDL3/SDL.h>
 
 #include "components.h"
 #include "ecs.h"
@@ -221,7 +221,7 @@ struct component *ecs_get_component(struct ecs *ecs, enum component_type type,
 {
     struct ecs_node *node = &ecs->components[type].buffer[entity];
     struct component *component = &node->data.component;
-    if (component->alive == SDL_FALSE)
+    if (!component->alive)
         return NULL;
     return component;
 }

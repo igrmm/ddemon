@@ -1,4 +1,4 @@
-#include "SDL.h" // IWYU pragma: keep //clangd
+#include <SDL3/SDL.h>
 
 #include "assets.h"
 #include "core.h"
