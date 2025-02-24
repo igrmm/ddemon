@@ -238,7 +238,7 @@ static int assets_load_shaders(struct assets *assets)
     return 0;
 }
 
-static int assets_load_textures(struct core *core, struct assets *assets)
+static int assets_load_textures(struct assets *assets)
 {
     size_t file_size = 0;
     Uint8 *file_buffer = SDL_malloc(ASSET_BUFSIZ * sizeof(Uint8));
@@ -250,11 +250,9 @@ static int assets_load_textures(struct core *core, struct assets *assets)
     for (int i = 0; i < ASSET_TEXTURE_COUNT; i++) {
         // create texture (single white pixel) for primitive drawing
         if (i == ASSET_TEXTURE_PIXEL) {
-            struct core_texture texture = core_create_stbi_texture(1, 1, 0);
-            core_offscreen_rendering_begin(core, &texture);
-            core_update_viewport(core, 1, 1);
-            core_clear_screen(1.0f, 1.0f, 1.0f, 1.0f);
-            core_offscreen_rendering_end();
+            Uint8 white_pixel[] = {255, 255, 255, 255};
+            struct core_texture texture =
+                core_create_stbi_texture(1, 1, white_pixel);
             int index;
             if (assets_cache_texture_in_atlas(assets->atlas, texture, &index) !=
                 0)
@@ -467,7 +465,7 @@ int assets_load(struct core *core, struct assets *assets)
     if (assets_load_shaders(assets) != 0)
         return -1;
 
-    if (assets_load_textures(core, assets) != 0)
+    if (assets_load_textures(assets) != 0)
         return -1;
 
     if (assets_load_fonts(core, assets) != 0)
