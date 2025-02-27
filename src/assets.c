@@ -24,7 +24,7 @@
 #include "core.h"
 #include "txt.h"
 
-#define ASSET_BUFSIZ 512000
+#define ASSETS_FILE_BUFFER_CAPACITY 512000
 
 #define ASSET_MAX_ATLAS_REGIONS 1000
 #define ASSET_ATLAS_WIDTH 1024
@@ -186,13 +186,15 @@ static int assets_load_file(Uint8 *buffer, size_t bufsiz, const char *file_path,
 
 static int assets_load_shaders(struct assets *assets)
 {
-    Uint8 *vertex_file_buffer = SDL_malloc(ASSET_BUFSIZ * sizeof(Uint8));
+    Uint8 *vertex_file_buffer =
+        SDL_malloc(ASSETS_FILE_BUFFER_CAPACITY * sizeof(Uint8));
     if (vertex_file_buffer == NULL) {
         SDL_Log("Error loading shaders: malloc failed (vertex_file_buffer)");
         return -1;
     }
 
-    Uint8 *fragment_file_buffer = SDL_malloc(ASSET_BUFSIZ * sizeof(Uint8));
+    Uint8 *fragment_file_buffer =
+        SDL_malloc(ASSETS_FILE_BUFFER_CAPACITY * sizeof(Uint8));
     if (fragment_file_buffer == NULL) {
         SDL_Log("Error loading shaders: malloc failed (fragment_file_buffer)");
         SDL_free(vertex_file_buffer);
@@ -202,7 +204,7 @@ static int assets_load_shaders(struct assets *assets)
     for (int i = 0; i < ASSET_SHADER_COUNT; i++) {
         // load vertex shader source from file
         vertex_file_buffer[0] = 0;
-        if (assets_load_file(vertex_file_buffer, ASSET_BUFSIZ,
+        if (assets_load_file(vertex_file_buffer, ASSETS_FILE_BUFFER_CAPACITY,
                              SHADER_VERTEX_PATHS[i], NULL) != 0) {
             SDL_free(vertex_file_buffer);
             SDL_free(fragment_file_buffer);
@@ -211,7 +213,7 @@ static int assets_load_shaders(struct assets *assets)
 
         // load fragment shader source from file
         fragment_file_buffer[0] = 0;
-        if (assets_load_file(fragment_file_buffer, ASSET_BUFSIZ,
+        if (assets_load_file(fragment_file_buffer, ASSETS_FILE_BUFFER_CAPACITY,
                              SHADER_FRAGMENT_PATHS[i], NULL) != 0) {
             SDL_free(vertex_file_buffer);
             SDL_free(fragment_file_buffer);
@@ -241,7 +243,8 @@ static int assets_load_shaders(struct assets *assets)
 static int assets_load_textures(struct assets *assets)
 {
     size_t file_size = 0;
-    Uint8 *file_buffer = SDL_malloc(ASSET_BUFSIZ * sizeof(Uint8));
+    Uint8 *file_buffer =
+        SDL_malloc(ASSETS_FILE_BUFFER_CAPACITY * sizeof(Uint8));
     if (file_buffer == NULL) {
         SDL_Log("Error loading textures: malloc failed (file_buffer)");
         return -1;
@@ -264,8 +267,8 @@ static int assets_load_textures(struct assets *assets)
         // load img from file
         file_buffer[0] = 0;
         file_size = 0;
-        if (assets_load_file(file_buffer, ASSET_BUFSIZ, TEXTURE_PATHS[i],
-                             &file_size) != 0) {
+        if (assets_load_file(file_buffer, ASSETS_FILE_BUFFER_CAPACITY,
+                             TEXTURE_PATHS[i], &file_size) != 0) {
             SDL_free(file_buffer);
             return -1;
         }
@@ -301,7 +304,8 @@ static int assets_load_fonts(struct core *core, struct assets *assets)
 {
     // create file buffer
     size_t file_size = 0;
-    Uint8 *file_buffer = SDL_malloc(ASSET_BUFSIZ * sizeof(Uint8));
+    Uint8 *file_buffer =
+        SDL_malloc(ASSETS_FILE_BUFFER_CAPACITY * sizeof(Uint8));
     if (file_buffer == NULL) {
         SDL_Log("Error loading fonts: malloc failed (file_buffer)");
         return -1;
@@ -332,8 +336,8 @@ static int assets_load_fonts(struct core *core, struct assets *assets)
     }
 
     // load ttf file
-    if (assets_load_file(file_buffer, ASSET_BUFSIZ, FONT_PATH, &file_size) !=
-        0) {
+    if (assets_load_file(file_buffer, ASSETS_FILE_BUFFER_CAPACITY, FONT_PATH,
+                         &file_size) != 0) {
         SDL_free(file_buffer);
         SDL_free(cache);
         return -1;
