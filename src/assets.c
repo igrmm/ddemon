@@ -138,8 +138,8 @@ static void assets_compute_atlas(struct core *core, struct asset_atlas *atlas,
     core_offscreen_rendering_end();
 }
 
-static int assets_load_file(Uint8 *buffer, size_t bufsiz, const char *file_path,
-                            size_t *file_size)
+static int assets_load_file(Uint8 *file_buffer, size_t file_buffer_capacity,
+                            const char *file_path, size_t *file_size)
 {
     // try to open file
     SDL_IOStream *file = SDL_IOFromFile(file_path, "r");
@@ -150,12 +150,12 @@ static int assets_load_file(Uint8 *buffer, size_t bufsiz, const char *file_path,
 
     // try to load bytes from file until end of buffer
     int status = 0;
-    for (size_t i = 0; i < bufsiz; i++) {
-        size_t bytes_read = SDL_ReadIO(file, &buffer[i], sizeof(Uint8));
+    for (size_t i = 0; i < file_buffer_capacity; i++) {
+        size_t bytes_read = SDL_ReadIO(file, &file_buffer[i], sizeof(Uint8));
         if (bytes_read == 0) {
             // loading is done whithout error
             if (SDL_GetIOStatus(file) == SDL_IO_STATUS_EOF) {
-                buffer[i] = 0;
+                file_buffer[i] = 0; // end with nullchar in case of reading text
                 if (file_size != NULL)
                     *file_size = i;
                 break;
@@ -169,7 +169,7 @@ static int assets_load_file(Uint8 *buffer, size_t bufsiz, const char *file_path,
         }
 
         // check for buffer overflow
-        if (i >= bufsiz - 1) {
+        if (i >= file_buffer_capacity - 1) {
             SDL_Log("Buffer overflow when loading file: %s", file_path);
             status = -1;
             break;
@@ -184,41 +184,26 @@ static int assets_load_file(Uint8 *buffer, size_t bufsiz, const char *file_path,
     return status;
 }
 
-static int assets_load_shaders(struct assets *assets)
+static int assets_load_shaders(Uint8 *file_buffer, size_t file_buffer_capacity,
+                               struct assets *assets)
 {
-    Uint8 *vertex_file_buffer =
-        SDL_malloc(ASSETS_FILE_BUFFER_CAPACITY * sizeof(Uint8));
-    if (vertex_file_buffer == NULL) {
-        SDL_Log("Error loading shaders: malloc failed (vertex_file_buffer)");
-        return -1;
-    }
-
-    Uint8 *fragment_file_buffer =
-        SDL_malloc(ASSETS_FILE_BUFFER_CAPACITY * sizeof(Uint8));
-    if (fragment_file_buffer == NULL) {
-        SDL_Log("Error loading shaders: malloc failed (fragment_file_buffer)");
-        SDL_free(vertex_file_buffer);
-        return -1;
-    }
+    // split file buffer because we need two buffers
+    file_buffer_capacity /= 2;
+    Uint8 *vertex_file_buffer = file_buffer;
+    Uint8 *fragment_file_buffer = &file_buffer[file_buffer_capacity];
 
     for (int i = 0; i < ASSET_SHADER_COUNT; i++) {
         // load vertex shader source from file
         vertex_file_buffer[0] = 0;
-        if (assets_load_file(vertex_file_buffer, ASSETS_FILE_BUFFER_CAPACITY,
-                             SHADER_VERTEX_PATHS[i], NULL) != 0) {
-            SDL_free(vertex_file_buffer);
-            SDL_free(fragment_file_buffer);
+        if (assets_load_file(vertex_file_buffer, file_buffer_capacity,
+                             SHADER_VERTEX_PATHS[i], NULL) != 0)
             return -1;
-        }
 
         // load fragment shader source from file
         fragment_file_buffer[0] = 0;
-        if (assets_load_file(fragment_file_buffer, ASSETS_FILE_BUFFER_CAPACITY,
-                             SHADER_FRAGMENT_PATHS[i], NULL) != 0) {
-            SDL_free(vertex_file_buffer);
-            SDL_free(fragment_file_buffer);
+        if (assets_load_file(fragment_file_buffer, file_buffer_capacity,
+                             SHADER_FRAGMENT_PATHS[i], NULL) != 0)
             return -1;
-        }
 
         int status;
         char log[512] = {0};
@@ -228,27 +213,17 @@ static int assets_load_shaders(struct assets *assets)
             core_create_shader(vert_src, frag_src, &status, log, 512);
         if (!status) {
             SDL_Log("shader error: \n\n%s\n", log);
-            SDL_free(vertex_file_buffer);
-            SDL_free(fragment_file_buffer);
             return -1;
         }
     }
 
-    SDL_free(vertex_file_buffer);
-    SDL_free(fragment_file_buffer);
-
     return 0;
 }
 
-static int assets_load_textures(struct assets *assets)
+static int assets_load_textures(Uint8 *file_buffer, size_t file_buffer_capacity,
+                                struct assets *assets)
 {
     size_t file_size = 0;
-    Uint8 *file_buffer =
-        SDL_malloc(ASSETS_FILE_BUFFER_CAPACITY * sizeof(Uint8));
-    if (file_buffer == NULL) {
-        SDL_Log("Error loading textures: malloc failed (file_buffer)");
-        return -1;
-    }
 
     for (int i = 0; i < ASSET_TEXTURE_COUNT; i++) {
         // create texture (single white pixel) for primitive drawing
@@ -265,13 +240,10 @@ static int assets_load_textures(struct assets *assets)
         }
 
         // load img from file
-        file_buffer[0] = 0;
         file_size = 0;
-        if (assets_load_file(file_buffer, ASSETS_FILE_BUFFER_CAPACITY,
-                             TEXTURE_PATHS[i], &file_size) != 0) {
-            SDL_free(file_buffer);
+        if (assets_load_file(file_buffer, file_buffer_capacity,
+                             TEXTURE_PATHS[i], &file_size) != 0)
             return -1;
-        }
 
         // load img data from memory using stbi and create the texture
         int width, height, nrChannels;
@@ -281,7 +253,6 @@ static int assets_load_textures(struct assets *assets)
         if (texture_data == NULL) {
             SDL_Log("Failed to loading texture from memory: %s",
                     stbi_failure_reason());
-            SDL_free(file_buffer);
             return -1;
         }
 
@@ -289,39 +260,32 @@ static int assets_load_textures(struct assets *assets)
         struct core_texture texture =
             core_create_stbi_texture(width, height, texture_data);
         int index;
-        if (assets_cache_texture_in_atlas(assets->atlas, texture, &index) != 0)
+        if (assets_cache_texture_in_atlas(assets->atlas, texture, &index) !=
+            0) {
+            stbi_image_free(texture_data);
             return -1;
+        }
         assets->texture_atlas_indexes[i] = index;
         stbi_image_free(texture_data);
     }
 
-    SDL_free(file_buffer);
-
     return 0;
 }
 
-static int assets_load_fonts(struct core *core, struct assets *assets)
+static int assets_load_fonts(Uint8 *file_buffer, size_t file_buffer_capacity,
+                             struct core *core, struct assets *assets)
 {
-    // create file buffer
     size_t file_size = 0;
-    Uint8 *file_buffer =
-        SDL_malloc(ASSETS_FILE_BUFFER_CAPACITY * sizeof(Uint8));
-    if (file_buffer == NULL) {
-        SDL_Log("Error loading fonts: malloc failed (file_buffer)");
-        return -1;
-    }
 
     // cache ascii codepoints
     struct txt_codepoint_cache *cache = txt_create_codepoint_cache();
     if (cache == NULL) {
-        SDL_free(file_buffer);
         return -1;
     } else {
         for (int i = '!'; i < '~'; i++) {
             char str[] = " ";
             str[0] = i;
             if (txt_cache_codepoints(cache, str) != 0) {
-                SDL_free(file_buffer);
                 SDL_free(cache);
                 return -1;
             }
@@ -330,15 +294,13 @@ static int assets_load_fonts(struct core *core, struct assets *assets)
 
     // cache window ui buttons codepoints
     if (txt_cache_codepoints(cache, "⊕⊗⊖◢") != 0) {
-        SDL_free(file_buffer);
         SDL_free(cache);
         return -1;
     }
 
     // load ttf file
-    if (assets_load_file(file_buffer, ASSETS_FILE_BUFFER_CAPACITY, FONT_PATH,
+    if (assets_load_file(file_buffer, file_buffer_capacity, FONT_PATH,
                          &file_size) != 0) {
-        SDL_free(file_buffer);
         SDL_free(cache);
         return -1;
     }
@@ -347,7 +309,6 @@ static int assets_load_fonts(struct core *core, struct assets *assets)
     stbtt_fontinfo info;
     if (!stbtt_InitFont(&info, file_buffer, 0)) {
         SDL_Log("stbtt_InitFont failed: %s", FONT_PATH);
-        SDL_free(file_buffer);
         SDL_free(cache);
         return -1;
     }
@@ -358,7 +319,6 @@ static int assets_load_fonts(struct core *core, struct assets *assets)
     assets->fonts[ASSET_FONT_SMALL] =
         txt_create_font(font_height, assets->atlas);
     if (assets->fonts[ASSET_FONT_SMALL] == NULL) {
-        SDL_free(file_buffer);
         SDL_free(cache);
         return -1;
     }
@@ -384,7 +344,6 @@ static int assets_load_fonts(struct core *core, struct assets *assets)
             if (texture_data == NULL) {
                 SDL_Log("stb_truetype failed getting codepoint bitmap: '%c'",
                         codepoint);
-                SDL_free(file_buffer);
                 SDL_free(cache);
                 return -1;
             }
@@ -437,7 +396,6 @@ static int assets_load_fonts(struct core *core, struct assets *assets)
             int index;
             if (assets_cache_texture_in_atlas(assets->atlas, texture_aligned,
                                               &index) != 0) {
-                SDL_free(file_buffer);
                 SDL_free(cache);
                 return -1;
             }
@@ -450,7 +408,6 @@ static int assets_load_fonts(struct core *core, struct assets *assets)
         }
     }
 
-    SDL_free(file_buffer);
     SDL_free(cache);
 
     return 0;
@@ -466,22 +423,36 @@ int assets_load(struct core *core, struct assets *assets)
     assets->atlas->texture =
         core_create_stbi_texture(ASSET_ATLAS_WIDTH, ASSET_ATLAS_HEIGHT, 0);
 
-    if (assets_load_shaders(assets) != 0)
+    Uint8 *file_buffer =
+        SDL_malloc(ASSETS_FILE_BUFFER_CAPACITY * sizeof(Uint8));
+    if (file_buffer == NULL) {
+        SDL_Log("Error loading textures: malloc failed (file_buffer)");
         return -1;
+    }
 
-    if (assets_load_textures(assets) != 0)
-        return -1;
+    int status = 0;
 
-    if (assets_load_fonts(core, assets) != 0)
-        return -1;
+    if ((status = assets_load_shaders(file_buffer, ASSETS_FILE_BUFFER_CAPACITY,
+                                       assets)) != 0)
+        goto cleanup;
 
-    if (assets_pack_atlas_rects(assets->atlas) != 0)
-        return -1;
+    if ((status = assets_load_textures(
+             file_buffer, ASSETS_FILE_BUFFER_CAPACITY, assets)) != 0)
+        goto cleanup;
+
+    if ((status = assets_load_fonts(file_buffer, ASSETS_FILE_BUFFER_CAPACITY,
+                                     core, assets)) != 0)
+        goto cleanup;
+
+    if ((status = assets_pack_atlas_rects(assets->atlas)) != 0)
+        goto cleanup;
 
     assets_compute_atlas(core, assets->atlas,
                          assets->shaders[ASSET_SHADER_ATLAS]);
 
-    return 0;
+cleanup:
+    SDL_free(file_buffer);
+    return status;
 }
 
 void assets_get_atlas_region(struct asset_atlas *atlas, int index,
