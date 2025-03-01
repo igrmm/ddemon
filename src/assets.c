@@ -433,15 +433,15 @@ int assets_load(struct core *core, struct assets *assets)
     int status = 0;
 
     if ((status = assets_load_shaders(file_buffer, ASSETS_FILE_BUFFER_CAPACITY,
+                                      assets)) != 0)
+        goto cleanup;
+
+    if ((status = assets_load_textures(file_buffer, ASSETS_FILE_BUFFER_CAPACITY,
                                        assets)) != 0)
         goto cleanup;
 
-    if ((status = assets_load_textures(
-             file_buffer, ASSETS_FILE_BUFFER_CAPACITY, assets)) != 0)
-        goto cleanup;
-
     if ((status = assets_load_fonts(file_buffer, ASSETS_FILE_BUFFER_CAPACITY,
-                                     core, assets)) != 0)
+                                    core, assets)) != 0)
         goto cleanup;
 
     if ((status = assets_pack_atlas_rects(assets->atlas)) != 0)
