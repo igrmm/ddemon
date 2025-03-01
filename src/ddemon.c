@@ -52,8 +52,7 @@ int main(int argc, char *argv[])
 
         core_clear_screen(0.5f, 0.0f, 0.0f, 1.0f);
         core_use_shader(&core, assets.shaders[ASSET_SHADER_DEFAULT]);
-        struct core_texture atlas_texture =
-            assets_get_atlas_texture(assets.atlas);
+        struct core_texture atlas_texture = atlas_get_texture(assets.atlas);
         core_bind_texture(&core, atlas_texture);
         SDL_FRect src_rect = {0, 0, 32, 32};
         SDL_FRect dst_rect = {0, 0, 32, 32};

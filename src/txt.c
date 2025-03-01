@@ -1,12 +1,13 @@
 #include <SDL3/SDL.h>
 
 #include "assets.h"
+#include "atlas.h"
 #include "core.h"
 #include "txt.h"
 
 struct txt_font {
     int height;
-    struct asset_atlas *atlas;
+    struct atlas *atlas;
     int glyph_atlas_indexes[TXT_UNICODE_MAX];
 };
 
@@ -86,7 +87,7 @@ struct txt_codepoint_cache *txt_create_codepoint_cache(void)
     return cache;
 }
 
-struct txt_font *txt_create_font(int height, struct asset_atlas *atlas)
+struct txt_font *txt_create_font(int height, struct atlas *atlas)
 {
     struct txt_font *font = SDL_calloc(1, sizeof(struct txt_font));
     if (font == NULL) {
@@ -127,7 +128,7 @@ int txt_length(const char *str, float x, float y, float length,
 
         int index = font->glyph_atlas_indexes[codepoint];
         SDL_FRect glyph_region;
-        assets_get_atlas_region(font->atlas, index, &glyph_region);
+        atlas_get_region(font->atlas, index, &glyph_region);
         src_rect = (SDL_FRect){0, 0, glyph_region.w, glyph_region.h};
         dst_rect = (SDL_FRect){0, y, glyph_region.w, glyph_region.h};
         dst_rect.x = x + cursor_x;
@@ -170,5 +171,5 @@ void txt_get_glyph_region(SDL_FRect *region, Uint32 codepoint,
                           struct txt_font *font)
 {
     int index = font->glyph_atlas_indexes[codepoint];
-    assets_get_atlas_region(font->atlas, index, region);
+    atlas_get_region(font->atlas, index, region);
 }

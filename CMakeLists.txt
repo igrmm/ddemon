@@ -11,6 +11,7 @@ add_executable(${PROJECT_NAME}
     WIN32
     src/ddemon.c
     src/assets.c
+    src/atlas.c
     src/ecs.c
     src/core.c
     src/txt.c
