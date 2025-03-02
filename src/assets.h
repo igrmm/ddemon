@@ -28,7 +28,7 @@ enum asset_shader {
 
 struct assets {
     struct atlas *atlas;
-    int texture_atlas_indexes[ASSET_TEXTURE_COUNT];
+    int texture_indexes_in_atlas[ASSET_TEXTURE_COUNT];
     struct txt_font *fonts[ASSET_FONT_COUNT];
     Uint32 shaders[ASSET_SHADER_COUNT];
 };

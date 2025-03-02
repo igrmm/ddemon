@@ -147,7 +147,7 @@ static int assets_load_textures(Uint8 *file_buffer, size_t file_buffer_capacity,
             int index;
             if (atlas_cache_texture(assets->atlas, texture, &index) != 0)
                 return -1;
-            assets->texture_atlas_indexes[i] = index;
+            assets->texture_indexes_in_atlas[i] = index;
             continue;
         }
 
@@ -176,7 +176,7 @@ static int assets_load_textures(Uint8 *file_buffer, size_t file_buffer_capacity,
             stbi_image_free(texture_data);
             return -1;
         }
-        assets->texture_atlas_indexes[i] = index;
+        assets->texture_indexes_in_atlas[i] = index;
         stbi_image_free(texture_data);
     }
 
@@ -366,7 +366,7 @@ void assets_get_texture_region(struct assets *assets,
                                SDL_FRect *region)
 {
     atlas_get_region(assets->atlas,
-                     assets->texture_atlas_indexes[asset_texture], region);
+                     assets->texture_indexes_in_atlas[asset_texture], region);
 }
 
 void assets_dispose(struct assets *assets)
