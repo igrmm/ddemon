@@ -25,7 +25,7 @@
 #define ASSETS_FILE_BUFFER_CAPACITY 512000
 
 // clang-format off
-static const char *TEXTURE_PATHS[] = {
+static const char *ASSETS_TEXTURE_PATHS[] = {
     [ASSET_TEXTURE_PLAYER] = "img.png",
     [ASSET_TEXTURE_TILEMAP] = "opengl.png",
     [ASSET_TEXTURE_ICON_PENCIL] = "pencil.png",
@@ -36,15 +36,15 @@ static const char *TEXTURE_PATHS[] = {
     [ASSET_TEXTURE_COUNT] = 0
 };
 
-static const char FONT_PATH[] = "NotoSansMono-Regular.ttf";
+static const char ASSETS_FONT_PATH[] = "NotoSansMono-Regular.ttf";
 
-static const char *SHADER_VERTEX_PATHS[] = {
+static const char *ASSETS_SHADER_VERTEX_PATHS[] = {
     [ASSET_SHADER_DEFAULT] = "default.vs",
     [ASSET_SHADER_ATLAS] = "atlas.vs",
     [ASSET_SHADER_COUNT] = 0
 };
 
-static const char *SHADER_FRAGMENT_PATHS[] = {
+static const char *ASSETS_SHADER_FRAGMENT_PATHS[] = {
     [ASSET_SHADER_DEFAULT] = "default.fs",
     [ASSET_SHADER_ATLAS] = "atlas.fs",
     [ASSET_SHADER_COUNT] = 0
@@ -109,13 +109,13 @@ static int assets_load_shaders(Uint8 *file_buffer, size_t file_buffer_capacity,
         // load vertex shader source from file
         vertex_file_buffer[0] = 0;
         if (assets_load_file(vertex_file_buffer, file_buffer_capacity,
-                             SHADER_VERTEX_PATHS[i], NULL) != 0)
+                             ASSETS_SHADER_VERTEX_PATHS[i], NULL) != 0)
             return -1;
 
         // load fragment shader source from file
         fragment_file_buffer[0] = 0;
         if (assets_load_file(fragment_file_buffer, file_buffer_capacity,
-                             SHADER_FRAGMENT_PATHS[i], NULL) != 0)
+                             ASSETS_SHADER_FRAGMENT_PATHS[i], NULL) != 0)
             return -1;
 
         int status;
@@ -154,7 +154,7 @@ static int assets_load_textures(Uint8 *file_buffer, size_t file_buffer_capacity,
         // load img from file
         file_size = 0;
         if (assets_load_file(file_buffer, file_buffer_capacity,
-                             TEXTURE_PATHS[i], &file_size) != 0)
+                             ASSETS_TEXTURE_PATHS[i], &file_size) != 0)
             return -1;
 
         // load img data from memory using stbi and create the texture
@@ -210,7 +210,7 @@ static int assets_load_fonts(Uint8 *file_buffer, size_t file_buffer_capacity,
     }
 
     // load ttf file
-    if (assets_load_file(file_buffer, file_buffer_capacity, FONT_PATH,
+    if (assets_load_file(file_buffer, file_buffer_capacity, ASSETS_FONT_PATH,
                          &file_size) != 0) {
         SDL_free(cache);
         return -1;
@@ -219,7 +219,7 @@ static int assets_load_fonts(Uint8 *file_buffer, size_t file_buffer_capacity,
     // initialize stb true type font
     stbtt_fontinfo info;
     if (!stbtt_InitFont(&info, file_buffer, 0)) {
-        SDL_Log("stbtt_InitFont failed: %s", FONT_PATH);
+        SDL_Log("stbtt_InitFont failed: %s", ASSETS_FONT_PATH);
         SDL_free(cache);
         return -1;
     }
