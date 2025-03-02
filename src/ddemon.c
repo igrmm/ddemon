@@ -2,6 +2,7 @@
 #include <SDL3/SDL_main.h>
 
 #include "assets.h"
+#include "atlas.h"
 #include "core.h"
 #include "txt.h"
 #include "ui.h"
