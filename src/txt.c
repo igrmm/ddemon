@@ -8,7 +8,7 @@
 struct txt_font {
     int height;
     struct atlas *atlas;
-    int glyph_atlas_indexes[TXT_UNICODE_MAX];
+    int glyph_indexes_in_atlas[TXT_UNICODE_MAX];
 };
 
 struct txt_codepoint_cache {
@@ -126,7 +126,7 @@ int txt_length(const char *str, float x, float y, float length,
             continue;
         }
 
-        int index = font->glyph_atlas_indexes[codepoint];
+        int index = font->glyph_indexes_in_atlas[codepoint];
         SDL_FRect glyph_region;
         atlas_get_region(font->atlas, index, &glyph_region);
         src_rect = (SDL_FRect){0, 0, glyph_region.w, glyph_region.h};
@@ -162,7 +162,7 @@ bool txt_is_codepoint_cached(struct txt_codepoint_cache *cache,
 void txt_set_glyph_atlas_index(struct txt_font *font, Uint32 codepoint,
                                Uint32 index)
 {
-    font->glyph_atlas_indexes[codepoint] = index;
+    font->glyph_indexes_in_atlas[codepoint] = index;
 }
 
 int txt_get_font_height(struct txt_font *font) { return font->height; }
@@ -170,6 +170,6 @@ int txt_get_font_height(struct txt_font *font) { return font->height; }
 void txt_get_glyph_region(SDL_FRect *region, Uint32 codepoint,
                           struct txt_font *font)
 {
-    int index = font->glyph_atlas_indexes[codepoint];
+    int index = font->glyph_indexes_in_atlas[codepoint];
     atlas_get_region(font->atlas, index, region);
 }
