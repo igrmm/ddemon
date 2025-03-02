@@ -1,6 +1,8 @@
 #define STB_RECT_PACK_IMPLEMENTATION
 #include "../external/stb/stb_rect_pack.h"
 
+#include <SDL3/SDL.h>
+
 #include "atlas.h"
 
 #define ATLAS_REGION_CAPACITY 1000
@@ -41,13 +43,13 @@ void atlas_destroy(struct atlas *atlas)
     }
 }
 
-int atlas_cache_texture(struct atlas *atlas, struct core_texture texture,
-                        int *index)
+bool atlas_cache_texture(struct atlas *atlas, struct core_texture texture,
+                         int *index)
 {
     // check if there is available regions in atlas
     if (atlas->region_count + 1 >= ATLAS_REGION_CAPACITY) {
         SDL_Log("Error caching texture in atlas: reached max regions.");
-        return -1;
+        return false;
     }
 
     // set out parameter "index"
@@ -61,28 +63,28 @@ int atlas_cache_texture(struct atlas *atlas, struct core_texture texture,
     // temporarily use stbrp_reck field "id" to store opengl texture
     atlas->regions[*index].id = texture.id;
 
-    return 0;
+    return true;
 }
 
-int atlas_pack_rects(struct atlas *atlas)
+bool atlas_pack_rects(struct atlas *atlas)
 {
-    int status = 0;
+    bool exit_status = true;
     struct stbrp_context ctx;
     struct stbrp_node *nodes =
         SDL_malloc(ATLAS_STBRP_NODE_CAPACITY * sizeof(struct stbrp_node));
     if (nodes == NULL) {
         SDL_Log("Error packing rectangles for atlas creation: malloc failed "
                 "(nodes)");
-        return -1;
+        return false;
     }
     stbrp_init_target(&ctx, ATLAS_WIDTH, ATLAS_HEIGHT, nodes,
                       ATLAS_STBRP_NODE_CAPACITY);
     if (stbrp_pack_rects(&ctx, atlas->regions, atlas->region_count) != 1) {
         SDL_Log("Error packing rectangles for atlas creation.");
-        status = -1;
+        exit_status = false;
     }
     SDL_free(nodes);
-    return status;
+    return exit_status;
 }
 
 void atlas_compute(struct core *core, struct atlas *atlas, Uint32 atlas_shader)

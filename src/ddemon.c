@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
     }
 
     struct assets assets = {0};
-    if (assets_load(&core, &assets) < 0) {
+    if (!assets_load(&core, &assets)) {
         SDL_Log("Error loading assets.");
         assets_dispose(&assets);
         core_shutdown(&core);

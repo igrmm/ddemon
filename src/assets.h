@@ -33,7 +33,7 @@ struct assets {
     Uint32 shaders[ASSET_SHADER_COUNT];
 };
 
-int assets_load(struct core *core, struct assets *assets);
+bool assets_load(struct core *core, struct assets *assets);
 void assets_dispose(struct assets *assets);
 void assets_get_texture_region(struct assets *assets,
                                enum asset_texture asset_texture,
