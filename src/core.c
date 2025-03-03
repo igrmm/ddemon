@@ -267,7 +267,7 @@ void core_clear_screen(float r, float g, float b, float a)
     glClear(GL_COLOR_BUFFER_BIT);
 }
 
-static int core_get_drawing_instance(struct core *core, int *instance)
+static bool core_get_drawing_instance(struct core *core, int *instance)
 {
     // check if there is available instances in the pool
     if (core->drawing_queue_size + 1 > CORE_DRAWING_POOL_SIZE) {
@@ -288,7 +288,7 @@ bool core_add_drawing_color_tex(struct core *core, const SDL_FRect *tex_region,
                                 const struct core_color *color)
 {
     int instance;
-    if (core_get_drawing_instance(core, &instance) < 0)
+    if (!core_get_drawing_instance(core, &instance))
         return false;
 
     float offset_x = 0, offset_y = 0;
@@ -348,24 +348,24 @@ bool core_add_drawing_rect(struct core *core, const SDL_FRect *pixel_tex_region,
     line.y = rect->y;
     line.w = rect->w;
     line.h = thickness;
-    if (core_add_drawing_fill_rect(core, pixel_tex_region, &line, color) != 0)
+    if (!core_add_drawing_fill_rect(core, pixel_tex_region, &line, color))
         return false;
 
     // line top
     line.y = rect->y + rect->h - thickness;
-    if (core_add_drawing_fill_rect(core, pixel_tex_region, &line, color) != 0)
+    if (!core_add_drawing_fill_rect(core, pixel_tex_region, &line, color))
         return false;
 
     // line left
     line.y = rect->y;
     line.w = thickness;
     line.h = rect->h;
-    if (core_add_drawing_fill_rect(core, pixel_tex_region, &line, color) != 0)
+    if (!core_add_drawing_fill_rect(core, pixel_tex_region, &line, color))
         return false;
 
     // line right
     line.x = rect->x + rect->w - thickness;
-    if (core_add_drawing_fill_rect(core, pixel_tex_region, &line, color) != 0)
+    if (!core_add_drawing_fill_rect(core, pixel_tex_region, &line, color))
         return false;
 
     return true;
