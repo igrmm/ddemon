@@ -10,7 +10,7 @@
 int main(int argc, char *argv[])
 {
     struct core core = {0};
-    if (core_setup(&core, "DDEMON", 800, 600, SDL_WINDOW_FULLSCREEN) < 0) {
+    if (!core_setup(&core, "DDEMON", 800, 600, SDL_WINDOW_FULLSCREEN)) {
         core_shutdown(&core);
         return -1;
     }

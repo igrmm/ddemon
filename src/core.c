@@ -5,19 +5,19 @@
 
 #include "core.h"
 
-int core_setup(struct core *core, const char *window_title, int window_width,
-               int window_height, int window_flag)
+bool core_setup(struct core *core, const char *window_title, int window_width,
+                int window_height, int window_flag)
 {
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
         SDL_Log("SDL_Init Error: %s\n", SDL_GetError());
-        return -1;
+        return false;
     }
 
     core->window = SDL_CreateWindow(window_title, window_width, window_height,
                                     window_flag | SDL_WINDOW_OPENGL);
     if (core->window == NULL) {
         SDL_Log("SDL_CreateWindow Error: %s\n", SDL_GetError());
-        return -1;
+        return false;
     }
 
     core->ctx = SDL_GL_CreateContext(core->window);
@@ -36,7 +36,7 @@ int core_setup(struct core *core, const char *window_title, int window_width,
     if (!version) {
         SDL_Log("Failed to initialize GLAD (OGL/OGLES) on platform: %s",
                 platform);
-        return -1;
+        return false;
     }
     SDL_Log("GLAD initialization succeeded.");
     SDL_Log("PLATFORM: %s, PROFILE: %i, VERSION: %i", platform, profile,
@@ -47,7 +47,7 @@ int core_setup(struct core *core, const char *window_title, int window_width,
         SDL_malloc(CORE_DRAWING_POOL_SIZE * sizeof(struct core_drawing));
     if (core->drawing_pool == NULL) {
         SDL_Log("Error in core_setup(): malloc failed (drawing_pool)");
-        return -1;
+        return false;
     }
 
     // vsync off so we can see fps
@@ -129,7 +129,7 @@ int core_setup(struct core *core, const char *window_title, int window_width,
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, core->element_buffer_object);
     glBindBuffer(GL_ARRAY_BUFFER, core->instance_vertex_buffer_object);
 
-    return 0;
+    return true;
 }
 
 void core_shutdown(struct core *core)
@@ -273,23 +273,23 @@ static int core_get_drawing_instance(struct core *core, int *instance)
     if (core->drawing_queue_size + 1 > CORE_DRAWING_POOL_SIZE) {
         SDL_Log(
             "Error getting drawing instance: no instances available in pool.");
-        return -1;
+        return false;
     }
 
     // obtain instance from the pool
     core->drawing_queue_size++;
     *instance = core->drawing_queue_size - 1;
-    return 0;
+    return true;
 }
 
-int core_add_drawing_color_tex(struct core *core, const SDL_FRect *tex_region,
-                               const SDL_FRect *src_rect,
-                               const SDL_FRect *dst_rect,
-                               const struct core_color *color)
+bool core_add_drawing_color_tex(struct core *core, const SDL_FRect *tex_region,
+                                const SDL_FRect *src_rect,
+                                const SDL_FRect *dst_rect,
+                                const struct core_color *color)
 {
     int instance;
     if (core_get_drawing_instance(core, &instance) < 0)
-        return -1;
+        return false;
 
     float offset_x = 0, offset_y = 0;
 
@@ -318,28 +318,28 @@ int core_add_drawing_color_tex(struct core *core, const SDL_FRect *tex_region,
         .g = c.g,
         .b = c.b};
 
-    return 0;
+    return true;
 }
 
-int core_add_drawing_tex(struct core *core, const SDL_FRect *tex_region,
-                         const SDL_FRect *src_rect, const SDL_FRect *dst_rect)
+bool core_add_drawing_tex(struct core *core, const SDL_FRect *tex_region,
+                          const SDL_FRect *src_rect, const SDL_FRect *dst_rect)
 {
     return core_add_drawing_color_tex(core, tex_region, src_rect, dst_rect,
                                       NULL);
 }
 
-int core_add_drawing_fill_rect(struct core *core,
-                               const SDL_FRect *pixel_tex_region,
-                               SDL_FRect *rect, struct core_color *color)
+bool core_add_drawing_fill_rect(struct core *core,
+                                const SDL_FRect *pixel_tex_region,
+                                SDL_FRect *rect, struct core_color *color)
 {
     SDL_FRect src_rect = {0, 0, pixel_tex_region->w, pixel_tex_region->h};
     return core_add_drawing_color_tex(core, pixel_tex_region, &src_rect, rect,
                                       color);
 }
 
-int core_add_drawing_rect(struct core *core, const SDL_FRect *pixel_tex_region,
-                          SDL_FRect *rect, struct core_color *color,
-                          float thickness)
+bool core_add_drawing_rect(struct core *core, const SDL_FRect *pixel_tex_region,
+                           SDL_FRect *rect, struct core_color *color,
+                           float thickness)
 {
     SDL_FRect line = {0};
 
@@ -349,26 +349,26 @@ int core_add_drawing_rect(struct core *core, const SDL_FRect *pixel_tex_region,
     line.w = rect->w;
     line.h = thickness;
     if (core_add_drawing_fill_rect(core, pixel_tex_region, &line, color) != 0)
-        return -1;
+        return false;
 
     // line top
     line.y = rect->y + rect->h - thickness;
     if (core_add_drawing_fill_rect(core, pixel_tex_region, &line, color) != 0)
-        return -1;
+        return false;
 
     // line left
     line.y = rect->y;
     line.w = thickness;
     line.h = rect->h;
     if (core_add_drawing_fill_rect(core, pixel_tex_region, &line, color) != 0)
-        return -1;
+        return false;
 
     // line right
     line.x = rect->x + rect->w - thickness;
     if (core_add_drawing_fill_rect(core, pixel_tex_region, &line, color) != 0)
-        return -1;
+        return false;
 
-    return 0;
+    return true;
 }
 
 void core_draw_queue(struct core *core)
