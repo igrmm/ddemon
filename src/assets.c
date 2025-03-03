@@ -197,7 +197,7 @@ static bool assets_load_fonts(Uint8 *file_buffer, size_t file_buffer_capacity,
         for (int i = '!'; i < '~'; i++) {
             char str[] = " ";
             str[0] = i;
-            if (txt_cache_codepoints(cache, str) != 0) {
+            if (!txt_cache_codepoints(cache, str)) {
                 SDL_free(cache);
                 return false;
             }
@@ -205,7 +205,7 @@ static bool assets_load_fonts(Uint8 *file_buffer, size_t file_buffer_capacity,
     }
 
     // cache window ui buttons codepoints
-    if (txt_cache_codepoints(cache, "⊕⊗⊖◢") != 0) {
+    if (!txt_cache_codepoints(cache, "⊕⊗⊖◢")) {
         SDL_free(cache);
         return false;
     }

@@ -16,14 +16,14 @@ struct txt_codepoint_cache {
     size_t count;
 };
 
-int txt_get_codepoint(Uint32 *codepoint, const char **iterator)
+bool txt_get_codepoint(Uint32 *codepoint, const char **iterator)
 {
     unsigned char byte = **iterator;
 
     // check if the character is ascii
     if ((byte & 0x80) == 0) {
         *codepoint = byte;
-        return 0;
+        return true;
     }
 
     // check how many bytes are encoded
@@ -36,7 +36,7 @@ int txt_get_codepoint(Uint32 *codepoint, const char **iterator)
         byte_count = 4;
     } else {
         SDL_Log("Error getting codepoint: invalid utf8.");
-        return -1;
+        return false;
     }
 
     for (int i = 0; i < byte_count; i++) {
@@ -59,23 +59,23 @@ int txt_get_codepoint(Uint32 *codepoint, const char **iterator)
         }
     }
 
-    return 0;
+    return true;
 }
 
-int txt_cache_codepoints(struct txt_codepoint_cache *cache, const char *str)
+bool txt_cache_codepoints(struct txt_codepoint_cache *cache, const char *str)
 {
     Uint32 codepoint;
     const char *iterator = str;
     while (*iterator != '\0') {
-        if (txt_get_codepoint(&codepoint, &iterator) != 0)
-            return -1;
+        if (!txt_get_codepoint(&codepoint, &iterator))
+            return false;
         if (!cache->codepoints[codepoint] && codepoint > 0) {
             cache->codepoints[codepoint] = true;
             cache->count++;
         }
         iterator++;
     }
-    return 0;
+    return true;
 }
 
 struct txt_codepoint_cache *txt_create_codepoint_cache(void)
@@ -105,9 +105,9 @@ void txt_destroy_font(struct txt_font *font)
         SDL_free(font);
 }
 
-int txt_length(const char *str, float x, float y, float length,
-               struct core_color *color, struct txt_font *font,
-               struct core *core)
+bool txt_length(const char *str, float x, float y, float length,
+                struct core_color *color, struct txt_font *font,
+                struct core *core)
 {
     SDL_FRect src_rect, dst_rect;
     int cursor_x = 0;
@@ -115,8 +115,8 @@ int txt_length(const char *str, float x, float y, float length,
     const char *iterator = str;
 
     while (*iterator != '\0') {
-        if (txt_get_codepoint(&codepoint, &iterator) != 0)
-            return -1;
+        if (!txt_get_codepoint(&codepoint, &iterator))
+            return false;
 
         iterator++;
 
@@ -141,11 +141,11 @@ int txt_length(const char *str, float x, float y, float length,
         cursor_x += glyph_region.w + 1;
     }
 
-    return 0;
+    return true;
 }
 
-int txt(const char *str, float x, float y, struct txt_font *font,
-        struct core *core)
+bool txt(const char *str, float x, float y, struct txt_font *font,
+         struct core *core)
 {
     return txt_length(str, x, y, 0, NULL, font, core);
 }
