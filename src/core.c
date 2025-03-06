@@ -13,6 +13,18 @@ bool core_setup(struct core *core, const char *window_title, int window_width,
         return false;
     }
 
+#if defined(SDL_PLATFORM_ANDROID)
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
+                        SDL_GL_CONTEXT_PROFILE_ES);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+#else
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
+                        SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+#endif
+
     core->window = SDL_CreateWindow(window_title, window_width, window_height,
                                     window_flag | SDL_WINDOW_OPENGL);
     if (core->window == NULL) {
