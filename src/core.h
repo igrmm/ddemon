@@ -104,7 +104,6 @@ void core_draw_queue(struct core *core);
 void core_update_window(SDL_Window *window);
 void core_update_viewport(struct core *core, int viewport_width,
                           int viewport_height);
-void core_restore_gl_state(struct core *core);
 void core_offscreen_rendering_begin(struct core *core,
                                     struct core_texture *target_texture);
 void core_offscreen_rendering_end(void);
