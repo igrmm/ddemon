@@ -160,10 +160,10 @@ static bool assets_load_textures(Uint8 *file_buffer,
 
         // load img data from memory using stbi and create the texture
         int width, height, nrChannels;
-        Uint8 *texture_data =
+        Uint8 *pixels =
             stbi_load_from_memory(file_buffer, file_size, &width, &height,
                                   &nrChannels, STBI_rgb_alpha);
-        if (texture_data == NULL) {
+        if (pixels == NULL) {
             SDL_Log("Failed to loading texture from memory: %s",
                     stbi_failure_reason());
             return false;
@@ -171,14 +171,14 @@ static bool assets_load_textures(Uint8 *file_buffer,
 
         // store texture in altas for computation
         struct core_texture texture = core_create_texture(
-            width, height, CORE_TEXTURE_FORMAT_RGBA, texture_data);
+            width, height, CORE_TEXTURE_FORMAT_RGBA, pixels);
         int index;
         if (!atlas_cache_texture(assets->atlas, texture, &index)) {
-            stbi_image_free(texture_data);
+            stbi_image_free(pixels);
             return false;
         }
         assets->texture_indexes_in_atlas[i] = index;
-        stbi_image_free(texture_data);
+        stbi_image_free(pixels);
     }
 
     return true;
@@ -251,17 +251,17 @@ static bool assets_load_fonts(Uint8 *file_buffer, size_t file_buffer_capacity,
     for (Uint32 codepoint = 0; codepoint < TXT_UNICODE_MAX; codepoint++) {
         if (txt_is_codepoint_cached(cache, codepoint)) {
             int width, height, xoff, yoff;
-            Uint8 *texture_data = stbtt_GetCodepointBitmap(
+            Uint8 *pixels = stbtt_GetCodepointBitmap(
                 &info, scale, scale, codepoint, &width, &height, &xoff, &yoff);
-            if (texture_data == NULL) {
+            if (pixels == NULL) {
                 SDL_Log("stb_truetype failed getting codepoint bitmap: '%c'",
                         codepoint);
                 SDL_free(cache);
                 return false;
             }
             struct core_texture texture_boundingbox = core_create_texture(
-                width, height, CORE_TEXTURE_FORMAT_RED, texture_data);
-            SDL_free(texture_data);
+                width, height, CORE_TEXTURE_FORMAT_RED, pixels);
+            SDL_free(pixels);
 
             // align glyph on Y axis with baseline (origin)
             /**

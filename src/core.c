@@ -218,7 +218,7 @@ void core_delete_texture(struct core_texture *texture)
 
 struct core_texture core_create_texture(int width, int height,
                                         enum core_texture_format format,
-                                        const Uint8 *texture_data)
+                                        const Uint8 *pixels)
 {
     // assume that non 1 channel images will be rgba images
     Sint32 opengl_format = GL_RGBA;
@@ -245,7 +245,7 @@ struct core_texture core_create_texture(int width, int height,
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
                     GL_NEAREST_MIPMAP_NEAREST);
     glTexImage2D(GL_TEXTURE_2D, 0, opengl_format, width, height, 0,
-                 opengl_format, GL_UNSIGNED_BYTE, texture_data);
+                 opengl_format, GL_UNSIGNED_BYTE, pixels);
     glGenerateMipmap(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, 0); // unbind texture
 

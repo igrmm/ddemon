@@ -74,7 +74,7 @@ void core_delete_texture(struct core_texture *texture);
  */
 struct core_texture core_create_texture(int width, int height,
                                         enum core_texture_format format,
-                                        const Uint8 *texture_data);
+                                        const Uint8 *pixels);
 void core_bind_texture(struct core *core, struct core_texture texture);
 void core_clear_screen(float r, float g, float b, float a);
 
