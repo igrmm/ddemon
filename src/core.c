@@ -124,14 +124,17 @@ bool core_setup(struct core *core, const char *window_title, int window_width,
     // put the vertex atrib of the instance vbo in the vao
     glBindBuffer(GL_ARRAY_BUFFER, core->instance_vertex_buffer_object);
     glEnableVertexAttribArray(1);
+    // the first 4 floats of struct core_drawing (dst rect x,y,w,h)
     glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 11 * sizeof(float),
                           (void *)0);
     glVertexAttribDivisor(1, 1); // create instance
     glEnableVertexAttribArray(2);
+    // the next 4 floats of struct core_drawing (src rect x,y,w,h)
     glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 11 * sizeof(float),
                           (void *)(4 * sizeof(float)));
     glVertexAttribDivisor(2, 1); // create instance
     glEnableVertexAttribArray(3);
+    // the last 3 floats of struct core_drawing (rgb color)
     glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float),
                           (void *)(8 * sizeof(float)));
     glVertexAttribDivisor(3, 1);      // create instance
