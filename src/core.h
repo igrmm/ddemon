@@ -11,6 +11,11 @@
 
 #define CORE_DRAWING_POOL_SIZE 13000
 
+enum core_texture_format {
+    CORE_TEXTURE_FORMAT_RGBA = 0,
+    CORE_TEXTURE_FORMAT_RED
+};
+
 struct core_color {
     float r, g, b, a;
 };
@@ -61,25 +66,15 @@ void core_use_shader(struct core *core, Uint32 shader);
 void core_delete_texture(struct core_texture *texture);
 
 /**
- * Create an opengl texture from a image loaded with the stbi library.
+ * Create an opengl texture from raw pixel array.
  *
- * core_create_stbi_texture() uses GL_UNPACK_ALIGNMENT of value 4 (the default
- * value) so it is expected that the width of the image is power of two and a
- * 4 channel image (RGBA).
- *
- */
-struct core_texture core_create_stbi_texture(int width, int height,
-                                             const Uint8 *texture_data);
-/**
- * Create an opengl texture from a image loaded with the stbtt library.
- *
- * core_create_stbtt_texture() uses GL_UNPACK_ALIGNMENT of value 1 because
- * stb_truetype may create bitmap with width not power of two. The image created
- * have one channel(R->RED), so we use a swizzle mask to make it white.
+ * core_create_texture() create a opengl texture that could be one channel (RED)
+ * or four channels (RGBA).
  *
  */
-struct core_texture core_create_stbtt_texture(int width, int height,
-                                              const Uint8 *texture_data);
+struct core_texture core_create_texture(int width, int height,
+                                        enum core_texture_format format,
+                                        const Uint8 *texture_data);
 void core_bind_texture(struct core *core, struct core_texture texture);
 void core_clear_screen(float r, float g, float b, float a);
 

@@ -23,7 +23,8 @@ struct atlas *atlas_create(void)
         SDL_Log("Error allocating memory for atlas (calloc failed)");
         return NULL;
     }
-    atlas->texture = core_create_stbi_texture(ATLAS_WIDTH, ATLAS_HEIGHT, 0);
+    atlas->texture = core_create_texture(ATLAS_WIDTH, ATLAS_HEIGHT,
+                                         CORE_TEXTURE_FORMAT_RGBA, 0);
     return atlas;
 }
 

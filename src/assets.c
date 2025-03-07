@@ -143,8 +143,8 @@ static bool assets_load_textures(Uint8 *file_buffer,
         // create texture (single white pixel) for primitive drawing
         if (i == ASSET_TEXTURE_PIXEL) {
             Uint8 white_pixel[] = {255, 255, 255, 255};
-            struct core_texture texture =
-                core_create_stbi_texture(1, 1, white_pixel);
+            struct core_texture texture = core_create_texture(
+                1, 1, CORE_TEXTURE_FORMAT_RGBA, white_pixel);
             int index;
             if (!atlas_cache_texture(assets->atlas, texture, &index))
                 return false;
@@ -170,8 +170,8 @@ static bool assets_load_textures(Uint8 *file_buffer,
         }
 
         // store texture in altas for computation
-        struct core_texture texture =
-            core_create_stbi_texture(width, height, texture_data);
+        struct core_texture texture = core_create_texture(
+            width, height, CORE_TEXTURE_FORMAT_RGBA, texture_data);
         int index;
         if (!atlas_cache_texture(assets->atlas, texture, &index)) {
             stbi_image_free(texture_data);
@@ -259,8 +259,8 @@ static bool assets_load_fonts(Uint8 *file_buffer, size_t file_buffer_capacity,
                 SDL_free(cache);
                 return false;
             }
-            struct core_texture texture_boundingbox =
-                core_create_stbtt_texture(width, height, texture_data);
+            struct core_texture texture_boundingbox = core_create_texture(
+                width, height, CORE_TEXTURE_FORMAT_RED, texture_data);
             SDL_free(texture_data);
 
             // align glyph on Y axis with baseline (origin)
@@ -291,8 +291,8 @@ static bool assets_load_fonts(Uint8 *file_buffer, size_t file_buffer_capacity,
             int new_width = width + xoff;
 
             // render to texture
-            struct core_texture texture_aligned =
-                core_create_stbi_texture(new_width, new_height, 0);
+            struct core_texture texture_aligned = core_create_texture(
+                new_width, new_height, CORE_TEXTURE_FORMAT_RGBA, 0);
             core_offscreen_rendering_begin(core, &texture_aligned);
             core_update_viewport(core, new_width, new_height);
             core_clear_screen(0.0f, 0.0f, 0.0f, 0.0f);

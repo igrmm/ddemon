@@ -216,47 +216,36 @@ void core_delete_texture(struct core_texture *texture)
     glDeleteTextures(1, &texture->id);
 }
 
-struct core_texture core_create_stbi_texture(int width, int height,
-                                             const Uint8 *texture_data)
+struct core_texture core_create_texture(int width, int height,
+                                        enum core_texture_format format,
+                                        const Uint8 *texture_data)
 {
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    Uint32 texture_id;
-    glGenTextures(1, &texture_id);
-    glBindTexture(GL_TEXTURE_2D, texture_id);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                    GL_NEAREST_MIPMAP_NEAREST);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
-                 GL_UNSIGNED_BYTE, texture_data);
-    glGenerateMipmap(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, 0); // unbind texture
+    // assume that non 1 channel images will be rgba images
+    Sint32 opengl_format = GL_RGBA;
+    if (format == CORE_TEXTURE_FORMAT_RED) {
+        opengl_format = GL_RED;
+    }
 
-    struct core_texture texture = {width, height, texture_id};
-
-    return texture;
-}
-
-struct core_texture core_create_stbtt_texture(int width, int height,
-                                              const Uint8 *texture_data)
-{
-    // unpack alignment of 1 because stbtt image could be not power of two
+    // unpack alignment of 1 because some images could be not power of two
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
     Uint32 texture_id;
     glGenTextures(1, &texture_id);
     glBindTexture(GL_TEXTURE_2D, texture_id);
 
-    // this step necessary to make 1 ch red stbtt image into white one w/ alpha
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, 1);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, 1);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, 1);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_RED);
+    // this step necessary to make 1 channel red image into white one w/ alpha
+    if (format == CORE_TEXTURE_FORMAT_RED) {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, 1);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, 1);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, 1);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, opengl_format);
+    }
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
                     GL_NEAREST_MIPMAP_NEAREST);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RED,
-                 GL_UNSIGNED_BYTE, texture_data);
+    glTexImage2D(GL_TEXTURE_2D, 0, opengl_format, width, height, 0,
+                 opengl_format, GL_UNSIGNED_BYTE, texture_data);
     glGenerateMipmap(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, 0); // unbind texture
 
