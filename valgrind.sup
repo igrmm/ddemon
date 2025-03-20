@@ -1,4 +1,22 @@
 {
+   nvidia_value8
+   Memcheck:Value8
+   ...
+   obj:/usr/lib/libGLX_nvidia.so.*
+}
+{
+   nvidia_bad_size
+   Memcheck:BadSize
+   ...
+   obj:/usr/lib/libGLX_nvidia.so.*
+}
+{
+   nvidia_cond
+   Memcheck:Cond
+   ...
+   obj:/usr/lib/libGLX_nvidia.so.*
+}
+{
    nvidia_realloc
    Memcheck:ReallocZero
    ...
@@ -45,6 +63,18 @@
    Memcheck:Cond
    ...
    fun:SDL_CreateRenderer_REAL
+}
+{
+   X11_quarks
+   Memcheck:Leak
+   ...
+   fun:_XrmInternalStringToQuark
+}
+{
+   X11_input_manager
+   Memcheck:Leak
+   ...
+   fun:_XimOpenIM
 }
 {
    X11_keyboard_something
