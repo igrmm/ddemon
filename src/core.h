@@ -9,7 +9,7 @@
 
 #include <SDL3/SDL.h>
 
-#define CORE_DRAWING_POOL_SIZE 13000
+#include "queue.h"
 
 enum core_texture_format {
     CORE_TEXTURE_FORMAT_RGBA = 0,
@@ -52,8 +52,8 @@ struct core {
     // CORE
     int viewport_width, viewport_height;
     struct core_texture current_texture;
-    struct core_drawing *drawing_pool;
-    int drawing_queue_size;
+    struct core_drawing *drawing_queue;
+    struct queue_handle drawing_queue_handle;
 };
 
 bool core_setup(struct core *core, const char *window_title, int window_width,

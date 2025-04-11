@@ -4,6 +4,9 @@
 #include <SDL3/SDL.h>
 
 #include "core.h"
+#include "queue.h"
+
+#define CORE_DRAWING_QUEUE_CAPACITY 13000
 
 bool core_setup(struct core *core, const char *window_title, int window_width,
                 int window_height, int window_flag)
@@ -54,13 +57,15 @@ bool core_setup(struct core *core, const char *window_title, int window_width,
     SDL_Log("PLATFORM: %s, PROFILE: %i, VERSION: %i", platform, profile,
             version);
 
-    // malloc memory for drawing pool
-    core->drawing_pool =
-        SDL_malloc(CORE_DRAWING_POOL_SIZE * sizeof(struct core_drawing));
-    if (core->drawing_pool == NULL) {
-        SDL_Log("Error in core_setup(): malloc failed (drawing_pool)");
+    // malloc memory for drawing queue
+    core->drawing_queue =
+        SDL_malloc(CORE_DRAWING_QUEUE_CAPACITY * sizeof(struct core_drawing));
+    if (core->drawing_queue == NULL) {
+        SDL_Log("Error in core_setup(): malloc failed (drawing_queue)");
         return false;
     }
+
+    queue_initialize(&core->drawing_queue_handle, CORE_DRAWING_QUEUE_CAPACITY);
 
     // vsync off so we can see fps
     SDL_GL_SetSwapInterval(0);
@@ -84,8 +89,8 @@ bool core_setup(struct core *core, const char *window_title, int window_width,
     glGenBuffers(1, &core->instance_vertex_buffer_object);
     glBindBuffer(GL_ARRAY_BUFFER, core->instance_vertex_buffer_object);
     glBufferData(GL_ARRAY_BUFFER,
-                 sizeof(struct core_drawing) * CORE_DRAWING_POOL_SIZE, NULL,
-                 GL_STATIC_DRAW);
+                 sizeof(struct core_drawing) * CORE_DRAWING_QUEUE_CAPACITY,
+                 NULL, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind instance_vbo
 
     // setup vertices/indices of quad for the template drawing
@@ -164,7 +169,7 @@ void core_shutdown(struct core *core)
     if (core->element_buffer_object > 0)
         glDeleteBuffers(1, &core->element_buffer_object);
 
-    SDL_free(core->drawing_pool);
+    SDL_free(core->drawing_queue);
     SDL_GL_DestroyContext(core->ctx);
     SDL_DestroyWindow(core->window);
     SDL_Quit();
@@ -271,28 +276,13 @@ void core_clear_screen(float r, float g, float b, float a)
     glClear(GL_COLOR_BUFFER_BIT);
 }
 
-static bool core_get_drawing_instance(struct core *core, int *instance)
-{
-    // check if there is available instances in the pool
-    if (core->drawing_queue_size + 1 > CORE_DRAWING_POOL_SIZE) {
-        SDL_Log(
-            "Error getting drawing instance: no instances available in pool.");
-        return false;
-    }
-
-    // obtain instance from the pool
-    core->drawing_queue_size++;
-    *instance = core->drawing_queue_size - 1;
-    return true;
-}
-
 bool core_add_drawing_color_tex(struct core *core, const SDL_FRect *tex_region,
                                 const SDL_FRect *src_rect,
                                 const SDL_FRect *dst_rect,
                                 const struct core_color *color)
 {
     int instance;
-    if (!core_get_drawing_instance(core, &instance))
+    if (!queue_add(&instance, &core->drawing_queue_handle))
         return false;
 
     float offset_x = 0, offset_y = 0;
@@ -309,7 +299,7 @@ bool core_add_drawing_color_tex(struct core *core, const SDL_FRect *tex_region,
         c = *color;
 
     // set up instance to be draw with opengl coords
-    core->drawing_pool[instance] = (struct core_drawing){
+    core->drawing_queue[instance] = (struct core_drawing){
         .dst_rect_x = dst_rect->x / core->viewport_width * 2.0f - 1.0f,
         .dst_rect_y = dst_rect->y / core->viewport_height * 2.0f - 1.0f,
         .dst_rect_w = 1.0f / core->viewport_width * 2.0f * dst_rect->w,
@@ -377,14 +367,13 @@ bool core_add_drawing_rect(struct core *core, const SDL_FRect *pixel_tex_region,
 
 void core_draw_queue(struct core *core)
 {
+    int drawing_count = core->drawing_queue_handle.count;
     glBufferSubData(GL_ARRAY_BUFFER, 0,
-                    sizeof(struct core_drawing) * core->drawing_queue_size,
-                    &core->drawing_pool[0]);
-    glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0,
-                            core->drawing_queue_size);
+                    sizeof(struct core_drawing) * drawing_count,
+                    &core->drawing_queue[0]);
+    glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, drawing_count);
 
-    // return all instances to the pool
-    core->drawing_queue_size = 0;
+    queue_reset(&core->drawing_queue_handle);
 }
 
 void core_update_window(SDL_Window *window) { SDL_GL_SwapWindow(window); }
