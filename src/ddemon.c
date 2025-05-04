@@ -11,6 +11,7 @@
 struct app {
     struct core core;
     struct assets assets;
+    struct ui ui;
     struct ui_element win;
 };
 
@@ -36,6 +37,7 @@ SDL_AppResult SDL_AppInit(void **app, int argc, char *argv[])
 
     struct core *core = &((struct app *)*app)->core;
     struct assets *assets = &((struct app *)*app)->assets;
+    struct ui *ui = &((struct app *)*app)->ui;
     struct ui_element *win = &((struct app *)*app)->win;
 
     if (!core_setup(core, "DDEMON", 800, 600, SDL_WINDOW_FULLSCREEN))
@@ -44,7 +46,9 @@ SDL_AppResult SDL_AppInit(void **app, int argc, char *argv[])
     if (!assets_load(core, assets))
         return SDL_APP_FAILURE;
 
-    ui_set_font(assets->fonts[ASSET_FONT_SMALL]);
+    if (!ui_initialize(ui, assets->fonts[ASSET_FONT_SMALL]))
+        return SDL_APP_FAILURE;
+
     *win = (struct ui_element){.rect = {400, 400, 400, 400},
                                .type = UI_TYPE_WINDOW,
                                .data.window = {.title = "TestWindow"}};
@@ -69,6 +73,7 @@ SDL_AppResult SDL_AppIterate(void *app)
 {
     struct core *core = &((struct app *)app)->core;
     struct assets *assets = &((struct app *)app)->assets;
+    struct ui *ui = &((struct app *)app)->ui;
     struct ui_element *win = &((struct app *)app)->win;
 
     count_fps();
@@ -96,7 +101,7 @@ SDL_AppResult SDL_AppIterate(void *app)
     char text[64] = "";
     SDL_snprintf(text, SDL_arraysize(text), "THIS IS NOT A GAME. FPS=%s", fps);
     txt(text, 0, 100, assets->fonts[ASSET_FONT_SMALL], core);
-    ui_mk_window(win, assets, core);
+    ui_mk_window(win, assets, ui, core);
     core_draw_queue(core);
     core_update_window(core->window);
 
@@ -108,8 +113,10 @@ void SDL_AppQuit(void *app, SDL_AppResult result)
     if (app != NULL) {
         struct assets *assets = &((struct app *)app)->assets;
         struct core *core = &((struct app *)app)->core;
+        struct ui *ui = &((struct app *)app)->ui;
         assets_dispose(assets);
         core_shutdown(core);
+        ui_terminate(ui);
         SDL_free(app);
     }
 }

@@ -5,6 +5,7 @@
 
 #include "assets.h"
 #include "core.h"
+#include "queue.h"
 
 enum ui_type { UI_TYPE_BUTTON, UI_TYPE_LABEL, UI_TYPE_WINDOW };
 
@@ -46,9 +47,14 @@ struct ui_element {
     union ui_element_data data;
 };
 
-void ui_set_font(struct txt_font *in_font);
-void ui_set_style(struct ui_style *in_style);
-struct ui_style ui_get_style(void);
+struct ui {
+    struct ui_element *element_queue;
+    struct queue_handle element_queue_handle;
+    struct txt_font *font;
+    struct ui_style style;
+};
+
+bool ui_initialize(struct ui *ui, struct txt_font *font);
 
 /**
  * Layout ui elements horizontally.
@@ -62,10 +68,11 @@ void ui_layout_row(struct ui_element *window, int height,
                    struct ui_element *elements[], int element_count);
 
 void ui_mk_button(struct ui_element *button, struct assets *assets,
-                  struct core *core);
-void ui_mk_label(struct ui_element *label, struct assets *assets,
+                  struct ui *ui, struct core *core);
+void ui_mk_label(struct ui_element *label, struct assets *assets, struct ui *ui,
                  struct core *core);
 void ui_mk_window(struct ui_element *window, struct assets *assets,
-                  struct core *core);
+                  struct ui *ui, struct core *core);
+void ui_terminate(struct ui *ui);
 
 #endif
