@@ -251,10 +251,17 @@ static bool assets_load_fonts(Uint8 *file_buffer, size_t file_buffer_capacity,
     for (Uint32 codepoint = 0; codepoint < TXT_UNICODE_MAX; codepoint++) {
         if (txt_is_codepoint_cached(cache, codepoint)) {
             int width, height, xoff, yoff;
-            Uint8 *pixels = stbtt_GetCodepointBitmap(
-                &info, scale, scale, codepoint, &width, &height, &xoff, &yoff);
+            int glyph_index = stbtt_FindGlyphIndex(&info, codepoint);
+            if (glyph_index == 0) {
+                SDL_Log("font doesn't have glyph for codepoint: %X", codepoint);
+                SDL_free(cache);
+                return false;
+            }
+            Uint8 *pixels = stbtt_GetGlyphBitmapSubpixel(
+                &info, scale, scale, 0.0f, 0.0f, glyph_index, &width, &height,
+                &xoff, &yoff);
             if (pixels == NULL) {
-                SDL_Log("stb_truetype failed getting codepoint bitmap: '%c'",
+                SDL_Log("stb_truetype failed getting codepoint bitmap: '%X'",
                         codepoint);
                 SDL_free(cache);
                 return false;
