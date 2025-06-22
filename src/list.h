@@ -47,7 +47,10 @@ void list_del(struct list_node *node);
  *  \code
  *  struct list_node *iterator = NULL;
  *  while ((iterator = list_iterate(iterator, &list))) {
- *  //do stuff
+ *      //delete example
+ *      struct list_node *prev = iterator->prev;
+ *      list_del(iterator);
+ *      iterator = prev;
  *  }
  *  \endcode
  *
