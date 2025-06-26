@@ -165,7 +165,7 @@ void txt_set_glyph_atlas_index(struct txt_font *font, Uint32 codepoint,
     font->glyph_indexes_in_atlas[codepoint] = index;
 }
 
-void txt_set_advance_x(float advance_x, struct txt_font *font)
+void txt_set_font_advance_x(float advance_x, struct txt_font *font)
 {
     font->advance_x = advance_x;
 }

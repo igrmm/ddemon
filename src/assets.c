@@ -330,7 +330,7 @@ static bool assets_load_fonts(Uint8 *file_buffer, size_t file_buffer_capacity,
             core_delete_texture(&texture_boundingbox);
         }
     }
-    txt_set_advance_x(advance_x, assets->fonts[ASSET_FONT_SMALL]);
+    txt_set_font_advance_x(advance_x, assets->fonts[ASSET_FONT_SMALL]);
 
     SDL_free(cache);
 
