@@ -194,7 +194,7 @@ static bool assets_load_fonts(Uint8 *file_buffer, size_t file_buffer_capacity,
     if (cache == NULL) {
         return false;
     } else {
-        for (int i = '!'; i < '~'; i++) {
+        for (int i = ' '; i < '~'; i++) {
             char str[] = " ";
             str[0] = i;
             if (!txt_cache_codepoints(cache, str)) {
@@ -202,12 +202,6 @@ static bool assets_load_fonts(Uint8 *file_buffer, size_t file_buffer_capacity,
                 return false;
             }
         }
-    }
-
-    // cache window ui buttons codepoints
-    if (!txt_cache_codepoints(cache, "⊕⊗⊖◢")) {
-        SDL_free(cache);
-        return false;
     }
 
     // load ttf file
@@ -248,6 +242,7 @@ static bool assets_load_fonts(Uint8 *file_buffer, size_t file_buffer_capacity,
     }
 
     // loop through cached codepoints, create aligned tex and store in atlas
+    float advance_x = 0.0f;
     for (Uint32 codepoint = 0; codepoint < TXT_UNICODE_MAX; codepoint++) {
         if (txt_is_codepoint_cached(cache, codepoint)) {
             int width, height, xoff, yoff;
@@ -257,10 +252,20 @@ static bool assets_load_fonts(Uint8 *file_buffer, size_t file_buffer_capacity,
                 SDL_free(cache);
                 return false;
             }
+            int advance_x_unscaled = 0;
+            stbtt_GetCodepointHMetrics(&info, codepoint, &advance_x_unscaled,
+                                       NULL);
+            if (advance_x > 0.0f && (advance_x_unscaled * scale) != advance_x) {
+                SDL_Log("font is not monospaced, glyph's advance_x vary.");
+                SDL_free(cache);
+                return false;
+            }
+            advance_x = advance_x_unscaled * scale;
+            float shift_x = advance_x - SDL_floorf(advance_x);
             Uint8 *pixels = stbtt_GetGlyphBitmapSubpixel(
-                &info, scale, scale, 0.0f, 0.0f, glyph_index, &width, &height,
-                &xoff, &yoff);
-            if (pixels == NULL) {
+                &info, scale, scale, shift_x, 0.0f, glyph_index, &width,
+                &height, &xoff, &yoff);
+            if (pixels == NULL && codepoint != ' ') {
                 SDL_Log("stb_truetype failed getting codepoint bitmap: '%X'",
                         codepoint);
                 SDL_free(cache);
@@ -325,6 +330,7 @@ static bool assets_load_fonts(Uint8 *file_buffer, size_t file_buffer_capacity,
             core_delete_texture(&texture_boundingbox);
         }
     }
+    txt_set_advance_x(advance_x, assets->fonts[ASSET_FONT_SMALL]);
 
     SDL_free(cache);
 

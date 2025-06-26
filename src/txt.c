@@ -9,6 +9,7 @@ struct txt_font {
     int height;
     struct atlas *atlas;
     int glyph_indexes_in_atlas[TXT_UNICODE_MAX];
+    float advance_x;
 };
 
 struct txt_codepoint_cache {
@@ -110,7 +111,7 @@ bool txt_length(const char *str, float x, float y, float length,
                 struct core *core)
 {
     SDL_FRect src_rect, dst_rect;
-    int cursor_x = 0;
+    float cursor_x = 0;
     Uint32 codepoint;
     const char *iterator = str;
 
@@ -120,9 +121,8 @@ bool txt_length(const char *str, float x, float y, float length,
 
         iterator++;
 
-        // TODO hardcoded: size of "space"
         if (codepoint == ' ') {
-            cursor_x += 32;
+            cursor_x += font->advance_x;
             continue;
         }
 
@@ -138,7 +138,7 @@ bool txt_length(const char *str, float x, float y, float length,
 
         core_add_drawing_color_tex(core, &glyph_region, &src_rect, &dst_rect,
                                    color);
-        cursor_x += glyph_region.w + 1;
+        cursor_x += font->advance_x;
     }
 
     return true;
@@ -163,6 +163,11 @@ void txt_set_glyph_atlas_index(struct txt_font *font, Uint32 codepoint,
                                Uint32 index)
 {
     font->glyph_indexes_in_atlas[codepoint] = index;
+}
+
+void txt_set_advance_x(float advance_x, struct txt_font *font)
+{
+    font->advance_x = advance_x;
 }
 
 int txt_get_font_height(struct txt_font *font) { return font->height; }
