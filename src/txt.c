@@ -120,7 +120,7 @@ void txt_get_string_rect_size(const char *str, float *width, float *height,
         SDL_FRect glyph_region;
         atlas_get_region(font->atlas, index, &glyph_region);
 
-        if (height != NULL)
+        if (height != NULL && glyph_region.h > *height)
             *height = glyph_region.h;
 
         if (width != NULL)
