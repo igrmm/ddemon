@@ -116,16 +116,15 @@ void txt_get_string_rect_size(const char *str, float *width, float *height,
             return;
         iterator++;
 
-        // set width
-        if (width != NULL)
-            *width += font->advance_x;
-
-        // set height
         int index = font->glyph_indexes_in_atlas[codepoint];
         SDL_FRect glyph_region;
         atlas_get_region(font->atlas, index, &glyph_region);
-        if (height != NULL && glyph_region.h > *height)
+
+        if (height != NULL)
             *height = glyph_region.h;
+
+        if (width != NULL)
+            *width += glyph_region.w;
     }
 }
 
