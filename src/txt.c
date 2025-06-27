@@ -106,6 +106,29 @@ void txt_destroy_font(struct txt_font *font)
         SDL_free(font);
 }
 
+void txt_get_string_rect_size(const char *str, float *width, float *height,
+                              struct txt_font *font)
+{
+    Uint32 codepoint;
+    const char *iterator = str;
+    while (*iterator != '\0') {
+        if (!txt_get_codepoint(&codepoint, &iterator))
+            return;
+        iterator++;
+
+        // set width
+        if (width != NULL)
+            *width += font->advance_x;
+
+        // set height
+        int index = font->glyph_indexes_in_atlas[codepoint];
+        SDL_FRect glyph_region;
+        atlas_get_region(font->atlas, index, &glyph_region);
+        if (height != NULL && glyph_region.h > *height)
+            *height = glyph_region.h;
+    }
+}
+
 bool txt_length(const char *str, float x, float y, float length,
                 struct core_color *color, struct txt_font *font,
                 struct core *core)
