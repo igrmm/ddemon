@@ -41,12 +41,14 @@ static const char ASSETS_FONT_PATH[] = "NotoSansMono-Regular.ttf";
 static const char *ASSETS_SHADER_VERTEX_PATHS[] = {
     [ASSET_SHADER_DEFAULT] = "default.vs",
     [ASSET_SHADER_ATLAS] = "atlas.vs",
+    [ASSET_SHADER_LINE] = "line.vs",
     [ASSET_SHADER_COUNT] = 0
 };
 
 static const char *ASSETS_SHADER_FRAGMENT_PATHS[] = {
     [ASSET_SHADER_DEFAULT] = "default.fs",
     [ASSET_SHADER_ATLAS] = "atlas.fs",
+    [ASSET_SHADER_LINE] = "line.fs",
     [ASSET_SHADER_COUNT] = 0
 };
 // clang-format on
@@ -313,7 +315,7 @@ static bool assets_load_fonts(Uint8 *file_buffer, size_t file_buffer_capacity,
             SDL_FRect src_rect = {0, 0, width, height};
             SDL_FRect dst_rect = {xoff, descent, width, height};
             core_add_drawing_tex(core, NULL, &src_rect, &dst_rect);
-            core_draw_queue(core);
+            core_render_drawings(core);
             core_offscreen_rendering_end();
 
             // store texture into atlas, set glyph on txt_font

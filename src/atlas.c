@@ -107,7 +107,7 @@ void atlas_compute(struct core *core, struct atlas *atlas, Uint32 atlas_shader)
         SDL_FRect src_rect = {0, 0, w, h};
         SDL_FRect dst_rect = {x, y, w, h};
         core_add_drawing_tex(core, NULL, &src_rect, &dst_rect);
-        core_draw_queue(core);
+        core_render_drawings(core);
 
         // free tmp texture from gpu's memory
         core_delete_texture(&texture);

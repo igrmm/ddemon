@@ -23,6 +23,7 @@ enum asset_font { ASSET_FONT_SMALL = 0, ASSET_FONT_COUNT };
 enum asset_shader {
     ASSET_SHADER_DEFAULT = 0,
     ASSET_SHADER_ATLAS,
+    ASSET_SHADER_LINE,
     ASSET_SHADER_COUNT
 };
 

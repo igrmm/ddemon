@@ -7,6 +7,7 @@
 #include "queue.h"
 
 #define CORE_DRAWING_QUEUE_CAPACITY 13000
+#define CORE_LINE_QUEUE_CAPACITY 500000
 
 bool core_setup(struct core *core, const char *window_title, int window_width,
                 int window_height, int window_flag)
@@ -17,8 +18,7 @@ bool core_setup(struct core *core, const char *window_title, int window_width,
     }
 
 #if defined(SDL_PLATFORM_ANDROID)
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
-                        SDL_GL_CONTEXT_PROFILE_ES);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 #else
@@ -64,8 +64,16 @@ bool core_setup(struct core *core, const char *window_title, int window_width,
         SDL_Log("Error in core_setup(): malloc failed (drawing_queue)");
         return false;
     }
-
     queue_initialize(&core->drawing_queue_handle, CORE_DRAWING_QUEUE_CAPACITY);
+
+    // malloc memory for line queue
+    core->line_queue =
+        SDL_malloc(CORE_LINE_QUEUE_CAPACITY * sizeof(struct core_line));
+    if (core->line_queue == NULL) {
+        SDL_Log("Error in core_setup(): malloc failed (line_queue)");
+        return false;
+    }
+    queue_initialize(&core->line_queue_handle, CORE_LINE_QUEUE_CAPACITY);
 
     // vsync off so we can see fps
     SDL_GL_SetSwapInterval(0);
@@ -85,49 +93,50 @@ bool core_setup(struct core *core, const char *window_title, int window_width,
     glGenVertexArrays(1, &core->vertex_array_object);
     glBindVertexArray(core->vertex_array_object);
 
-    // setup instance vbo
-    glGenBuffers(1, &core->instance_vertex_buffer_object);
-    glBindBuffer(GL_ARRAY_BUFFER, core->instance_vertex_buffer_object);
+    // setup instance vbo for the drawings
+    glGenBuffers(1, &core->drawing_instance_vertex_buffer_object);
+    glBindBuffer(GL_ARRAY_BUFFER, core->drawing_instance_vertex_buffer_object);
     glBufferData(GL_ARRAY_BUFFER,
                  sizeof(struct core_drawing) * CORE_DRAWING_QUEUE_CAPACITY,
                  NULL, GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind instance_vbo
+    glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind drawing_instance_vbo
 
     // setup vertices/indices of quad for the template drawing
-    float vertices[] = {
+    float drawing_vertices[] = {
         // w     h     <- identify if this is a "width" or "height" vertex
         1.0f, 1.0f, // top right
         1.0f, 0.0f, // bottom right
         0.0f, 0.0f, // bottom left
         0.0f, 1.0f, // top left
     };
-    Uint32 indices[] = {
+    Uint32 drawing_indices[] = {
         0, 1, 3, // first triangle
         1, 2, 3  // second triangle
     };
 
     // setup vbo for the quad template
-    glGenBuffers(1, &core->vertex_buffer_object);
-    glBindBuffer(GL_ARRAY_BUFFER, core->vertex_buffer_object);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glGenBuffers(1, &core->drawing_vertex_buffer_object);
+    glBindBuffer(GL_ARRAY_BUFFER, core->drawing_vertex_buffer_object);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(drawing_vertices), drawing_vertices,
+                 GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind vbo
 
     // setup ebo for the quad template
-    glGenBuffers(1, &core->element_buffer_object);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, core->element_buffer_object);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices,
-                 GL_STATIC_DRAW);
+    glGenBuffers(1, &core->drawing_element_buffer_object);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, core->drawing_element_buffer_object);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(drawing_indices),
+                 drawing_indices, GL_STATIC_DRAW);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); // unbind ebo
 
     // put the vertex atrib of the quad template vbo in the vao
-    glBindBuffer(GL_ARRAY_BUFFER, core->vertex_buffer_object);
+    glBindBuffer(GL_ARRAY_BUFFER, core->drawing_vertex_buffer_object);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float),
                           (void *)0);
     glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind vbo
 
     // put the vertex atrib of the instance vbo in the vao
-    glBindBuffer(GL_ARRAY_BUFFER, core->instance_vertex_buffer_object);
+    glBindBuffer(GL_ARRAY_BUFFER, core->drawing_instance_vertex_buffer_object);
     glEnableVertexAttribArray(1);
     // the first 4 floats of struct core_drawing (dst rect x,y,w,h)
     glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 11 * sizeof(float),
@@ -145,9 +154,57 @@ bool core_setup(struct core *core, const char *window_title, int window_width,
     glVertexAttribDivisor(3, 1);      // create instance
     glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind instance vbo
 
-    // bind ebo and instance vbo to be used throughout the whole program
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, core->element_buffer_object);
-    glBindBuffer(GL_ARRAY_BUFFER, core->instance_vertex_buffer_object);
+    // setup instance vbo for the lines
+    glGenBuffers(1, &core->line_instance_vertex_buffer_object);
+    glBindBuffer(GL_ARRAY_BUFFER, core->line_instance_vertex_buffer_object);
+    glBufferData(GL_ARRAY_BUFFER,
+                 sizeof(struct core_line) * CORE_LINE_QUEUE_CAPACITY, NULL,
+                 GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind line_instance_vbo
+
+    // setup vertices of line for the template drawing
+    float line_vertices[] = {
+        // x     y
+        0.0f, 0.0f, // p0
+        1.0f, 1.0f  // p1
+    };
+
+    // setup vbo for the line template
+    glGenBuffers(1, &core->line_vertex_buffer_object);
+    glBindBuffer(GL_ARRAY_BUFFER, core->line_vertex_buffer_object);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(line_vertices), line_vertices,
+                 GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind vbo
+
+    // put the vertex atrib of the line template vbo in the vao
+    glBindBuffer(GL_ARRAY_BUFFER, core->line_vertex_buffer_object);
+    glEnableVertexAttribArray(4);
+    glVertexAttribPointer(4, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float),
+                          (void *)0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind vbo
+
+    // put the vertex atrib of the line instance vbo in the vao
+    glBindBuffer(GL_ARRAY_BUFFER, core->line_instance_vertex_buffer_object);
+    glEnableVertexAttribArray(5);
+    // the first 2 floats of struct core_line (x0, y0)
+    glVertexAttribPointer(5, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(float),
+                          (void *)0);
+    glVertexAttribDivisor(5, 1); // create instance
+    glEnableVertexAttribArray(6);
+    // the next 2 floats of struct core_line (x1, y1)
+    glVertexAttribPointer(6, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(float),
+                          (void *)(2 * sizeof(float)));
+    glVertexAttribDivisor(6, 1); // create instance
+    glEnableVertexAttribArray(7);
+    // the last 3 floats of struct core_line (rgb color)
+    glVertexAttribPointer(7, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float),
+                          (void *)(4 * sizeof(float)));
+    glVertexAttribDivisor(7, 1);      // create instance
+    glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind instance vbo
+
+    // bind drawing ebo to be used throughout the whole program. We dont use ebo
+    // for the line rendering
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, core->drawing_element_buffer_object);
 
     return true;
 }
@@ -160,16 +217,23 @@ void core_shutdown(struct core *core)
     if (core->vertex_array_object > 0)
         glDeleteVertexArrays(1, &core->vertex_array_object);
 
-    if (core->instance_vertex_buffer_object > 0)
-        glDeleteBuffers(1, &core->instance_vertex_buffer_object);
+    if (core->drawing_instance_vertex_buffer_object > 0)
+        glDeleteBuffers(1, &core->drawing_instance_vertex_buffer_object);
 
-    if (core->vertex_buffer_object > 0)
-        glDeleteBuffers(1, &core->vertex_buffer_object);
+    if (core->drawing_vertex_buffer_object > 0)
+        glDeleteBuffers(1, &core->drawing_vertex_buffer_object);
 
-    if (core->element_buffer_object > 0)
-        glDeleteBuffers(1, &core->element_buffer_object);
+    if (core->drawing_element_buffer_object > 0)
+        glDeleteBuffers(1, &core->drawing_element_buffer_object);
+
+    if (core->line_instance_vertex_buffer_object > 0)
+        glDeleteBuffers(1, &core->line_instance_vertex_buffer_object);
+
+    if (core->line_vertex_buffer_object > 0)
+        glDeleteBuffers(1, &core->line_vertex_buffer_object);
 
     SDL_free(core->drawing_queue);
+    SDL_free(core->line_queue);
     SDL_GL_DestroyContext(core->ctx);
     SDL_DestroyWindow(core->window);
     SDL_Quit();
@@ -365,15 +429,49 @@ bool core_add_drawing_rect(struct core *core, const SDL_FRect *pixel_tex_region,
     return true;
 }
 
-void core_draw_queue(struct core *core)
+bool core_add_line(struct core *core, float x0, float y0, float x1, float y1,
+                   struct core_color *color)
 {
+    int instance;
+    if (!queue_add(&instance, &core->line_queue_handle)) {
+        return false;
+    }
+
+    struct core_color c = {0.0f, 0.0f, 0.0f, 0.0f};
+    if (color != NULL)
+        c = *color;
+
+    core->line_queue[instance] =
+        (struct core_line){.x0 = x0 / core->viewport_width * 2.0f - 1.0f,
+                           .y0 = y0 / core->viewport_height * 2.0f - 1.0f,
+                           .x1 = (x1 - x0) / core->viewport_width * 2.0f,
+                           .y1 = (y1 - y0) / core->viewport_height * 2.0f,
+                           .r = c.r,
+                           .g = c.g,
+                           .b = c.b};
+
+    return true;
+}
+
+void core_render_drawings(struct core *core)
+{
+    glBindBuffer(GL_ARRAY_BUFFER, core->drawing_instance_vertex_buffer_object);
     int drawing_count = core->drawing_queue_handle.count;
     glBufferSubData(GL_ARRAY_BUFFER, 0,
                     sizeof(struct core_drawing) * drawing_count,
                     &core->drawing_queue[0]);
     glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, drawing_count);
-
     queue_reset(&core->drawing_queue_handle);
+}
+
+void core_render_lines(struct core *core)
+{
+    glBindBuffer(GL_ARRAY_BUFFER, core->line_instance_vertex_buffer_object);
+    int line_count = core->line_queue_handle.count;
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(struct core_line) * line_count,
+                    &core->line_queue[0]);
+    glDrawArraysInstanced(GL_LINES, 0, 2, line_count);
+    queue_reset(&core->line_queue_handle);
 }
 
 void core_update_window(SDL_Window *window) { SDL_GL_SwapWindow(window); }

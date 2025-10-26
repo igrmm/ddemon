@@ -36,6 +36,15 @@ struct core_drawing {
     float r, g, b;
 };
 
+struct core_line {
+    // line p0
+    float x0, y0;
+    // line p1
+    float x1, y1;
+    // line rgb color
+    float r, g, b;
+};
+
 struct core {
     // SDL
     SDL_Window *window;
@@ -43,9 +52,11 @@ struct core {
 
     // OPENGL
     Uint32 vertex_array_object;
-    Uint32 vertex_buffer_object;
-    Uint32 element_buffer_object;
-    Uint32 instance_vertex_buffer_object;
+    Uint32 drawing_vertex_buffer_object;
+    Uint32 drawing_element_buffer_object;
+    Uint32 drawing_instance_vertex_buffer_object;
+    Uint32 line_vertex_buffer_object;
+    Uint32 line_instance_vertex_buffer_object;
     Uint32 frame_buffer_object;
     Uint32 current_shader;
 
@@ -54,6 +65,8 @@ struct core {
     struct core_texture current_texture;
     struct core_drawing *drawing_queue;
     struct queue_handle drawing_queue_handle;
+    struct core_line *line_queue;
+    struct queue_handle line_queue_handle;
 };
 
 bool core_setup(struct core *core, const char *window_title, int window_width,
@@ -100,7 +113,10 @@ bool core_add_drawing_fill_rect(struct core *core,
 bool core_add_drawing_rect(struct core *core, const SDL_FRect *pixel_tex_region,
                            SDL_FRect *rect, struct core_color *color,
                            float thickness);
-void core_draw_queue(struct core *core);
+bool core_add_line(struct core *core, float x0, float y0, float x1, float y1,
+                   struct core_color *color);
+void core_render_drawings(struct core *core);
+void core_render_lines(struct core *core);
 void core_update_window(SDL_Window *window);
 void core_update_viewport(struct core *core, int viewport_width,
                           int viewport_height);
