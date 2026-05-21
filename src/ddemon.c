@@ -84,8 +84,8 @@ SDL_AppResult SDL_AppIterate(void *app)
     core_clear_screen(0.5f, 0.0f, 0.0f, 1.0f);
     SDL_FRect src_rect = {0, 0, 32, 32};
     SDL_FRect dst_rect = {0, 0, 32, 32};
-    SDL_FRect tex_region;
-    assets_get_texture_region(assets, ASSET_TEXTURE_TILEMAP, &tex_region);
+    struct core_texture_region *tilemap =
+        assets->textures[ASSET_TEXTURE_TILEMAP];
 
     // render some lines
     struct core_color c = {0.0f, 1.0f, 0.0f, 1.0f};
@@ -99,14 +99,15 @@ SDL_AppResult SDL_AppIterate(void *app)
                 dst_rect.x = x * 32;
                 dst_rect.y = y * 32;
                 src_rect.x = l * 32;
-                core_add_drawing_tex(core, &tex_region, &src_rect, &dst_rect);
+                core_add_drawing_tex(core, &tilemap->rect, &src_rect,
+                                     &dst_rect);
             }
         }
     }
     char text[64] = "";
     SDL_snprintf(text, SDL_arraysize(text), "THIS IS NOT A GAME. FPS=%s", fps);
     txt(text, 0, 100, assets->fonts[ASSET_FONT_SMALL], core);
-    ui_mk_window(win, assets, ui, core);
+    // ui_mk_window(win, assets, ui, core); disable ui for now
 
     core_use_shader(core, assets->shaders[ASSET_SHADER_DEFAULT]);
     core_render_drawings(core);

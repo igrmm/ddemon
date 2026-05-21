@@ -5,13 +5,14 @@
 
 #include "atlas.h"
 
-#define ATLAS_REGION_CAPACITY 1000
+#define ATLAS_CAPACITY 1000
 #define ATLAS_WIDTH 1024
 #define ATLAS_HEIGHT ATLAS_WIDTH
 #define ATLAS_STBRP_NODE_CAPACITY ATLAS_WIDTH * 2
 
 struct atlas {
-    stbrp_rect regions[ATLAS_REGION_CAPACITY];
+    stbrp_rect stbrprects[ATLAS_CAPACITY];
+    struct core_texture_region regions[ATLAS_CAPACITY];
     int region_count;
     struct core_texture texture;
 };
@@ -32,8 +33,8 @@ void atlas_destroy(struct atlas *atlas)
 {
     if (atlas != NULL) {
         // delete incomplete atlas's cached opengl texture from gpu
-        for (int i = 0; i < ATLAS_REGION_CAPACITY; i++) {
-            int id = atlas->regions[i].id;
+        for (int i = 0; i < ATLAS_CAPACITY; i++) {
+            int id = atlas->stbrprects[i].id;
             if (id > 0) {
                 struct core_texture texture = {.id = id};
                 core_delete_texture(&texture);
@@ -44,27 +45,25 @@ void atlas_destroy(struct atlas *atlas)
     }
 }
 
-bool atlas_cache_texture(struct atlas *atlas, struct core_texture texture,
-                         int *index)
+struct core_texture_region *atlas_cache_texture(struct atlas *atlas,
+                                                struct core_texture texture)
 {
     // check if there is available regions in atlas
-    if (atlas->region_count + 1 >= ATLAS_REGION_CAPACITY) {
+    if (atlas->region_count + 1 >= ATLAS_CAPACITY) {
         SDL_Log("Error caching texture in atlas: reached max regions.");
-        return false;
+        return NULL;
     }
 
-    // set out parameter "index"
-    *index = atlas->region_count;
+    int index = atlas->region_count;
     atlas->region_count++;
 
-    // set region width and height
-    atlas->regions[*index].w = texture.width;
-    atlas->regions[*index].h = texture.height;
+    atlas->stbrprects[index].w = texture.width;
+    atlas->stbrprects[index].h = texture.height;
 
     // temporarily use stbrp_reck field "id" to store opengl texture
-    atlas->regions[*index].id = texture.id;
+    atlas->stbrprects[index].id = texture.id;
 
-    return true;
+    return &atlas->regions[index];
 }
 
 bool atlas_pack_rects(struct atlas *atlas)
@@ -80,7 +79,7 @@ bool atlas_pack_rects(struct atlas *atlas)
     }
     stbrp_init_target(&ctx, ATLAS_WIDTH, ATLAS_HEIGHT, nodes,
                       ATLAS_STBRP_NODE_CAPACITY);
-    if (stbrp_pack_rects(&ctx, atlas->regions, atlas->region_count) != 1) {
+    if (stbrp_pack_rects(&ctx, atlas->stbrprects, atlas->region_count) != 1) {
         SDL_Log("Error packing rectangles for atlas creation.");
         exit_status = false;
     }
@@ -97,11 +96,11 @@ void atlas_compute(struct core *core, struct atlas *atlas, Uint32 atlas_shader)
 
     // draw textures into atlas
     for (int i = 0; i < atlas->region_count; i++) {
-        float x = atlas->regions[i].x;
-        float y = atlas->regions[i].y;
-        float w = atlas->regions[i].w;
-        float h = atlas->regions[i].h;
-        int id = atlas->regions[i].id;
+        float x = atlas->regions[i].rect.x = atlas->stbrprects[i].x;
+        float y = atlas->regions[i].rect.y = atlas->stbrprects[i].y;
+        float w = atlas->regions[i].rect.w = atlas->stbrprects[i].w;
+        float h = atlas->regions[i].rect.h = atlas->stbrprects[i].h;
+        int id = atlas->stbrprects[i].id;
         struct core_texture texture = {w, h, id};
         core_bind_texture(core, texture);
         SDL_FRect src_rect = {0, 0, w, h};
@@ -111,17 +110,9 @@ void atlas_compute(struct core *core, struct atlas *atlas, Uint32 atlas_shader)
 
         // free tmp texture from gpu's memory
         core_delete_texture(&texture);
-        atlas->regions[i].id = 0;
+        atlas->stbrprects[i].id = 0;
     }
     core_offscreen_rendering_end();
-}
-
-void atlas_get_region(struct atlas *atlas, int index, SDL_FRect *region)
-{
-    region->x = atlas->regions[index].x;
-    region->y = atlas->regions[index].y;
-    region->w = atlas->regions[index].w;
-    region->h = atlas->regions[index].h;
 }
 
 struct core_texture atlas_get_texture(struct atlas *atlas)

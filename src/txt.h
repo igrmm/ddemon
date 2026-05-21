@@ -46,7 +46,7 @@ bool txt_get_codepoint(Uint32 *codepoint, const char **iterator);
 bool txt_cache_codepoints(struct txt_codepoint_cache *cache, const char *str);
 
 struct txt_codepoint_cache *txt_create_codepoint_cache(void);
-struct txt_font *txt_create_font(int height, struct atlas *atlas);
+struct txt_font *txt_create_font(int height);
 void txt_destroy_font(struct txt_font *font);
 void txt_get_string_rect_size(const char *str, float *width, float *height,
                               struct txt_font *font);
@@ -68,11 +68,9 @@ bool txt(const char *str, float x, float y, struct txt_font *font,
          struct core *core);
 bool txt_is_codepoint_cached(struct txt_codepoint_cache *cache,
                              Uint32 codepoint);
-void txt_set_glyph_atlas_index(struct txt_font *font, Uint32 codepoint,
-                               Uint32 index);
+void txt_set_glyph_atlas_region(struct txt_font *font, Uint32 codepoint,
+                                struct core_texture_region *region);
 void txt_set_font_advance_x(float advance_x, struct txt_font *font);
 int txt_get_font_height(struct txt_font *font);
-void txt_get_glyph_region(SDL_FRect *region, Uint32 codepoint,
-                          struct txt_font *font);
 
 #endif

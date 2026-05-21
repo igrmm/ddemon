@@ -133,11 +133,12 @@ void ui_mk_label(struct ui_element *label, struct assets *assets, struct ui *ui,
 void ui_mk_window(struct ui_element *window, struct assets *assets,
                   struct ui *ui, struct core *core)
 {
-    SDL_FRect pixel_tex_region;
-    assets_get_texture_region(assets, ASSET_TEXTURE_PIXEL, &pixel_tex_region);
+    struct core_texture_region *pixel_tex_region =
+        assets->textures[ASSET_TEXTURE_PIXEL];
+    SDL_FRect pixel_tex_rect = pixel_tex_region->rect;
 
     // draw window
-    core_add_drawing_fill_rect(core, &pixel_tex_region, &window->rect,
+    core_add_drawing_fill_rect(core, &pixel_tex_rect, &window->rect,
                                &ui->style.background_color);
 
     // draw bar
@@ -145,22 +146,22 @@ void ui_mk_window(struct ui_element *window, struct assets *assets,
     SDL_FRect bar_rect = {window->rect.x,
                           window->rect.y + window->rect.h - bar_height,
                           window->rect.w, bar_height};
-    core_add_drawing_fill_rect(core, &pixel_tex_region, &bar_rect,
+    core_add_drawing_fill_rect(core, &pixel_tex_rect, &bar_rect,
                                &ui->style.foreground_color);
     window->data.window.row_y = window->rect.y + window->rect.h;
 
     // draw window border
-    core_add_drawing_rect(core, &pixel_tex_region, &window->rect,
+    core_add_drawing_rect(core, &pixel_tex_rect, &window->rect,
                           &ui->style.foreground_color, 1);
 
     // draw scale button
     SDL_FRect scale_btn_rect = {
         window->rect.x + window->rect.w - bar_height / 2.0f - 2,
         window->rect.y + 2, bar_height / 2.0f, bar_height / 2.0f};
-    core_add_drawing_fill_rect(core, &pixel_tex_region, &scale_btn_rect,
+    core_add_drawing_fill_rect(core, &pixel_tex_rect, &scale_btn_rect,
                                &ui->style.foreground_color);
 
-    SDL_FRect tex_region;
+    SDL_FRect tex_rect;
 
     struct ui_element bar_title_label = {
         .padding = 1,
@@ -168,32 +169,32 @@ void ui_mk_window(struct ui_element *window, struct assets *assets,
         .data = {
             .label = {.text = window->data.window.title, .text_width = 120}}};
 
-    txt_get_glyph_region(&tex_region, UI_MINIM_BUTTON_CODEPOINT, ui->font);
+    // txt_get_glyph_region(&tex_rect, UI_MINIM_BUTTON_CODEPOINT, ui->font);
     struct ui_element minim_btn = {
         .padding = 1,
         .type = UI_TYPE_BUTTON,
-        .data = {.button = {.tex_region = tex_region}}};
+        .data = {.button = {.tex_region = tex_rect}}};
 
-    txt_get_glyph_region(&tex_region, UI_MAXIM_BUTTON_CODEPOINT, ui->font);
+    // txt_get_glyph_region(&tex_rect, UI_MAXIM_BUTTON_CODEPOINT, ui->font);
     struct ui_element maxim_btn = {
         .padding = 1,
         .type = UI_TYPE_BUTTON,
-        .data = {.button = {.tex_region = tex_region}}};
+        .data = {.button = {.tex_region = tex_rect}}};
 
-    txt_get_glyph_region(&tex_region, UI_CLOSE_BUTTON_CODEPOINT, ui->font);
+    // txt_get_glyph_region(&tex_rect, UI_CLOSE_BUTTON_CODEPOINT, ui->font);
     struct ui_element close_btn = {
         .padding = 1,
         .type = UI_TYPE_BUTTON,
-        .data = {.button = {.tex_region = tex_region}}};
+        .data = {.button = {.tex_region = tex_rect}}};
 
     struct ui_element *elements[] = {&bar_title_label, NULL, &minim_btn,
                                      &maxim_btn, &close_btn};
     ui_layout_row(window, bar_height, elements, SDL_arraysize(elements));
 
-    ui_mk_label(&bar_title_label, assets, ui, core);
-    ui_mk_button(&close_btn, assets, ui, core);
-    ui_mk_button(&maxim_btn, assets, ui, core);
-    ui_mk_button(&minim_btn, assets, ui, core);
+    // ui_mk_label(&bar_title_label, assets, ui, core);
+    // ui_mk_button(&close_btn, assets, ui, core);
+    // ui_mk_button(&maxim_btn, assets, ui, core);
+    // ui_mk_button(&minim_btn, assets, ui, core);
 }
 
 void ui_terminate(struct ui *ui) { SDL_free(ui->element_queue); }

@@ -29,15 +29,12 @@ enum asset_shader {
 
 struct assets {
     struct atlas *atlas;
-    int texture_indexes_in_atlas[ASSET_TEXTURE_COUNT];
+    struct core_texture_region *textures[ASSET_TEXTURE_COUNT];
     struct txt_font *fonts[ASSET_FONT_COUNT];
     Uint32 shaders[ASSET_SHADER_COUNT];
 };
 
 bool assets_load(struct core *core, struct assets *assets);
 void assets_dispose(struct assets *assets);
-void assets_get_texture_region(struct assets *assets,
-                               enum asset_texture asset_texture,
-                               SDL_FRect *region);
 
 #endif

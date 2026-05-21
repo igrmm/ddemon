@@ -25,6 +25,10 @@ struct core_texture {
     Uint32 id;
 };
 
+struct core_texture_region {
+    SDL_FRect rect;
+};
+
 struct core_drawing {
     // the destination rectangle to be drawn on screen with opengl coords;
     // the texture will be stretched to fill the given rectangle

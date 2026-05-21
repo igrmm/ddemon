@@ -147,10 +147,11 @@ static bool assets_load_textures(Uint8 *file_buffer,
             Uint8 white_pixel[] = {255, 255, 255, 255};
             struct core_texture texture = core_create_texture(
                 1, 1, CORE_TEXTURE_FORMAT_RGBA, white_pixel);
-            int index;
-            if (!atlas_cache_texture(assets->atlas, texture, &index))
+            struct core_texture_region *region =
+                atlas_cache_texture(assets->atlas, texture);
+            if (region == NULL)
                 return false;
-            assets->texture_indexes_in_atlas[i] = index;
+            assets->textures[i] = region;
             continue;
         }
 
@@ -174,12 +175,13 @@ static bool assets_load_textures(Uint8 *file_buffer,
         // store texture in altas for computation
         struct core_texture texture = core_create_texture(
             width, height, CORE_TEXTURE_FORMAT_RGBA, pixels);
-        int index;
-        if (!atlas_cache_texture(assets->atlas, texture, &index)) {
+        struct core_texture_region *region =
+            atlas_cache_texture(assets->atlas, texture);
+        if (region == NULL) {
             stbi_image_free(pixels);
             return false;
         }
-        assets->texture_indexes_in_atlas[i] = index;
+        assets->textures[i] = region;
         stbi_image_free(pixels);
     }
 
@@ -224,8 +226,7 @@ static bool assets_load_fonts(Uint8 *file_buffer, size_t file_buffer_capacity,
     float scale = stbtt_ScaleForPixelHeight(&info, font_height);
 
     // create txt_font
-    assets->fonts[ASSET_FONT_SMALL] =
-        txt_create_font(font_height, assets->atlas);
+    assets->fonts[ASSET_FONT_SMALL] = txt_create_font(font_height);
     if (assets->fonts[ASSET_FONT_SMALL] == NULL) {
         SDL_free(cache);
         return false;
@@ -319,13 +320,14 @@ static bool assets_load_fonts(Uint8 *file_buffer, size_t file_buffer_capacity,
             core_offscreen_rendering_end();
 
             // store texture into atlas, set glyph on txt_font
-            int index;
-            if (!atlas_cache_texture(assets->atlas, texture_aligned, &index)) {
+            struct core_texture_region *region = NULL;
+            region = atlas_cache_texture(assets->atlas, texture_aligned);
+            if (region == NULL) {
                 SDL_free(cache);
                 return false;
             }
-            txt_set_glyph_atlas_index(assets->fonts[ASSET_FONT_SMALL],
-                                      codepoint, index);
+            txt_set_glyph_atlas_region(assets->fonts[ASSET_FONT_SMALL],
+                                       codepoint, region);
 
             // unbind texture_boundinbox so we can free it from gpu's memory
             core_bind_texture(core, (struct core_texture){0, 0, 0});
@@ -374,14 +376,6 @@ bool assets_load(struct core *core, struct assets *assets)
 cleanup:
     SDL_free(file_buffer);
     return exit_status;
-}
-
-void assets_get_texture_region(struct assets *assets,
-                               enum asset_texture asset_texture,
-                               SDL_FRect *region)
-{
-    atlas_get_region(assets->atlas,
-                     assets->texture_indexes_in_atlas[asset_texture], region);
 }
 
 void assets_dispose(struct assets *assets)

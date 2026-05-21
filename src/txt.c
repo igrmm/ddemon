@@ -1,14 +1,12 @@
 #include <SDL3/SDL.h>
 
 #include "assets.h"
-#include "atlas.h"
 #include "core.h"
 #include "txt.h"
 
 struct txt_font {
+    struct core_texture_region *glyphs[TXT_UNICODE_MAX];
     int height;
-    struct atlas *atlas;
-    int glyph_indexes_in_atlas[TXT_UNICODE_MAX];
     float advance_x;
 };
 
@@ -88,7 +86,7 @@ struct txt_codepoint_cache *txt_create_codepoint_cache(void)
     return cache;
 }
 
-struct txt_font *txt_create_font(int height, struct atlas *atlas)
+struct txt_font *txt_create_font(int height)
 {
     struct txt_font *font = SDL_calloc(1, sizeof(struct txt_font));
     if (font == NULL) {
@@ -96,7 +94,6 @@ struct txt_font *txt_create_font(int height, struct atlas *atlas)
         return font;
     }
     font->height = height;
-    font->atlas = atlas;
     return font;
 }
 
@@ -116,15 +113,13 @@ void txt_get_string_rect_size(const char *str, float *width, float *height,
             return;
         iterator++;
 
-        int index = font->glyph_indexes_in_atlas[codepoint];
-        SDL_FRect glyph_region;
-        atlas_get_region(font->atlas, index, &glyph_region);
+        SDL_FRect glyph_rect = font->glyphs[codepoint]->rect;
 
-        if (height != NULL && glyph_region.h > *height)
-            *height = glyph_region.h;
+        if (height != NULL && glyph_rect.h > *height)
+            *height = glyph_rect.h;
 
         if (width != NULL)
-            *width += glyph_region.w;
+            *width += glyph_rect.w;
     }
 }
 
@@ -148,17 +143,15 @@ bool txt_length(const char *str, float x, float y, float length,
             continue;
         }
 
-        int index = font->glyph_indexes_in_atlas[codepoint];
-        SDL_FRect glyph_region;
-        atlas_get_region(font->atlas, index, &glyph_region);
-        src_rect = (SDL_FRect){0, 0, glyph_region.w, glyph_region.h};
-        dst_rect = (SDL_FRect){0, y, glyph_region.w, glyph_region.h};
+        SDL_FRect glyph_rect = font->glyphs[codepoint]->rect;
+        src_rect = (SDL_FRect){0, 0, glyph_rect.w, glyph_rect.h};
+        dst_rect = (SDL_FRect){0, y, glyph_rect.w, glyph_rect.h};
         dst_rect.x = x + cursor_x;
 
         if (length > 0 && (cursor_x + dst_rect.w) > length)
             break;
 
-        core_add_drawing_color_tex(core, &glyph_region, &src_rect, &dst_rect,
+        core_add_drawing_color_tex(core, &glyph_rect, &src_rect, &dst_rect,
                                    color);
         cursor_x += font->advance_x;
     }
@@ -181,10 +174,10 @@ bool txt_is_codepoint_cached(struct txt_codepoint_cache *cache,
     return false;
 }
 
-void txt_set_glyph_atlas_index(struct txt_font *font, Uint32 codepoint,
-                               Uint32 index)
+void txt_set_glyph_atlas_region(struct txt_font *font, Uint32 codepoint,
+                                struct core_texture_region *region)
 {
-    font->glyph_indexes_in_atlas[codepoint] = index;
+    font->glyphs[codepoint] = region;
 }
 
 void txt_set_font_advance_x(float advance_x, struct txt_font *font)
@@ -193,10 +186,3 @@ void txt_set_font_advance_x(float advance_x, struct txt_font *font)
 }
 
 int txt_get_font_height(struct txt_font *font) { return font->height; }
-
-void txt_get_glyph_region(SDL_FRect *region, Uint32 codepoint,
-                          struct txt_font *font)
-{
-    int index = font->glyph_indexes_in_atlas[codepoint];
-    atlas_get_region(font->atlas, index, region);
-}
