@@ -45,8 +45,9 @@ void atlas_destroy(struct atlas *atlas)
     }
 }
 
-struct core_texture_region *atlas_cache_texture(struct atlas *atlas,
-                                                struct core_texture texture)
+struct core_texture_region *
+atlas_create_region_from_texture(struct atlas *atlas,
+                                 struct core_texture texture)
 {
     // check if there is available regions in atlas
     if (atlas->region_count + 1 >= ATLAS_CAPACITY) {

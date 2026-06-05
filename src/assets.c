@@ -148,7 +148,7 @@ static bool assets_load_textures(Uint8 *file_buffer,
             struct core_texture texture = core_create_texture(
                 1, 1, CORE_TEXTURE_FORMAT_RGBA, white_pixel);
             struct core_texture_region *region =
-                atlas_cache_texture(assets->atlas, texture);
+                atlas_create_region_from_texture(assets->atlas, texture);
             if (region == NULL)
                 return false;
             assets->textures[i] = region;
@@ -161,7 +161,7 @@ static bool assets_load_textures(Uint8 *file_buffer,
                               ASSETS_TEXTURE_PATHS[i], &file_size))
             return false;
 
-        // load img data from memory using stbi and create the texture
+        // get raw pixels using stbi from img data in memory
         int width, height, nrChannels;
         Uint8 *pixels =
             stbi_load_from_memory(file_buffer, file_size, &width, &height,
@@ -172,11 +172,12 @@ static bool assets_load_textures(Uint8 *file_buffer,
             return false;
         }
 
-        // store texture in altas for computation
+        // create texture from raw pixels
         struct core_texture texture = core_create_texture(
             width, height, CORE_TEXTURE_FORMAT_RGBA, pixels);
+        // store the texture in altas for computation; create region
         struct core_texture_region *region =
-            atlas_cache_texture(assets->atlas, texture);
+            atlas_create_region_from_texture(assets->atlas, texture);
         if (region == NULL) {
             stbi_image_free(pixels);
             return false;
@@ -319,9 +320,10 @@ static bool assets_load_fonts(Uint8 *file_buffer, size_t file_buffer_capacity,
             core_render_drawings(core);
             core_offscreen_rendering_end();
 
-            // store texture into atlas, set glyph on txt_font
-            struct core_texture_region *region = NULL;
-            region = atlas_cache_texture(assets->atlas, texture_aligned);
+            // store texture into atlas, create region and set glyph on txt_font
+            struct core_texture_region *region =
+                atlas_create_region_from_texture(assets->atlas,
+                                                 texture_aligned);
             if (region == NULL) {
                 SDL_free(cache);
                 return false;
