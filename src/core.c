@@ -9,8 +9,8 @@
 #define CORE_DRAWING_QUEUE_CAPACITY 13000
 #define CORE_LINE_QUEUE_CAPACITY 500000
 
-bool core_setup(struct core *core, const char *window_title, int window_width,
-                int window_height, int window_flag)
+bool core_initialize(struct core *core, const char *window_title,
+                     int window_width, int window_height, int window_flag)
 {
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
         SDL_Log("SDL_Init Error: %s\n", SDL_GetError());
@@ -209,7 +209,7 @@ bool core_setup(struct core *core, const char *window_title, int window_width,
     return true;
 }
 
-void core_shutdown(struct core *core)
+void core_terminate(struct core *core)
 {
     if (core->frame_buffer_object > 0)
         glDeleteFramebuffers(1, &core->frame_buffer_object);

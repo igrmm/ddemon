@@ -40,7 +40,7 @@ SDL_AppResult SDL_AppInit(void **app, int argc, char *argv[])
     struct ui *ui = &((struct app *)*app)->ui;
     struct ui_element *win = &((struct app *)*app)->win;
 
-    if (!core_setup(core, "DDEMON", 800, 600, SDL_WINDOW_FULLSCREEN))
+    if (!core_initialize(core, "DDEMON", 800, 600, SDL_WINDOW_FULLSCREEN))
         return SDL_APP_FAILURE;
 
     if (!assets_load(core, assets))
@@ -125,7 +125,7 @@ void SDL_AppQuit(void *app, SDL_AppResult result)
         struct core *core = &((struct app *)app)->core;
         struct ui *ui = &((struct app *)app)->ui;
         assets_dispose(assets);
-        core_shutdown(core);
+        core_terminate(core);
         ui_terminate(ui);
         SDL_free(app);
     }
