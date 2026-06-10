@@ -19,11 +19,18 @@ struct atlas {
 
 struct atlas *atlas_create(void)
 {
-    struct atlas *atlas = SDL_calloc(1, sizeof(*atlas));
+    struct atlas *atlas = SDL_malloc(sizeof(*atlas));
     if (atlas == NULL) {
-        SDL_Log("Error allocating memory for atlas (calloc failed)");
+        SDL_Log("Error allocating memory for atlas (malloc failed)");
         return NULL;
     }
+
+    // initialize atlas
+    for (int i = 0; i < ATLAS_CAPACITY; i++) {
+        atlas->stbrprects[i] = (stbrp_rect){0};
+        atlas->regions[i] = (struct core_texture_region){0};
+    }
+    atlas->region_count = 0;
     atlas->texture = core_create_texture(ATLAS_WIDTH, ATLAS_HEIGHT,
                                          CORE_TEXTURE_FORMAT_RGBA, 0);
     return atlas;
