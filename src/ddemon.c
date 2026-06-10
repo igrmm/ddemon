@@ -129,4 +129,7 @@ void SDL_AppQuit(void *app, SDL_AppResult result)
         ui_terminate(ui);
         SDL_free(app);
     }
+
+    if (result == SDL_APP_FAILURE)
+        SDL_Log("SDL application ended with failure.");
 }
