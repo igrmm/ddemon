@@ -31,6 +31,9 @@ void count_fps(void)
 
 SDL_AppResult SDL_AppInit(void **app, int argc, char *argv[])
 {
+    (void)argc;
+    (void)argv;
+
     *app = SDL_malloc(sizeof(struct app));
     if (*app == NULL)
         return SDL_APP_FAILURE;
