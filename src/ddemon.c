@@ -46,7 +46,7 @@ SDL_AppResult SDL_AppInit(void **app, int argc, char *argv[])
     if (!core_initialize(core, "DDEMON", 800, 600, SDL_WINDOW_FULLSCREEN))
         return SDL_APP_FAILURE;
 
-    if (!assets_load(core, assets))
+    if (!assets_initialize(core, assets))
         return SDL_APP_FAILURE;
 
     if (!ui_initialize(ui, assets->fonts[ASSET_FONT_SMALL]))
@@ -127,7 +127,7 @@ void SDL_AppQuit(void *app, SDL_AppResult result)
         struct assets *assets = &((struct app *)app)->assets;
         struct core *core = &((struct app *)app)->core;
         struct ui *ui = &((struct app *)app)->ui;
-        assets_dispose(assets);
+        assets_terminate(assets);
         core_terminate(core);
         ui_terminate(ui);
         SDL_free(app);

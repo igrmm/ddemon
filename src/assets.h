@@ -34,7 +34,7 @@ struct assets {
     Uint32 shaders[ASSET_SHADER_COUNT];
 };
 
-bool assets_load(struct core *core, struct assets *assets);
-void assets_dispose(struct assets *assets);
+bool assets_initialize(struct core *core, struct assets *assets);
+void assets_terminate(struct assets *assets);
 
 #endif

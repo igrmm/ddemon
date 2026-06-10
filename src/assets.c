@@ -343,7 +343,7 @@ static bool assets_load_fonts(Uint8 *file_buffer, size_t file_buffer_capacity,
     return true;
 }
 
-bool assets_load(struct core *core, struct assets *assets)
+bool assets_initialize(struct core *core, struct assets *assets)
 {
     assets->atlas = atlas_create();
     if (assets->atlas == NULL)
@@ -380,7 +380,7 @@ cleanup:
     return exit_status;
 }
 
-void assets_dispose(struct assets *assets)
+void assets_terminate(struct assets *assets)
 {
     atlas_destroy(assets->atlas);
 
