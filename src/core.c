@@ -239,7 +239,11 @@ void core_terminate(struct core *core)
     SDL_Quit();
 }
 
-void core_delete_shader(Uint32 shader) { glDeleteProgram(shader); }
+void core_delete_shader(Uint32 shader)
+{
+    if (glDeleteProgram != NULL)
+        glDeleteProgram(shader);
+}
 
 Uint32 core_create_shader(const char *vert_src, const char *frag_src,
                           int *status, char *log, size_t log_size)
@@ -285,7 +289,8 @@ void core_use_shader(struct core *core, Uint32 shader)
 
 void core_delete_texture(struct core_texture *texture)
 {
-    glDeleteTextures(1, &texture->id);
+    if (glDeleteTextures != NULL)
+        glDeleteTextures(1, &texture->id);
 }
 
 struct core_texture core_create_texture(int width, int height,
