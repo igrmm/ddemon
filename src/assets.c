@@ -385,7 +385,8 @@ void assets_terminate(struct assets *assets)
     atlas_destroy(assets->atlas);
 
     for (int i = 0; i < ASSET_SHADER_COUNT; i++) {
-        core_delete_shader(assets->shaders[i]);
+        if (assets->shaders[i] > 0)
+            core_delete_shader(assets->shaders[i]);
     }
 
     for (int i = 0; i < ASSET_FONT_COUNT; i++) {
