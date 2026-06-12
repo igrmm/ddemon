@@ -29,58 +29,53 @@ void count_fps(void)
     frames++;
 }
 
-SDL_AppResult SDL_AppInit(void **app, int argc, char *argv[])
+SDL_AppResult SDL_AppInit(void **app_state, int argc, char *argv[])
 {
     (void)argc;
     (void)argv;
 
-    *app = SDL_malloc(sizeof(struct app));
-    if (*app == NULL)
+    struct app *app = SDL_malloc(sizeof(struct app));
+    if (app == NULL)
+        return SDL_APP_FAILURE;
+    *app = (struct app){0};
+    *app_state = app;
+
+    if (!core_initialize(&app->core, "DDEMON", 800, 600, SDL_WINDOW_FULLSCREEN))
         return SDL_APP_FAILURE;
 
-    struct core *core = &((struct app *)*app)->core;
-    struct assets *assets = &((struct app *)*app)->assets;
-    struct ui *ui = &((struct app *)*app)->ui;
-    struct ui_element *win = &((struct app *)*app)->win;
-
-    if (!core_initialize(core, "DDEMON", 800, 600, SDL_WINDOW_FULLSCREEN))
+    if (!assets_initialize(&app->core, &app->assets))
         return SDL_APP_FAILURE;
 
-    if (!assets_initialize(core, assets))
+    if (!ui_initialize(&app->ui, app->assets.fonts[ASSET_FONT_SMALL]))
         return SDL_APP_FAILURE;
 
-    if (!ui_initialize(ui, assets->fonts[ASSET_FONT_SMALL]))
-        return SDL_APP_FAILURE;
+    app->win = (struct ui_element){.rect = {400, 400, 400, 400},
+                                   .type = UI_TYPE_WINDOW,
+                                   .data.window = {.title = "TestWindow"}};
 
-    *win = (struct ui_element){.rect = {400, 400, 400, 400},
-                               .type = UI_TYPE_WINDOW,
-                               .data.window = {.title = "TestWindow"}};
-
-    struct core_texture atlas_texture = atlas_get_texture(assets->atlas);
-    core_bind_texture(core, atlas_texture);
+    struct core_texture atlas_texture = atlas_get_texture(app->assets.atlas);
+    core_bind_texture(&app->core, atlas_texture);
 
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult SDL_AppEvent(void *app, SDL_Event *event)
+SDL_AppResult SDL_AppEvent(void *app_state, SDL_Event *event)
 {
-    struct core *core = &((struct app *)app)->core;
+    struct app *app = (struct app *)app_state;
 
     if (event->type == SDL_EVENT_QUIT)
         return SDL_APP_SUCCESS;
 
     if (event->type == SDL_EVENT_WINDOW_RESIZED)
-        core_update_viewport(core, event->window.data1, event->window.data2);
+        core_update_viewport(&app->core, event->window.data1,
+                             event->window.data2);
 
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult SDL_AppIterate(void *app)
+SDL_AppResult SDL_AppIterate(void *app_state)
 {
-    struct core *core = &((struct app *)app)->core;
-    struct assets *assets = &((struct app *)app)->assets;
-    struct ui *ui = &((struct app *)app)->ui;
-    struct ui_element *win = &((struct app *)app)->win;
+    struct app *app = (struct app *)app_state;
 
     count_fps();
 
@@ -88,12 +83,12 @@ SDL_AppResult SDL_AppIterate(void *app)
     SDL_FRect src_rect = {0, 0, 32, 32};
     SDL_FRect dst_rect = {0, 0, 32, 32};
     struct core_texture_region *tilemap =
-        assets->textures[ASSET_TEXTURE_TILEMAP];
+        app->assets.textures[ASSET_TEXTURE_TILEMAP];
 
     // render some lines
     struct core_color c = {0.0f, 1.0f, 0.0f, 1.0f};
-    core_add_line(core, 0, 0, 100, 100, &c);
-    core_add_line(core, 0, 0, 100, 50, &c);
+    core_add_line(&app->core, 0, 0, 100, 100, &c);
+    core_add_line(&app->core, 0, 0, 100, 50, &c);
 
     // render 13k images on screen
     for (int l = 0; l < 6; l++) {
@@ -102,34 +97,32 @@ SDL_AppResult SDL_AppIterate(void *app)
                 dst_rect.x = x * 32;
                 dst_rect.y = y * 32;
                 src_rect.x = l * 32;
-                core_add_drawing_tex(core, &tilemap->rect, &src_rect,
+                core_add_drawing_tex(&app->core, &tilemap->rect, &src_rect,
                                      &dst_rect);
             }
         }
     }
     char text[64] = "";
     SDL_snprintf(text, SDL_arraysize(text), "THIS IS NOT A GAME. FPS=%s", fps);
-    txt(text, 0, 100, assets->fonts[ASSET_FONT_SMALL], core);
+    txt(text, 0, 100, app->assets.fonts[ASSET_FONT_SMALL], &app->core);
     // ui_mk_window(win, assets, ui, core); disable ui for now
 
-    core_use_shader(core, assets->shaders[ASSET_SHADER_DEFAULT]);
-    core_render_drawings(core);
-    core_use_shader(core, assets->shaders[ASSET_SHADER_LINE]);
-    core_render_lines(core);
-    core_update_window(core->window);
+    core_use_shader(&app->core, app->assets.shaders[ASSET_SHADER_DEFAULT]);
+    core_render_drawings(&app->core);
+    core_use_shader(&app->core, app->assets.shaders[ASSET_SHADER_LINE]);
+    core_render_lines(&app->core);
+    core_update_window(app->core.window);
 
     return SDL_APP_CONTINUE;
 }
 
-void SDL_AppQuit(void *app, SDL_AppResult result)
+void SDL_AppQuit(void *app_state, SDL_AppResult result)
 {
+    struct app *app = (struct app *)app_state;
     if (app != NULL) {
-        struct assets *assets = &((struct app *)app)->assets;
-        struct core *core = &((struct app *)app)->core;
-        struct ui *ui = &((struct app *)app)->ui;
-        assets_terminate(assets);
-        core_terminate(core);
-        ui_terminate(ui);
+        assets_terminate(&app->assets);
+        core_terminate(&app->core);
+        ui_terminate(&app->ui);
         SDL_free(app);
     }
 
