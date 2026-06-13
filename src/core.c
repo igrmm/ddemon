@@ -63,7 +63,7 @@ bool core_initialize(struct core *core, struct arena *arena,
     core->drawing_queue = arena_alloc(arena, CORE_DRAWING_QUEUE_CAPACITY *
                                                  sizeof(struct core_drawing));
     if (core->drawing_queue == NULL) {
-        SDL_Log("Error in core_setup(): alloc failed (drawing_queue)");
+        SDL_Log("Error in core_initialize(): alloc failed (drawing_queue)");
         return false;
     }
     queue_initialize(&core->drawing_queue_handle, CORE_DRAWING_QUEUE_CAPACITY);
@@ -72,7 +72,7 @@ bool core_initialize(struct core *core, struct arena *arena,
     core->line_queue =
         arena_alloc(arena, CORE_LINE_QUEUE_CAPACITY * sizeof(struct core_line));
     if (core->line_queue == NULL) {
-        SDL_Log("Error in core_setup(): alloc failed (line_queue)");
+        SDL_Log("Error in core_initialize(): alloc failed (line_queue)");
         return false;
     }
     queue_initialize(&core->line_queue_handle, CORE_LINE_QUEUE_CAPACITY);
