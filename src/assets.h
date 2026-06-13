@@ -3,6 +3,8 @@
 
 #include <SDL3/SDL.h>
 
+#include "arena.h"
+#include "atlas.h"
 #include "core.h"
 
 struct atlas;
@@ -28,13 +30,14 @@ enum asset_shader {
 };
 
 struct assets {
-    struct atlas *atlas;
+    struct atlas atlas;
     struct core_texture_region *textures[ASSET_TEXTURE_COUNT];
     struct txt_font *fonts[ASSET_FONT_COUNT];
     Uint32 shaders[ASSET_SHADER_COUNT];
 };
 
-bool assets_initialize(struct core *core, struct assets *assets);
+bool assets_initialize(struct assets *assets, struct core *core,
+                       struct arena *arena);
 void assets_terminate(struct assets *assets);
 
 #endif

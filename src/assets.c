@@ -17,6 +17,7 @@
 
 #include <SDL3/SDL.h>
 
+#include "arena.h"
 #include "assets.h"
 #include "atlas.h"
 #include "core.h"
@@ -148,7 +149,7 @@ static bool assets_load_textures(Uint8 *file_buffer,
             struct core_texture texture = core_create_texture(
                 1, 1, CORE_TEXTURE_FORMAT_RGBA, white_pixel);
             struct core_texture_region *region =
-                atlas_create_region_from_texture(assets->atlas, texture);
+                atlas_create_region_from_texture(&assets->atlas, texture);
             if (region == NULL)
                 return false;
             assets->textures[i] = region;
@@ -177,7 +178,7 @@ static bool assets_load_textures(Uint8 *file_buffer,
             width, height, CORE_TEXTURE_FORMAT_RGBA, pixels);
         // store the texture in altas for computation; create region
         struct core_texture_region *region =
-            atlas_create_region_from_texture(assets->atlas, texture);
+            atlas_create_region_from_texture(&assets->atlas, texture);
         if (region == NULL) {
             stbi_image_free(pixels);
             return false;
@@ -322,7 +323,7 @@ static bool assets_load_fonts(Uint8 *file_buffer, size_t file_buffer_capacity,
 
             // store texture into atlas, create region and set glyph on txt_font
             struct core_texture_region *region =
-                atlas_create_region_from_texture(assets->atlas,
+                atlas_create_region_from_texture(&assets->atlas,
                                                  texture_aligned);
             if (region == NULL) {
                 SDL_free(cache);
@@ -343,10 +344,10 @@ static bool assets_load_fonts(Uint8 *file_buffer, size_t file_buffer_capacity,
     return true;
 }
 
-bool assets_initialize(struct core *core, struct assets *assets)
+bool assets_initialize(struct assets *assets, struct core *core,
+                       struct arena *arena)
 {
-    assets->atlas = atlas_create();
-    if (assets->atlas == NULL)
+    if (!atlas_initialize(&assets->atlas, arena))
         return false;
 
     Uint8 *file_buffer =
@@ -370,10 +371,10 @@ bool assets_initialize(struct core *core, struct assets *assets)
               file_buffer, ASSETS_FILE_BUFFER_CAPACITY, core, assets)))
         goto cleanup;
 
-    if (!(exit_status = atlas_pack_rects(assets->atlas)))
+    if (!(exit_status = atlas_pack_rects(&assets->atlas, arena)))
         goto cleanup;
 
-    atlas_compute(core, assets->atlas, assets->shaders[ASSET_SHADER_ATLAS]);
+    atlas_compute(core, &assets->atlas, assets->shaders[ASSET_SHADER_ATLAS]);
 
 cleanup:
     SDL_free(file_buffer);
@@ -382,7 +383,7 @@ cleanup:
 
 void assets_terminate(struct assets *assets)
 {
-    atlas_destroy(assets->atlas);
+    atlas_terminate(&assets->atlas);
 
     for (int i = 0; i < ASSET_SHADER_COUNT; i++) {
         if (assets->shaders[i] > 0)

@@ -50,7 +50,7 @@ SDL_AppResult SDL_AppInit(void **app_state, int argc, char *argv[])
                          SDL_WINDOW_FULLSCREEN))
         return SDL_APP_FAILURE;
 
-    if (!assets_initialize(&app->core, &app->assets))
+    if (!assets_initialize(&app->assets, &app->core, &app->arena))
         return SDL_APP_FAILURE;
 
     if (!ui_initialize(&app->ui, app->assets.fonts[ASSET_FONT_SMALL]))
@@ -60,8 +60,7 @@ SDL_AppResult SDL_AppInit(void **app_state, int argc, char *argv[])
                                    .type = UI_TYPE_WINDOW,
                                    .data.window = {.title = "TestWindow"}};
 
-    struct core_texture atlas_texture = atlas_get_texture(app->assets.atlas);
-    core_bind_texture(&app->core, atlas_texture);
+    core_bind_texture(&app->core, app->assets.atlas.texture);
 
     return SDL_APP_CONTINUE;
 }

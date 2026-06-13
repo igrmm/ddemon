@@ -3,6 +3,7 @@
 
 #include <SDL3/SDL.h>
 
+#include "arena.h"
 #include "atlas.h"
 
 #define ATLAS_CAPACITY 1000
@@ -10,22 +11,21 @@
 #define ATLAS_HEIGHT ATLAS_WIDTH
 #define ATLAS_STBRP_NODE_CAPACITY ATLAS_WIDTH * 2
 
-struct atlas {
-    stbrp_rect stbrprects[ATLAS_CAPACITY];
-    struct core_texture_region regions[ATLAS_CAPACITY];
-    int region_count;
-    struct core_texture texture;
-};
-
-struct atlas *atlas_create(void)
+bool atlas_initialize(struct atlas *atlas, struct arena *arena)
 {
-    struct atlas *atlas = SDL_malloc(sizeof(*atlas));
-    if (atlas == NULL) {
-        SDL_Log("Error allocating memory for atlas (malloc failed)");
-        return NULL;
+    atlas->stbrprects = arena_alloc(arena, ATLAS_CAPACITY * sizeof(stbrp_rect));
+    if (atlas->stbrprects == NULL) {
+        SDL_Log("Error initializing atlas->stbrprects: arena_alloc failed.");
+        return false;
     }
 
-    // initialize atlas
+    atlas->regions =
+        arena_alloc(arena, ATLAS_CAPACITY * sizeof(struct core_texture_region));
+    if (atlas->regions == NULL) {
+        SDL_Log("Error initializing atlas->regions: arena_alloc failed.");
+        return false;
+    }
+
     for (int i = 0; i < ATLAS_CAPACITY; i++) {
         atlas->stbrprects[i] = (stbrp_rect){0};
         atlas->regions[i] = (struct core_texture_region){0};
@@ -36,19 +36,18 @@ struct atlas *atlas_create(void)
     return atlas;
 }
 
-void atlas_destroy(struct atlas *atlas)
+void atlas_terminate(struct atlas *atlas)
 {
-    if (atlas != NULL) {
-        // delete incomplete atlas's cached opengl texture from gpu
-        for (int i = 0; i < ATLAS_CAPACITY; i++) {
-            int id = atlas->stbrprects[i].id;
-            if (id > 0) {
-                struct core_texture texture = {.id = id};
-                core_delete_texture(&texture);
-            }
+    core_delete_texture(&atlas->texture);
+    // delete incomplete atlas's cached opengl texture from gpu
+    if (atlas->stbrprects == NULL)
+        return;
+    for (int i = 0; i < ATLAS_CAPACITY; i++) {
+        int id = atlas->stbrprects[i].id;
+        if (id > 0) {
+            struct core_texture texture = {.id = id};
+            core_delete_texture(&texture);
         }
-        core_delete_texture(&atlas->texture);
-        SDL_free(atlas);
     }
 }
 
@@ -74,15 +73,15 @@ atlas_create_region_from_texture(struct atlas *atlas,
     return &atlas->regions[index];
 }
 
-bool atlas_pack_rects(struct atlas *atlas)
+bool atlas_pack_rects(struct atlas *atlas, struct arena *arena)
 {
     bool exit_status = true;
     struct stbrp_context ctx;
-    struct stbrp_node *nodes =
-        SDL_malloc(ATLAS_STBRP_NODE_CAPACITY * sizeof(struct stbrp_node));
+    struct stbrp_node *nodes = arena_alloc(
+        arena, ATLAS_STBRP_NODE_CAPACITY * sizeof(struct stbrp_node));
     if (nodes == NULL) {
-        SDL_Log("Error packing rectangles for atlas creation: malloc failed "
-                "(nodes)");
+        SDL_Log(
+            "Error packing rectangles for atlas creation: arena_alloc failed.");
         return false;
     }
     stbrp_init_target(&ctx, ATLAS_WIDTH, ATLAS_HEIGHT, nodes,
@@ -91,7 +90,6 @@ bool atlas_pack_rects(struct atlas *atlas)
         SDL_Log("Error packing rectangles for atlas creation.");
         exit_status = false;
     }
-    SDL_free(nodes);
     return exit_status;
 }
 
@@ -121,9 +119,4 @@ void atlas_compute(struct core *core, struct atlas *atlas, Uint32 atlas_shader)
         atlas->stbrprects[i].id = 0;
     }
     core_offscreen_rendering_end();
-}
-
-struct core_texture atlas_get_texture(struct atlas *atlas)
-{
-    return atlas->texture;
 }
