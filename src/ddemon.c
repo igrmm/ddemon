@@ -2,6 +2,7 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 
+#include "arena.h"
 #include "assets.h"
 #include "atlas.h"
 #include "core.h"
@@ -9,6 +10,7 @@
 #include "ui.h"
 
 struct app {
+    struct arena arena;
     struct core core;
     struct assets assets;
     struct ui ui;
@@ -34,13 +36,18 @@ SDL_AppResult SDL_AppInit(void **app_state, int argc, char *argv[])
     (void)argc;
     (void)argv;
 
-    struct app *app = SDL_malloc(sizeof(struct app));
+    struct arena arena;
+    if (!arena_initialize(&arena, 50000000))
+        return SDL_APP_FAILURE;
+
+    struct app *app = arena_alloc(&arena, sizeof(struct app));
     if (app == NULL)
         return SDL_APP_FAILURE;
-    *app = (struct app){0};
+    *app = (struct app){.arena = arena};
     *app_state = app;
 
-    if (!core_initialize(&app->core, "DDEMON", 800, 600, SDL_WINDOW_FULLSCREEN))
+    if (!core_initialize(&app->core, &app->arena, "DDEMON", 800, 600,
+                         SDL_WINDOW_FULLSCREEN))
         return SDL_APP_FAILURE;
 
     if (!assets_initialize(&app->core, &app->assets))
@@ -123,7 +130,7 @@ void SDL_AppQuit(void *app_state, SDL_AppResult result)
         assets_terminate(&app->assets);
         core_terminate(&app->core);
         ui_terminate(&app->ui);
-        SDL_free(app);
+        arena_terminate(&app->arena);
     }
 
     if (result == SDL_APP_FAILURE)

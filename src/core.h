@@ -9,6 +9,7 @@
 
 #include <SDL3/SDL.h>
 
+#include "arena.h"
 #include "queue.h"
 
 enum core_texture_format {
@@ -73,8 +74,9 @@ struct core {
     struct queue_handle line_queue_handle;
 };
 
-bool core_initialize(struct core *core, const char *window_title,
-                     int window_width, int window_height, int window_flag);
+bool core_initialize(struct core *core, struct arena *arena,
+                     const char *window_title, int window_width,
+                     int window_height, int window_flag);
 void core_terminate(struct core *core);
 void core_delete_shader(Uint32 shader);
 Uint32 core_create_shader(const char *vert_src, const char *frag_src,

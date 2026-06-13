@@ -3,14 +3,16 @@
 
 #include <SDL3/SDL.h>
 
+#include "arena.h"
 #include "core.h"
 #include "queue.h"
 
 #define CORE_DRAWING_QUEUE_CAPACITY 13000
 #define CORE_LINE_QUEUE_CAPACITY 500000
 
-bool core_initialize(struct core *core, const char *window_title,
-                     int window_width, int window_height, int window_flag)
+bool core_initialize(struct core *core, struct arena *arena,
+                     const char *window_title, int window_width,
+                     int window_height, int window_flag)
 {
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
         SDL_Log("SDL_Init Error: %s\n", SDL_GetError());
@@ -57,20 +59,20 @@ bool core_initialize(struct core *core, const char *window_title,
     SDL_Log("PLATFORM: %s, PROFILE: %i, VERSION: %i", platform, profile,
             version);
 
-    // malloc memory for drawing queue
-    core->drawing_queue =
-        SDL_malloc(CORE_DRAWING_QUEUE_CAPACITY * sizeof(struct core_drawing));
+    // alloc memory for drawing queue
+    core->drawing_queue = arena_alloc(arena, CORE_DRAWING_QUEUE_CAPACITY *
+                                                 sizeof(struct core_drawing));
     if (core->drawing_queue == NULL) {
-        SDL_Log("Error in core_setup(): malloc failed (drawing_queue)");
+        SDL_Log("Error in core_setup(): alloc failed (drawing_queue)");
         return false;
     }
     queue_initialize(&core->drawing_queue_handle, CORE_DRAWING_QUEUE_CAPACITY);
 
-    // malloc memory for line queue
+    // alloc memory for line queue
     core->line_queue =
-        SDL_malloc(CORE_LINE_QUEUE_CAPACITY * sizeof(struct core_line));
+        arena_alloc(arena, CORE_LINE_QUEUE_CAPACITY * sizeof(struct core_line));
     if (core->line_queue == NULL) {
-        SDL_Log("Error in core_setup(): malloc failed (line_queue)");
+        SDL_Log("Error in core_setup(): alloc failed (line_queue)");
         return false;
     }
     queue_initialize(&core->line_queue_handle, CORE_LINE_QUEUE_CAPACITY);
@@ -232,11 +234,8 @@ void core_terminate(struct core *core)
     if (core->line_vertex_buffer_object > 0)
         glDeleteBuffers(1, &core->line_vertex_buffer_object);
 
-    SDL_free(core->drawing_queue);
-    SDL_free(core->line_queue);
     SDL_GL_DestroyContext(core->ctx);
     SDL_DestroyWindow(core->window);
-    SDL_Quit();
 }
 
 void core_delete_shader(Uint32 shader)
