@@ -351,34 +351,28 @@ bool assets_initialize(struct assets *assets, struct core *core,
         return false;
 
     Uint8 *file_buffer =
-        SDL_malloc(ASSETS_FILE_BUFFER_CAPACITY * sizeof(Uint8));
+        arena_alloc(arena, ASSETS_FILE_BUFFER_CAPACITY * sizeof(Uint8));
     if (file_buffer == NULL) {
-        SDL_Log("Error loading textures: malloc failed (file_buffer)");
+        SDL_Log("Error loading textures: arena_alloc failed (file_buffer)");
         return false;
     }
 
-    bool exit_status = true;
+    if (!assets_load_shaders(file_buffer, ASSETS_FILE_BUFFER_CAPACITY, assets))
+        return false;
 
-    if (!(exit_status = assets_load_shaders(
-              file_buffer, ASSETS_FILE_BUFFER_CAPACITY, assets)))
-        goto cleanup;
+    if (!assets_load_textures(file_buffer, ASSETS_FILE_BUFFER_CAPACITY, assets))
+        return false;
 
-    if (!(exit_status = assets_load_textures(
-              file_buffer, ASSETS_FILE_BUFFER_CAPACITY, assets)))
-        goto cleanup;
+    if (!assets_load_fonts(file_buffer, ASSETS_FILE_BUFFER_CAPACITY, core,
+                           assets))
+        return false;
 
-    if (!(exit_status = assets_load_fonts(
-              file_buffer, ASSETS_FILE_BUFFER_CAPACITY, core, assets)))
-        goto cleanup;
-
-    if (!(exit_status = atlas_pack_rects(&assets->atlas, arena)))
-        goto cleanup;
+    if (!atlas_pack_rects(&assets->atlas, arena))
+        return false;
 
     atlas_compute(core, &assets->atlas, assets->shaders[ASSET_SHADER_ATLAS]);
 
-cleanup:
-    SDL_free(file_buffer);
-    return exit_status;
+    return true;
 }
 
 void assets_terminate(struct assets *assets)
