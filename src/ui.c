@@ -1,5 +1,6 @@
 #include <SDL3/SDL.h>
 
+#include "arena.h"
 #include "assets.h"
 #include "core.h"
 #include "queue.h"
@@ -12,12 +13,12 @@
 
 #define UI_QUEUE_CAPACITY 100
 
-bool ui_initialize(struct ui *ui, struct txt_font *font)
+bool ui_initialize(struct ui *ui, struct txt_font *font, struct arena *arena)
 {
     ui->element_queue =
-        SDL_malloc(UI_QUEUE_CAPACITY * sizeof(*ui->element_queue));
+        arena_alloc(arena, UI_QUEUE_CAPACITY * sizeof(*ui->element_queue));
     if (ui->element_queue == NULL) {
-        SDL_Log("Error allocating memory for ui (malloc failed)");
+        SDL_Log("Error allocating memory for ui (arena_alloc failed)");
         return false;
     }
     queue_initialize(&ui->element_queue_handle, UI_QUEUE_CAPACITY);
@@ -196,5 +197,3 @@ void ui_mk_window(struct ui_element *window, struct assets *assets,
     // ui_mk_button(&maxim_btn, assets, ui, core);
     // ui_mk_button(&minim_btn, assets, ui, core);
 }
-
-void ui_terminate(struct ui *ui) { SDL_free(ui->element_queue); }

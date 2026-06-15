@@ -53,7 +53,8 @@ SDL_AppResult SDL_AppInit(void **app_state, int argc, char *argv[])
     if (!assets_initialize(&app->assets, &app->core, &app->arena))
         return SDL_APP_FAILURE;
 
-    if (!ui_initialize(&app->ui, app->assets.fonts[ASSET_FONT_SMALL]))
+    if (!ui_initialize(&app->ui, app->assets.fonts[ASSET_FONT_SMALL],
+                       &app->arena))
         return SDL_APP_FAILURE;
 
     app->win = (struct ui_element){.rect = {400, 400, 400, 400},
@@ -128,7 +129,6 @@ void SDL_AppQuit(void *app_state, SDL_AppResult result)
     if (app != NULL) {
         assets_terminate(&app->assets);
         core_terminate(&app->core);
-        ui_terminate(&app->ui);
         arena_terminate(&app->arena);
     }
 

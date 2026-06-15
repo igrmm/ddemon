@@ -3,6 +3,7 @@
 
 #include <SDL3/SDL.h>
 
+#include "arena.h"
 #include "assets.h"
 #include "core.h"
 #include "queue.h"
@@ -54,7 +55,7 @@ struct ui {
     struct ui_style style;
 };
 
-bool ui_initialize(struct ui *ui, struct txt_font *font);
+bool ui_initialize(struct ui *ui, struct txt_font *font, struct arena *arena);
 
 /**
  * Layout ui elements horizontally.
@@ -73,6 +74,5 @@ void ui_mk_label(struct ui_element *label, struct assets *assets, struct ui *ui,
                  struct core *core);
 void ui_mk_window(struct ui_element *window, struct assets *assets,
                   struct ui *ui, struct core *core);
-void ui_terminate(struct ui *ui);
 
 #endif
