@@ -1,5 +1,6 @@
 #include <SDL3/SDL.h>
 
+#include "arena.h"
 #include "assets.h"
 #include "core.h"
 #include "txt.h"
@@ -77,12 +78,12 @@ bool txt_cache_codepoints(struct txt_codepoint_cache *cache, const char *str)
     return true;
 }
 
-struct txt_codepoint_cache *txt_create_codepoint_cache(void)
+struct txt_codepoint_cache *txt_create_codepoint_cache(struct arena *arena)
 {
     struct txt_codepoint_cache *cache =
-        SDL_malloc(sizeof(struct txt_codepoint_cache));
+        arena_alloc(arena, sizeof(struct txt_codepoint_cache));
     if (cache == NULL)
-        SDL_Log("Error creating codepoint cache: malloc failed.");
+        SDL_Log("Error creating codepoint cache: arena_alloc failed.");
 
     // initialize codepoint cache
     cache->count = 0;
@@ -92,11 +93,11 @@ struct txt_codepoint_cache *txt_create_codepoint_cache(void)
     return cache;
 }
 
-struct txt_font *txt_create_font(int height)
+struct txt_font *txt_create_font(int height, struct arena *arena)
 {
-    struct txt_font *font = SDL_malloc(sizeof(struct txt_font));
+    struct txt_font *font = arena_alloc(arena, sizeof(struct txt_font));
     if (font == NULL) {
-        SDL_Log("Error creating txt_font: malloc failed.");
+        SDL_Log("Error creating txt_font: arena_alloc failed.");
         return font;
     }
 
@@ -106,12 +107,6 @@ struct txt_font *txt_create_font(int height)
     font->height = height;
     font->advance_x = 0.0f;
     return font;
-}
-
-void txt_destroy_font(struct txt_font *font)
-{
-    if (font != NULL)
-        SDL_free(font);
 }
 
 void txt_get_string_rect_size(const char *str, float *width, float *height,

@@ -191,48 +191,42 @@ static bool assets_load_textures(Uint8 *file_buffer,
 }
 
 static bool assets_load_fonts(Uint8 *file_buffer, size_t file_buffer_capacity,
-                              struct core *core, struct assets *assets)
+                              struct core *core, struct arena *arena,
+                              struct assets *assets)
 {
     size_t file_size = 0;
 
     // cache ascii codepoints
-    struct txt_codepoint_cache *cache = txt_create_codepoint_cache();
+    struct txt_codepoint_cache *cache = txt_create_codepoint_cache(arena);
     if (cache == NULL) {
         return false;
     } else {
         for (int i = ' '; i < '~'; i++) {
             char str[] = " ";
             str[0] = i;
-            if (!txt_cache_codepoints(cache, str)) {
-                SDL_free(cache);
+            if (!txt_cache_codepoints(cache, str))
                 return false;
-            }
         }
     }
 
     // load ttf file
     if (!assets_load_file(file_buffer, file_buffer_capacity, ASSETS_FONT_PATH,
-                          &file_size)) {
-        SDL_free(cache);
+                          &file_size))
         return false;
-    }
 
     // initialize stb true type font
     stbtt_fontinfo info;
     if (!stbtt_InitFont(&info, file_buffer, 0)) {
         SDL_Log("stbtt_InitFont failed: %s", ASSETS_FONT_PATH);
-        SDL_free(cache);
         return false;
     }
     int font_height = 22;
     float scale = stbtt_ScaleForPixelHeight(&info, font_height);
 
     // create txt_font
-    assets->fonts[ASSET_FONT_SMALL] = txt_create_font(font_height);
-    if (assets->fonts[ASSET_FONT_SMALL] == NULL) {
-        SDL_free(cache);
+    assets->fonts[ASSET_FONT_SMALL] = txt_create_font(font_height, arena);
+    if (assets->fonts[ASSET_FONT_SMALL] == NULL)
         return false;
-    }
 
     // get the lowest descent (like the tail in letter 'g'), descent = y1
     int lowest_descent = 0;
@@ -254,7 +248,6 @@ static bool assets_load_fonts(Uint8 *file_buffer, size_t file_buffer_capacity,
             int glyph_index = stbtt_FindGlyphIndex(&info, codepoint);
             if (glyph_index == 0) {
                 SDL_Log("font doesn't have glyph for codepoint: %X", codepoint);
-                SDL_free(cache);
                 return false;
             }
             int advance_x_unscaled = 0;
@@ -262,7 +255,6 @@ static bool assets_load_fonts(Uint8 *file_buffer, size_t file_buffer_capacity,
                                        NULL);
             if (advance_x > 0.0f && (advance_x_unscaled * scale) != advance_x) {
                 SDL_Log("font is not monospaced, glyph's advance_x vary.");
-                SDL_free(cache);
                 return false;
             }
             advance_x = advance_x_unscaled * scale;
@@ -273,7 +265,6 @@ static bool assets_load_fonts(Uint8 *file_buffer, size_t file_buffer_capacity,
             if (pixels == NULL && codepoint != ' ') {
                 SDL_Log("stb_truetype failed getting codepoint bitmap: '%X'",
                         codepoint);
-                SDL_free(cache);
                 return false;
             }
             struct core_texture texture_boundingbox = core_create_texture(
@@ -325,10 +316,8 @@ static bool assets_load_fonts(Uint8 *file_buffer, size_t file_buffer_capacity,
             struct core_texture_region *region =
                 atlas_create_region_from_texture(&assets->atlas,
                                                  texture_aligned);
-            if (region == NULL) {
-                SDL_free(cache);
+            if (region == NULL)
                 return false;
-            }
             txt_set_glyph_atlas_region(assets->fonts[ASSET_FONT_SMALL],
                                        codepoint, region);
 
@@ -338,8 +327,6 @@ static bool assets_load_fonts(Uint8 *file_buffer, size_t file_buffer_capacity,
         }
     }
     txt_set_font_advance_x(advance_x, assets->fonts[ASSET_FONT_SMALL]);
-
-    SDL_free(cache);
 
     return true;
 }
@@ -364,7 +351,7 @@ bool assets_initialize(struct assets *assets, struct core *core,
         return false;
 
     if (!assets_load_fonts(file_buffer, ASSETS_FILE_BUFFER_CAPACITY, core,
-                           assets))
+                           arena, assets))
         return false;
 
     if (!atlas_pack_rects(&assets->atlas, arena))
@@ -382,9 +369,5 @@ void assets_terminate(struct assets *assets)
     for (int i = 0; i < ASSET_SHADER_COUNT; i++) {
         if (assets->shaders[i] > 0)
             core_delete_shader(assets->shaders[i]);
-    }
-
-    for (int i = 0; i < ASSET_FONT_COUNT; i++) {
-        txt_destroy_font(assets->fonts[i]);
     }
 }
