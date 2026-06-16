@@ -385,9 +385,8 @@ bool core_add_drawing_tex(struct core *core, const SDL_FRect *src_rect,
     return core_add_drawing_color_tex(core, src_rect, dst_rect, NULL);
 }
 
-bool core_add_drawing_fill_rect(struct core *core,
-
-                                SDL_FRect *rect, struct core_color *color)
+bool core_add_drawing_fill_rect(struct core *core, SDL_FRect *rect,
+                                struct core_color *color)
 {
     return core_add_drawing_color_tex(core, &core->pixel->rect, rect, color);
 }
