@@ -133,12 +133,8 @@ void ui_mk_label(struct ui_element *label, struct assets *assets, struct ui *ui,
 void ui_mk_window(struct ui_element *window, struct assets *assets,
                   struct ui *ui, struct core *core)
 {
-    struct core_texture_region *pixel_tex_region =
-        assets->textures[ASSET_TEXTURE_PIXEL];
-    SDL_FRect pixel_tex_rect = pixel_tex_region->rect;
-
     // draw window
-    core_add_drawing_fill_rect(core, &pixel_tex_rect, &window->rect,
+    core_add_drawing_fill_rect(core, &window->rect,
                                &ui->style.background_color);
 
     // draw bar
@@ -146,19 +142,17 @@ void ui_mk_window(struct ui_element *window, struct assets *assets,
     SDL_FRect bar_rect = {window->rect.x,
                           window->rect.y + window->rect.h - bar_height,
                           window->rect.w, bar_height};
-    core_add_drawing_fill_rect(core, &pixel_tex_rect, &bar_rect,
-                               &ui->style.foreground_color);
+    core_add_drawing_fill_rect(core, &bar_rect, &ui->style.foreground_color);
     window->data.window.row_y = window->rect.y + window->rect.h;
 
     // draw window border
-    core_add_drawing_rect(core, &pixel_tex_rect, &window->rect,
-                          &ui->style.foreground_color, 1);
+    core_add_drawing_rect(core, &window->rect, &ui->style.foreground_color, 1);
 
     // draw scale button
     SDL_FRect scale_btn_rect = {
         window->rect.x + window->rect.w - bar_height / 2.0f - 2,
         window->rect.y + 2, bar_height / 2.0f, bar_height / 2.0f};
-    core_add_drawing_fill_rect(core, &pixel_tex_rect, &scale_btn_rect,
+    core_add_drawing_fill_rect(core, &scale_btn_rect,
                                &ui->style.foreground_color);
 
     SDL_FRect tex_rect;

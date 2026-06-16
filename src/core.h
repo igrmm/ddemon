@@ -72,12 +72,14 @@ struct core {
     struct queue_handle drawing_queue_handle;
     struct core_line *line_queue;
     struct queue_handle line_queue_handle;
+    struct core_texture_region *pixel;
 };
 
 bool core_initialize(struct core *core, struct arena *arena,
                      const char *window_title, int window_width,
                      int window_height, int window_flag);
 void core_terminate(struct core *core);
+void core_set_pixel(struct core *core, struct core_texture_region *pixel);
 void core_delete_shader(Uint32 shader);
 Uint32 core_create_shader(const char *vert_src, const char *frag_src,
                           int *status, char *log, size_t log_size);
@@ -111,11 +113,10 @@ bool core_add_drawing_color_tex(struct core *core, const SDL_FRect *src_rect,
 bool core_add_drawing_tex(struct core *core, const SDL_FRect *src_rect,
                           const SDL_FRect *dst_rect);
 bool core_add_drawing_fill_rect(struct core *core,
-                                const SDL_FRect *pixel_tex_region,
+
                                 SDL_FRect *rect, struct core_color *color);
-bool core_add_drawing_rect(struct core *core, const SDL_FRect *pixel_tex_region,
-                           SDL_FRect *rect, struct core_color *color,
-                           float thickness);
+bool core_add_drawing_rect(struct core *core, SDL_FRect *rect,
+                           struct core_color *color, float thickness);
 bool core_add_line(struct core *core, float x0, float y0, float x1, float y1,
                    struct core_color *color);
 void core_render_drawings(struct core *core);

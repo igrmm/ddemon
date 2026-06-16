@@ -238,6 +238,11 @@ void core_terminate(struct core *core)
     SDL_DestroyWindow(core->window);
 }
 
+void core_set_pixel(struct core *core, struct core_texture_region *pixel)
+{
+    core->pixel = pixel;
+}
+
 void core_delete_shader(Uint32 shader)
 {
     if (glDeleteProgram != NULL)
@@ -381,15 +386,14 @@ bool core_add_drawing_tex(struct core *core, const SDL_FRect *src_rect,
 }
 
 bool core_add_drawing_fill_rect(struct core *core,
-                                const SDL_FRect *pixel_tex_region,
+
                                 SDL_FRect *rect, struct core_color *color)
 {
-    return core_add_drawing_color_tex(core, pixel_tex_region, rect, color);
+    return core_add_drawing_color_tex(core, &core->pixel->rect, rect, color);
 }
 
-bool core_add_drawing_rect(struct core *core, const SDL_FRect *pixel_tex_region,
-                           SDL_FRect *rect, struct core_color *color,
-                           float thickness)
+bool core_add_drawing_rect(struct core *core, SDL_FRect *rect,
+                           struct core_color *color, float thickness)
 {
     SDL_FRect line = {0};
 
@@ -398,24 +402,24 @@ bool core_add_drawing_rect(struct core *core, const SDL_FRect *pixel_tex_region,
     line.y = rect->y;
     line.w = rect->w;
     line.h = thickness;
-    if (!core_add_drawing_fill_rect(core, pixel_tex_region, &line, color))
+    if (!core_add_drawing_fill_rect(core, &line, color))
         return false;
 
     // line top
     line.y = rect->y + rect->h - thickness;
-    if (!core_add_drawing_fill_rect(core, pixel_tex_region, &line, color))
+    if (!core_add_drawing_fill_rect(core, &line, color))
         return false;
 
     // line left
     line.y = rect->y;
     line.w = thickness;
     line.h = rect->h;
-    if (!core_add_drawing_fill_rect(core, pixel_tex_region, &line, color))
+    if (!core_add_drawing_fill_rect(core, &line, color))
         return false;
 
     // line right
     line.x = rect->x + rect->w - thickness;
-    if (!core_add_drawing_fill_rect(core, pixel_tex_region, &line, color))
+    if (!core_add_drawing_fill_rect(core, &line, color))
         return false;
 
     return true;

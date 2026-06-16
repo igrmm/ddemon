@@ -62,6 +62,7 @@ SDL_AppResult SDL_AppInit(void **app_state, int argc, char *argv[])
                                    .data.window = {.title = "TestWindow"}};
 
     core_bind_texture(&app->core, app->assets.atlas.texture);
+    core_set_pixel(&app->core, app->assets.textures[ASSET_TEXTURE_PIXEL]);
 
     return SDL_APP_CONTINUE;
 }
@@ -92,10 +93,13 @@ SDL_AppResult SDL_AppIterate(void *app_state)
     SDL_FRect src_rect = {tilemap->rect.x, tilemap->rect.y, 32, 32};
     SDL_FRect dst_rect = {0, 0, 32, 32};
 
-    // render some lines
+    // render some lines (GL_LINES)
     struct core_color c = {0.0f, 1.0f, 0.0f, 1.0f};
     core_add_line(&app->core, 0, 0, 100, 100, &c);
     core_add_line(&app->core, 0, 0, 100, 50, &c);
+
+    // render one rect using a pixel texture
+    core_add_drawing_rect(&app->core, &(SDL_FRect){5, 5, 500, 500}, &c, 1.0f);
 
     // render 13k images on screen
     for (int l = 0; l < 6; l++) {
