@@ -97,8 +97,7 @@ struct core_texture core_create_texture(int width, int height,
 void core_bind_texture(struct core *core, struct core_texture texture);
 void core_clear_screen(float r, float g, float b, float a);
 
-bool core_add_drawing_color_tex(struct core *core, const SDL_FRect *tex_region,
-                                const SDL_FRect *src_rect,
+bool core_add_drawing_color_tex(struct core *core, const SDL_FRect *src_rect,
                                 const SDL_FRect *dst_rect,
                                 const struct core_color *color);
 
@@ -106,13 +105,11 @@ bool core_add_drawing_color_tex(struct core *core, const SDL_FRect *tex_region,
  * Add a drawing of a region of a texture to the drawing queue.
  *
  * core_add_drawing_tex() add a region of the bound opengl texture, represented
- * by the rectangle src_rect, to the drawing queue. If the pointer to the rect
- * tex_region is not NULL, src_rect will represent a region of this texture
- * region instead, ant tex_region will represent a portion of the bound texture.
+ * by the rectangle src_rect, to the drawing queue.
  *
  */
-bool core_add_drawing_tex(struct core *core, const SDL_FRect *tex_region,
-                          const SDL_FRect *src_rect, const SDL_FRect *dst_rect);
+bool core_add_drawing_tex(struct core *core, const SDL_FRect *src_rect,
+                          const SDL_FRect *dst_rect);
 bool core_add_drawing_fill_rect(struct core *core,
                                 const SDL_FRect *pixel_tex_region,
                                 SDL_FRect *rect, struct core_color *color);

@@ -106,13 +106,12 @@ void ui_mk_button(struct ui_element *button, struct assets *assets,
     // todo: exit function if element isnt inside window
 
     SDL_FRect *tex_region = &button->data.button.tex_region;
-    SDL_FRect src_rect = {.w = tex_region->w, .h = tex_region->h};
     // todo: add text offset to dst_rect x position
     SDL_FRect dst_rect = {.x = button->rect.x + button->padding,
                           .y = button->rect.y + button->padding,
                           .w = tex_region->w,
                           .h = tex_region->h};
-    core_add_drawing_color_tex(core, tex_region, &src_rect, &dst_rect,
+    core_add_drawing_color_tex(core, tex_region, &dst_rect,
                                &ui->style.font_color);
 }
 

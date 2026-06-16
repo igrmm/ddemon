@@ -87,10 +87,10 @@ SDL_AppResult SDL_AppIterate(void *app_state)
     count_fps();
 
     core_clear_screen(0.5f, 0.0f, 0.0f, 1.0f);
-    SDL_FRect src_rect = {0, 0, 32, 32};
-    SDL_FRect dst_rect = {0, 0, 32, 32};
     struct core_texture_region *tilemap =
         app->assets.textures[ASSET_TEXTURE_TILEMAP];
+    SDL_FRect src_rect = {tilemap->rect.x, tilemap->rect.y, 32, 32};
+    SDL_FRect dst_rect = {0, 0, 32, 32};
 
     // render some lines
     struct core_color c = {0.0f, 1.0f, 0.0f, 1.0f};
@@ -104,8 +104,7 @@ SDL_AppResult SDL_AppIterate(void *app_state)
                 dst_rect.x = x * 32;
                 dst_rect.y = y * 32;
                 src_rect.x = l * 32;
-                core_add_drawing_tex(&app->core, &tilemap->rect, &src_rect,
-                                     &dst_rect);
+                core_add_drawing_tex(&app->core, &src_rect, &dst_rect);
             }
         }
     }

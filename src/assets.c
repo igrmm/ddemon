@@ -308,7 +308,7 @@ static bool assets_load_fonts(Uint8 *file_buffer, size_t file_buffer_capacity,
             core_bind_texture(core, texture_boundingbox);
             SDL_FRect src_rect = {0, 0, width, height};
             SDL_FRect dst_rect = {xoff, descent, width, height};
-            core_add_drawing_tex(core, NULL, &src_rect, &dst_rect);
+            core_add_drawing_tex(core, &src_rect, &dst_rect);
             core_render_drawings(core);
             core_offscreen_rendering_end();
 

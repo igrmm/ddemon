@@ -344,22 +344,13 @@ void core_clear_screen(float r, float g, float b, float a)
     glClear(GL_COLOR_BUFFER_BIT);
 }
 
-bool core_add_drawing_color_tex(struct core *core, const SDL_FRect *tex_region,
-                                const SDL_FRect *src_rect,
+bool core_add_drawing_color_tex(struct core *core, const SDL_FRect *src_rect,
                                 const SDL_FRect *dst_rect,
                                 const struct core_color *color)
 {
     int instance;
     if (!queue_add(&instance, &core->drawing_queue_handle))
         return false;
-
-    float offset_x = 0, offset_y = 0;
-
-    // verify if drawing is part of other texture
-    if (tex_region != NULL) {
-        offset_x = tex_region->x;
-        offset_y = tex_region->y;
-    }
 
     // check given color
     struct core_color c = {1.0f, 1.0f, 1.0f, 0.0f};
@@ -372,8 +363,8 @@ bool core_add_drawing_color_tex(struct core *core, const SDL_FRect *tex_region,
         .dst_rect_y = dst_rect->y / core->viewport_height * 2.0f - 1.0f,
         .dst_rect_w = 1.0f / core->viewport_width * 2.0f * dst_rect->w,
         .dst_rect_h = 1.0f / core->viewport_height * 2.0f * dst_rect->h,
-        .src_rect_x = (src_rect->x + offset_x) / core->current_texture.width,
-        .src_rect_y = (src_rect->y + offset_y) / core->current_texture.height,
+        .src_rect_x = src_rect->x / core->current_texture.width,
+        .src_rect_y = src_rect->y / core->current_texture.height,
         .src_rect_w = src_rect->w / core->current_texture.width,
         .src_rect_h = src_rect->h / core->current_texture.height,
         .r = c.r,
@@ -383,20 +374,17 @@ bool core_add_drawing_color_tex(struct core *core, const SDL_FRect *tex_region,
     return true;
 }
 
-bool core_add_drawing_tex(struct core *core, const SDL_FRect *tex_region,
-                          const SDL_FRect *src_rect, const SDL_FRect *dst_rect)
+bool core_add_drawing_tex(struct core *core, const SDL_FRect *src_rect,
+                          const SDL_FRect *dst_rect)
 {
-    return core_add_drawing_color_tex(core, tex_region, src_rect, dst_rect,
-                                      NULL);
+    return core_add_drawing_color_tex(core, src_rect, dst_rect, NULL);
 }
 
 bool core_add_drawing_fill_rect(struct core *core,
                                 const SDL_FRect *pixel_tex_region,
                                 SDL_FRect *rect, struct core_color *color)
 {
-    SDL_FRect src_rect = {0, 0, pixel_tex_region->w, pixel_tex_region->h};
-    return core_add_drawing_color_tex(core, pixel_tex_region, &src_rect, rect,
-                                      color);
+    return core_add_drawing_color_tex(core, pixel_tex_region, rect, color);
 }
 
 bool core_add_drawing_rect(struct core *core, const SDL_FRect *pixel_tex_region,

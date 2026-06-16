@@ -150,15 +150,13 @@ bool txt_length(const char *str, float x, float y, float length,
         }
 
         SDL_FRect glyph_rect = font->glyphs[codepoint]->rect;
-        src_rect = (SDL_FRect){0, 0, glyph_rect.w, glyph_rect.h};
         dst_rect = (SDL_FRect){0, y, glyph_rect.w, glyph_rect.h};
         dst_rect.x = x + cursor_x;
 
         if (length > 0 && (cursor_x + dst_rect.w) > length)
             break;
 
-        core_add_drawing_color_tex(core, &glyph_rect, &src_rect, &dst_rect,
-                                   color);
+        core_add_drawing_color_tex(core, &glyph_rect, &dst_rect, color);
         cursor_x += font->advance_x;
     }
 
