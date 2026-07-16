@@ -196,136 +196,131 @@ static bool assets_load_fonts(Uint8 *file_buffer, size_t file_buffer_capacity,
 {
     size_t file_size = 0;
 
-    // cache ascii codepoints
-    struct txt_codepoint_cache *cache = txt_create_codepoint_cache(arena);
-    if (cache == NULL) {
-        return false;
-    } else {
-        for (int i = ' '; i < '~'; i++) {
-            char str[] = " ";
-            str[0] = i;
-            if (!txt_cache_codepoints(cache, str))
-                return false;
-        }
-    }
-
     // load ttf file
     if (!assets_load_file(file_buffer, file_buffer_capacity, ASSETS_FONT_PATH,
                           &file_size))
         return false;
 
-    // initialize stb true type font
-    stbtt_fontinfo info;
-    if (!stbtt_InitFont(&info, file_buffer, 0)) {
-        SDL_Log("stbtt_InitFont failed: %s", ASSETS_FONT_PATH);
-        return false;
-    }
     int font_height = 22;
-    float scale = stbtt_ScaleForPixelHeight(&info, font_height);
 
     // create txt_font
     assets->fonts[ASSET_FONT_SMALL] = txt_create_font(font_height, arena);
     if (assets->fonts[ASSET_FONT_SMALL] == NULL)
         return false;
 
+    // call stbtt api
+    int font_atlas_width = 512, font_atlas_height = 512;
+    Uint8 *font_atlas_pixels =
+        arena_alloc(arena, font_atlas_width * font_atlas_height);
+    if (font_atlas_pixels == NULL)
+        return false;
+    stbtt_pack_context pack_context;
+    if (!stbtt_PackBegin(&pack_context, font_atlas_pixels, font_atlas_width,
+                         font_atlas_height, 0, 1, NULL))
+        return false;
+    Uint32 codepoint_range_count = 255;   // all ascii
+    Uint32 first_codepoint_in_range = 32; // ascii begin "space"
+    stbtt_packedchar *packed_chars =
+        arena_alloc(arena, sizeof(stbtt_packedchar) * codepoint_range_count);
+    if (packed_chars == NULL)
+        return false;
+    if (!stbtt_PackFontRange(&pack_context, file_buffer, 0, font_height,
+                             first_codepoint_in_range, codepoint_range_count,
+                             packed_chars))
+        return false;
+    stbtt_PackEnd(&pack_context);
+
+    // make temp font atlas
+    struct core_texture font_atlas_texture =
+        core_create_texture(font_atlas_width, font_atlas_height,
+                            CORE_TEXTURE_FORMAT_RED, font_atlas_pixels);
+
     // get the lowest descent (like the tail in letter 'g'), descent = y1
-    int lowest_descent = 0;
-    for (Uint32 codepoint = 0; codepoint < TXT_UNICODE_MAX; codepoint++) {
-        if (txt_is_codepoint_cached(cache, codepoint)) {
-            int descent;
-            stbtt_GetCodepointBitmapBox(&info, codepoint, scale, scale, 0, 0, 0,
-                                        &descent);
-            if (descent > lowest_descent)
-                lowest_descent = descent;
-        }
+    float lowest_descent = 0.0f;
+    for (Uint32 codepoint = first_codepoint_in_range;
+         codepoint < codepoint_range_count; codepoint++) {
+        float xpos = 0.0f, ypos = 0.0f;
+        stbtt_aligned_quad q = {0};
+        stbtt_GetPackedQuad(packed_chars, font_atlas_width, font_atlas_height,
+                            codepoint - first_codepoint_in_range, &xpos, &ypos,
+                            &q, 0);
+        if (q.y1 > lowest_descent)
+            lowest_descent = q.y1;
     }
 
-    // loop through cached codepoints, create aligned tex and store in atlas
+    // loop codepoints in range, create aligned tex and store in atlas
     float advance_x = 0.0f;
-    for (Uint32 codepoint = 0; codepoint < TXT_UNICODE_MAX; codepoint++) {
-        if (txt_is_codepoint_cached(cache, codepoint)) {
-            int width, height, xoff, yoff;
-            int glyph_index = stbtt_FindGlyphIndex(&info, codepoint);
-            if (glyph_index == 0) {
-                SDL_Log("font doesn't have glyph for codepoint: %X", codepoint);
-                return false;
-            }
-            int advance_x_unscaled = 0;
-            stbtt_GetCodepointHMetrics(&info, codepoint, &advance_x_unscaled,
-                                       NULL);
-            if (advance_x > 0.0f && (advance_x_unscaled * scale) != advance_x) {
-                SDL_Log("font is not monospaced, glyph's advance_x vary.");
-                return false;
-            }
-            advance_x = advance_x_unscaled * scale;
-            float shift_x = advance_x - SDL_floorf(advance_x);
-            Uint8 *pixels = stbtt_GetGlyphBitmapSubpixel(
-                &info, scale, scale, shift_x, 0.0f, glyph_index, &width,
-                &height, &xoff, &yoff);
-            if (pixels == NULL && codepoint != ' ') {
-                SDL_Log("stb_truetype failed getting codepoint bitmap: '%X'",
-                        codepoint);
-                return false;
-            }
-            struct core_texture texture_boundingbox = core_create_texture(
-                width, height, CORE_TEXTURE_FORMAT_RED, pixels);
-            SDL_free(pixels);
+    for (Uint32 codepoint = first_codepoint_in_range;
+         codepoint < codepoint_range_count; codepoint++) {
+        float xpos = 0, ypos = 0;
+        stbtt_aligned_quad q = {0};
+        stbtt_GetPackedQuad(packed_chars, font_atlas_width, font_atlas_height,
+                            codepoint - first_codepoint_in_range, &xpos, &ypos,
+                            &q, 0);
 
-            // align glyph on Y axis with baseline (origin)
-            /**
-             * The initial texture_boundingbox is made of the bounding box of
-             * the glyph without any padding. We want to store these glyphs
-             * aligned with the font's baseline (glyph origin point) on
-             * atlas. To do this, we will render these bounding boxes a little
-             * bit up into another texture (texture_aligned). The glyphs with
-             * the lowest descent, like the letter 'g', will not be rendered up,
-             * beacause they will be touching the bottom of the texture (they
-             * already are), thus, the lowest descent will be used as a
-             * reference. For this reason, the final texture will have a bigger
-             * height (new_height). STB_TRUE_TYPE uses y-down, so to render up
-             * we will be subtracting y. Also, when a glyph have a yoff
-             * (top-left of the bounding box to the origin) bigger than the
-             * glyph height, in order to align with baseline, we subtract
-             * new_height with descent and make descent = 0.
-             */
-            int new_height = height + lowest_descent;
-            int descent = height + yoff;
-            if (descent < 0) {
-                new_height -= descent;
-                descent = 0;
-            }
-
-            // align glyph on X axis with baseline (origin)
-            int new_width = width + xoff;
-
-            // render to texture
-            struct core_texture texture_aligned = core_create_texture(
-                new_width, new_height, CORE_TEXTURE_FORMAT_RGBA, 0);
-            core_offscreen_rendering_begin(core, &texture_aligned);
-            core_update_viewport(core, new_width, new_height);
-            core_clear_screen(0.0f, 0.0f, 0.0f, 0.0f);
-            core_use_shader(core, assets->shaders[ASSET_SHADER_DEFAULT]);
-            core_bind_texture(core, texture_boundingbox);
-            SDL_FRect src_rect = {0, 0, width, height};
-            SDL_FRect dst_rect = {xoff, descent, width, height};
-            core_add_drawing_tex(core, &src_rect, &dst_rect);
-            core_render_drawings(core);
-            core_offscreen_rendering_end();
-
-            // store texture into atlas, create region and set glyph on txt_font
-            struct core_texture_region *region =
-                atlas_create_region_from_texture(&assets->atlas,
-                                                 texture_aligned);
-            if (region == NULL)
-                return false;
-            txt_set_glyph_atlas_region(assets->fonts[ASSET_FONT_SMALL],
-                                       codepoint, region);
-
-            // unbind texture_boundinbox so we can free it from gpu's memory
-            core_bind_texture(core, (struct core_texture){0, 0, 0});
-            core_delete_texture(&texture_boundingbox);
+        if (advance_x > 0.0f && xpos != advance_x) {
+            SDL_Log("font is not monospaced, glyph's advance_x vary.");
+            return false;
         }
+        advance_x = xpos;
+
+        SDL_FRect srcrect = {.x = q.s0 * font_atlas_width,
+                             .y = q.t0 * font_atlas_height,
+                             .w = (q.s1 - q.s0) * font_atlas_width,
+                             .h = (q.t1 - q.t0) * font_atlas_height};
+
+        // align glyph on Y axis with baseline (origin)
+        /**
+         * The initial texture_boundingbox is made of the bounding box of
+         * the glyph without any padding. We want to store these glyphs
+         * aligned with the font's baseline (glyph origin point) on
+         * atlas. To do this, we will render these bounding boxes a little
+         * bit up into another texture (texture_aligned). The glyphs with
+         * the lowest descent, like the letter 'g', will not be rendered up,
+         * beacause they will be touching the bottom of the texture (they
+         * already are), thus, the lowest descent will be used as a
+         * reference. For this reason, the final texture will have a bigger
+         * height (new_height). STB_TRUE_TYPE uses y-down, so to render up
+         * we will be subtracting y. Also, when a glyph have a yoff
+         * (top-left of the bounding box to the origin) bigger than the
+         * glyph height, in order to align with baseline, we subtract
+         * new_height with descent and make descent = 0.
+         */
+        float new_height = srcrect.h + lowest_descent;
+        float descent = srcrect.h + q.y0;
+        if (descent < 0) {
+            new_height -= descent;
+            descent = 0;
+        }
+
+        // align glyph on X axis with baseline (origin)
+        float new_width = srcrect.w + q.x0;
+
+        SDL_FRect dstrect = {
+            .x = q.x0, .y = descent, .w = srcrect.w, .h = srcrect.h};
+
+        // render to texture
+        struct core_texture texture_aligned = core_create_texture(
+            new_width, new_height, CORE_TEXTURE_FORMAT_RGBA, 0);
+        core_offscreen_rendering_begin(core, &texture_aligned);
+        core_update_viewport(core, new_width, new_height);
+        core_clear_screen(0.0f, 0.0f, 0.0f, 0.0f);
+        core_bind_texture(core, font_atlas_texture);
+        core_use_shader(core, assets->shaders[ASSET_SHADER_DEFAULT]);
+        core_add_drawing_tex(core, &srcrect, &dstrect);
+        core_render_drawings(core);
+        core_offscreen_rendering_end();
+
+        // store texture into atlas, create region and set glyph on txt_font
+        struct core_texture_region *region =
+            atlas_create_region_from_texture(&assets->atlas, texture_aligned);
+        if (region == NULL)
+            return false;
+        txt_set_glyph_atlas_region(assets->fonts[ASSET_FONT_SMALL], codepoint,
+                                   region);
+        core_bind_texture(core, (struct core_texture){0, 0, 0});
     }
+    core_delete_texture(&font_atlas_texture);
     txt_set_font_advance_x(advance_x, assets->fonts[ASSET_FONT_SMALL]);
 
     return true;
