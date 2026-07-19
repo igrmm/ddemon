@@ -1,192 +1,87 @@
 #include <SDL3/SDL.h>
 
 #include "arena.h"
-#include "assets.h"
-#include "core.h"
-#include "queue.h"
+#include "pool.h"
 #include "txt.h"
 #include "ui.h"
 
-#define UI_CLOSE_BUTTON_CODEPOINT 8855
-#define UI_MINIM_BUTTON_CODEPOINT 8854
-#define UI_MAXIM_BUTTON_CODEPOINT 8853
-
-#define UI_QUEUE_CAPACITY 100
+#define UI_POOL_CAPACITY 10
+#define UI_DEFAULT_BORDER_THICKNESS 1.0f
+#define UI_DEFAULT_COLORS                                                      \
+    (struct ui_colors)                                                         \
+    {                                                                          \
+        .background = {0.16f, 0.16f, 0.21f, 0.0f},                             \
+        .foreground = {0.74f, 0.58f, 0.98f, 0.0f},                             \
+    }
 
 bool ui_initialize(struct ui *ui, struct txt_font *font, struct arena *arena)
 {
-    ui->element_queue =
-        arena_alloc(arena, UI_QUEUE_CAPACITY * sizeof(*ui->element_queue));
-    if (ui->element_queue == NULL) {
-        SDL_Log("Error allocating memory for ui (arena_alloc failed)");
+    ui->pool = arena_alloc(arena, sizeof(struct ui_poolable_element) *
+                                      UI_POOL_CAPACITY);
+    if (ui->pool == NULL)
         return false;
+    ui->pool_handle = (struct pool_handle){0};
+    for (int i = 0; i < UI_POOL_CAPACITY; i++) {
+        ui->pool[i] = (struct ui_poolable_element){0};
+        pool_return(&ui->pool[i].node, &ui->pool_handle);
     }
-    queue_initialize(&ui->element_queue_handle, UI_QUEUE_CAPACITY);
+
     ui->font = font;
-    // default colors are dracula theme
-    ui->style =
-        (struct ui_style){.background_color = {0.16f, 0.16f, 0.21f, 0.0f},
-                          .foreground_color = {0.74f, 0.58f, 0.98f, 0.0f},
-                          .font_color = {0.27f, 0.28f, 0.35f, 0.0f},
-                          .hover_color = {0.23f, 0.24f, 0.31f, 0.0f},
-                          .click_color = {0.21f, 0.22f, 0.30f, 0.0f}};
+    ui->colors = UI_DEFAULT_COLORS;
+    ui->border_thickness = UI_DEFAULT_BORDER_THICKNESS;
+
     return true;
 }
 
-static void ui_compute_button_size(int height, struct ui_element *button)
+static struct ui_element *ui_create_element(enum ui_type type, struct ui *ui)
 {
-    int padding_num = 0;
-
-    // check if button have text or image
-    if (button->data.button.text_width > 0 ||
-        button->data.button.tex_region.w > 0)
-        padding_num = 2;
-
-    // check if button have both text and image
-    if (button->data.button.text_width > 0 &&
-        button->data.button.tex_region.w > 0)
-        padding_num = 3;
-
-    button->rect.w = button->data.button.text_width +
-                     button->data.button.tex_region.w +
-                     padding_num * button->padding;
-    button->rect.h = height;
+    struct list_node *node = pool_obtain(&ui->pool_handle);
+    if (node == NULL)
+        return NULL;
+    struct ui_poolable_element *poolable = (struct ui_poolable_element *)node;
+    struct ui_element *element = &poolable->element;
+    element->type = type;
+    element->border_thickness = ui->border_thickness;
+    return element;
 }
 
-static void ui_compute_label_size(int height, struct ui_element *label)
+struct ui_element *ui_create_window(float x, float y, float w, float h,
+                                    const char *title, struct ui *ui)
 {
-    if (label->data.label.text_width > 0)
-        label->rect.w = label->data.label.text_width + 2 * label->padding;
-    label->rect.h = height;
+    struct ui_element *window = ui_create_element(UI_TYPE_WINDOW, ui);
+    if (window == NULL)
+        return NULL;
+    window->rect = (SDL_FRect){x, y, w, h};
+    window->data.window.title = title;
+    window->data.window.bar_height = txt_get_font_height(ui->font);
+    list_add(&window->node, &ui->windows);
+    return window;
 }
 
-void ui_layout_row(struct ui_element *window, int height,
-                   struct ui_element *elements[], int element_count)
+static void ui_add_window_drawing(struct ui_element *window, struct core *core,
+                                  struct ui *ui)
 {
-    // calculate element rect, get amount of "free width" and growable elements
-    int row_free_width = window->rect.w, growable_element_count = 0;
-    for (int i = 0; i < element_count; i++) {
-        struct ui_element *element = elements[i];
-        if (element == NULL) {
-            growable_element_count++;
-        } else if (element->type == UI_TYPE_BUTTON) {
-            ui_compute_button_size(height, element);
-            row_free_width -= element->rect.w;
-        } else if (element->type == UI_TYPE_LABEL) {
-            ui_compute_label_size(height, element);
-            row_free_width -= element->rect.w;
-        } else {
-            // NOT IMPLEMENTED
-        }
-    }
-
-    int grow_width = 0;
-    if (growable_element_count > 0)
-        grow_width = row_free_width / growable_element_count;
-
-    // layout
-    int x = window->rect.x;
-    int y = window->data.window.row_y - height;
-    for (int i = 0; i < element_count; i++) {
-        struct ui_element *element = elements[i];
-        if (element == NULL) {
-            x += grow_width;
-        } else {
-            element->rect.x = x;
-            element->rect.y = y;
-            x += element->rect.w;
-        }
-    }
-    window->data.window.row_y = y;
-}
-
-void ui_mk_button(struct ui_element *button, struct assets *assets,
-                  struct ui *ui, struct core *core)
-{
-    // todo: exit function if element isnt inside window
-
-    SDL_FRect *tex_region = &button->data.button.tex_region;
-    // todo: add text offset to dst_rect x position
-    SDL_FRect dst_rect = {.x = button->rect.x + button->padding,
-                          .y = button->rect.y + button->padding,
-                          .w = tex_region->w,
-                          .h = tex_region->h};
-    core_add_drawing_color_tex(core, tex_region, &dst_rect,
-                               &ui->style.font_color);
-}
-
-void ui_mk_label(struct ui_element *label, struct assets *assets, struct ui *ui,
-                 struct core *core)
-{
-    // todo: exit function if element isnt inside window
-
-    const char *text = label->data.label.text;
-    float text_x = label->rect.x + label->padding;
-    float text_y = label->rect.y + label->padding;
-    float text_w = label->rect.w - label->padding * 2;
-    struct core_color *text_color = &ui->style.font_color;
-    txt_length(text, text_x, text_y, text_w, text_color, ui->font, core);
-
-    // todo handle events
-}
-
-void ui_mk_window(struct ui_element *window, struct assets *assets,
-                  struct ui *ui, struct core *core)
-{
-    // draw window
-    core_add_drawing_fill_rect(core, &window->rect,
-                               &ui->style.background_color);
+    // draw window rect with background color
+    core_add_drawing_fill_rect(core, &window->rect, &ui->colors.background);
 
     // draw bar
-    int bar_height = txt_get_font_height(ui->font);
     SDL_FRect bar_rect = {window->rect.x,
-                          window->rect.y + window->rect.h - bar_height,
-                          window->rect.w, bar_height};
-    core_add_drawing_fill_rect(core, &bar_rect, &ui->style.foreground_color);
-    window->data.window.row_y = window->rect.y + window->rect.h;
+                          window->rect.y + window->rect.h -
+                              window->data.window.bar_height,
+                          window->rect.w, window->data.window.bar_height};
+    core_add_drawing_fill_rect(core, &bar_rect, &ui->colors.foreground);
 
     // draw window border
-    core_add_drawing_rect(core, &window->rect, &ui->style.foreground_color, 1);
+    core_add_drawing_rect(core, &window->rect, &ui->colors.foreground,
+                          window->border_thickness);
+}
 
-    // draw scale button
-    SDL_FRect scale_btn_rect = {
-        window->rect.x + window->rect.w - bar_height / 2.0f - 2,
-        window->rect.y + 2, bar_height / 2.0f, bar_height / 2.0f};
-    core_add_drawing_fill_rect(core, &scale_btn_rect,
-                               &ui->style.foreground_color);
-
-    SDL_FRect tex_rect;
-
-    struct ui_element bar_title_label = {
-        .padding = 1,
-        .type = UI_TYPE_LABEL,
-        .data = {
-            .label = {.text = window->data.window.title, .text_width = 120}}};
-
-    // txt_get_glyph_region(&tex_rect, UI_MINIM_BUTTON_CODEPOINT, ui->font);
-    struct ui_element minim_btn = {
-        .padding = 1,
-        .type = UI_TYPE_BUTTON,
-        .data = {.button = {.tex_region = tex_rect}}};
-
-    // txt_get_glyph_region(&tex_rect, UI_MAXIM_BUTTON_CODEPOINT, ui->font);
-    struct ui_element maxim_btn = {
-        .padding = 1,
-        .type = UI_TYPE_BUTTON,
-        .data = {.button = {.tex_region = tex_rect}}};
-
-    // txt_get_glyph_region(&tex_rect, UI_CLOSE_BUTTON_CODEPOINT, ui->font);
-    struct ui_element close_btn = {
-        .padding = 1,
-        .type = UI_TYPE_BUTTON,
-        .data = {.button = {.tex_region = tex_rect}}};
-
-    struct ui_element *elements[] = {&bar_title_label, NULL, &minim_btn,
-                                     &maxim_btn, &close_btn};
-    ui_layout_row(window, bar_height, elements, SDL_arraysize(elements));
-
-    // ui_mk_label(&bar_title_label, assets, ui, core);
-    // ui_mk_button(&close_btn, assets, ui, core);
-    // ui_mk_button(&maxim_btn, assets, ui, core);
-    // ui_mk_button(&minim_btn, assets, ui, core);
+void ui_add_drawings(struct ui *ui, struct core *core)
+{
+    // iterate windows
+    struct list_node *window_iterator = NULL;
+    while ((window_iterator = list_iterate(window_iterator, &ui->windows))) {
+        struct ui_element *window = (struct ui_element *)window_iterator;
+        ui_add_window_drawing(window, core, ui);
+    }
 }

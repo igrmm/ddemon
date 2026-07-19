@@ -4,75 +4,51 @@
 #include <SDL3/SDL.h>
 
 #include "arena.h"
-#include "assets.h"
 #include "core.h"
-#include "queue.h"
+#include "list.h"
+#include "pool.h"
 
-enum ui_type { UI_TYPE_BUTTON, UI_TYPE_LABEL, UI_TYPE_WINDOW };
+enum ui_type { UI_TYPE_WINDOW };
 
-struct ui_button {
-    const char *text;
-    int text_width;
-    SDL_FRect tex_region;
-};
-
-struct ui_label {
-    const char *text;
-    int text_width;
+struct ui_colors {
+    struct core_color background;
+    struct core_color foreground;
 };
 
 struct ui_window {
-    int row_y;
     const char *title;
-};
-
-struct ui_style {
-    struct core_color background_color;
-    struct core_color foreground_color;
-    struct core_color hover_color;
-    struct core_color click_color;
-    struct core_color font_color;
+    float bar_height;
 };
 
 union ui_element_data {
-    struct ui_button button;
-    struct ui_label label;
     struct ui_window window;
 };
 
 struct ui_element {
-    SDL_FRect rect;
-    int padding;
-    struct ui_style *style;
+    struct list_node node;
     enum ui_type type;
     union ui_element_data data;
+    SDL_FRect rect;
+    float border_thickness;
+};
+
+struct ui_poolable_element {
+    struct list_node node;
+    struct ui_element element;
 };
 
 struct ui {
-    struct ui_element *element_queue;
-    struct queue_handle element_queue_handle;
+    struct ui_poolable_element *pool;
+    struct pool_handle pool_handle;
+    struct ui_colors colors;
     struct txt_font *font;
-    struct ui_style style;
+    float border_thickness;
+    struct list windows;
 };
 
 bool ui_initialize(struct ui *ui, struct txt_font *font, struct arena *arena);
-
-/**
- * Layout ui elements horizontally.
- *
- * Layout ui elements horizontally with a maximum height of given height. Null
- * pointers that are part of elements array will be treated as growable empty
- * spaces.
- *
- */
-void ui_layout_row(struct ui_element *window, int height,
-                   struct ui_element *elements[], int element_count);
-
-void ui_mk_button(struct ui_element *button, struct assets *assets,
-                  struct ui *ui, struct core *core);
-void ui_mk_label(struct ui_element *label, struct assets *assets, struct ui *ui,
-                 struct core *core);
-void ui_mk_window(struct ui_element *window, struct assets *assets,
-                  struct ui *ui, struct core *core);
+struct ui_element *ui_create_window(float x, float y, float w, float h,
+                                    const char *title, struct ui *ui);
+void ui_add_drawings(struct ui *ui, struct core *core);
 
 #endif

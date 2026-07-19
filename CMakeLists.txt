@@ -18,6 +18,8 @@ add_executable(${PROJECT_NAME}
     src/ui.c
     src/queue.c
     src/arena.c
+    src/list.c
+    src/pool.c
     )
 
 if (CMAKE_C_COMPILER_ID STREQUAL "GNU")

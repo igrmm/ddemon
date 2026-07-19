@@ -14,7 +14,6 @@ struct app {
     struct core core;
     struct assets assets;
     struct ui ui;
-    struct ui_element win;
 };
 
 static char fps[12];
@@ -56,10 +55,7 @@ SDL_AppResult SDL_AppInit(void **app_state, int argc, char *argv[])
     if (!ui_initialize(&app->ui, app->assets.fonts[ASSET_FONT_SMALL],
                        &app->arena))
         return SDL_APP_FAILURE;
-
-    app->win = (struct ui_element){.rect = {400, 400, 400, 400},
-                                   .type = UI_TYPE_WINDOW,
-                                   .data.window = {.title = "TestWindow"}};
+    ui_create_window(10, 670, 400, 400, "Test Window!", &app->ui);
 
     core_bind_texture(&app->core, app->assets.atlas.texture);
     core_set_pixel(&app->core, app->assets.textures[ASSET_TEXTURE_PIXEL]);
@@ -115,7 +111,8 @@ SDL_AppResult SDL_AppIterate(void *app_state)
     char text[64] = "";
     SDL_snprintf(text, SDL_arraysize(text), "THIS IS NOT A GAME. FPS=%s", fps);
     txt(text, 0, 100, app->assets.fonts[ASSET_FONT_SMALL], &app->core);
-    // ui_mk_window(win, assets, ui, core); disable ui for now
+
+    ui_add_drawings(&app->ui, &app->core);
 
     core_use_shader(&app->core, app->assets.shaders[ASSET_SHADER_DEFAULT]);
     core_render_drawings(&app->core);
