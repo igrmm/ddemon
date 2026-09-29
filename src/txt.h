@@ -52,13 +52,12 @@ void txt_get_string_rect_size(const char *str, float *width, float *height,
                               struct txt_font *font);
 
 /**
- * Draw text on screen made of "str" string with a maximum "length" line length
- * in pixels.
+ * Draw text on screen made of "str" string inside the given rectangle, breaking
+ * lines when necessary.
  *
  */
-bool txt_length(const char *str, float x, float y, float length,
-                struct core_color *color, struct txt_font *font,
-                struct core *core);
+bool txt_rect(const char *str, const SDL_FRect *rect, struct core_color *color,
+              struct txt_font *font, struct core *core);
 
 /**
  * Draw text on screen made of "str" string with no length limit.

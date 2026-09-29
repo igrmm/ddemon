@@ -112,6 +112,11 @@ SDL_AppResult SDL_AppIterate(void *app_state)
     SDL_snprintf(text, SDL_arraysize(text), "THIS IS NOT A GAME. FPS=%s", fps);
     txt(text, 0, 100, app->assets.fonts[ASSET_FONT_SMALL], &app->core);
 
+    SDL_FRect rect = {700, 100, 100, 100};
+    core_add_drawing_rect(&app->core, &rect, &c, 1.0f);
+    c.r = c.g = c.b = 1.0f;
+    txt_rect(text, &rect, &c, app->assets.fonts[ASSET_FONT_SMALL], &app->core);
+
     ui_add_drawings(&app->ui, &app->core);
 
     core_use_shader(&app->core, app->assets.shaders[ASSET_SHADER_DEFAULT]);

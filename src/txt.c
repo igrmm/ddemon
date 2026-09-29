@@ -129,14 +129,13 @@ void txt_get_string_rect_size(const char *str, float *width, float *height,
     }
 }
 
-bool txt_length(const char *str, float x, float y, float length,
-                struct core_color *color, struct txt_font *font,
-                struct core *core)
+bool txt_rect(const char *str, const SDL_FRect *rect, struct core_color *color,
+              struct txt_font *font, struct core *core)
 {
-    SDL_FRect src_rect, dst_rect;
-    float cursor_x = 0;
     Uint32 codepoint;
     const char *iterator = str;
+
+    SDL_FRect dst_rect = {.x = rect->x, .y = rect->y + rect->h - font->height};
 
     while (*iterator != '\0') {
         if (!txt_get_codepoint(&codepoint, &iterator))
@@ -145,19 +144,24 @@ bool txt_length(const char *str, float x, float y, float length,
         iterator++;
 
         if (codepoint == ' ') {
-            cursor_x += font->advance_x;
+            dst_rect.x += font->advance_x;
             continue;
         }
 
         SDL_FRect glyph_rect = font->glyphs[codepoint]->rect;
-        dst_rect = (SDL_FRect){0, y, glyph_rect.w, glyph_rect.h};
-        dst_rect.x = x + cursor_x;
+        dst_rect.w = glyph_rect.w;
+        dst_rect.h = glyph_rect.h;
 
-        if (length > 0 && (cursor_x + dst_rect.w) > length)
+        // break line
+        if (rect->w > 0.0f && (dst_rect.x + dst_rect.w) > (rect->x + rect->w)) {
+            dst_rect.x = rect->x;
+            dst_rect.y -= font->height;
+        }
+        if (rect->h > 0.0f && dst_rect.y < rect->y)
             break;
 
         core_add_drawing_color_tex(core, &glyph_rect, &dst_rect, color);
-        cursor_x += font->advance_x;
+        dst_rect.x += font->advance_x;
     }
 
     return true;
@@ -166,7 +170,7 @@ bool txt_length(const char *str, float x, float y, float length,
 bool txt(const char *str, float x, float y, struct txt_font *font,
          struct core *core)
 {
-    return txt_length(str, x, y, 0, NULL, font, core);
+    return txt_rect(str, &(SDL_FRect){.x = x, .y = y}, NULL, font, core);
 }
 
 bool txt_is_codepoint_cached(struct txt_codepoint_cache *cache,
